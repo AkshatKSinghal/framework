@@ -16,4 +16,15 @@ class BTPost
 	{
 		//Check for duplicates, throw exception in case duplicates within file are found
 	}
+
+	/**
+	 * Function to create a new courier company
+	 * 
+	 * @param string $name Name of the courier company
+	 * @param 
+	 */
+	public static function createCourierCompany($name, )
+	{
+
+	}
 }

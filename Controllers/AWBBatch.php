@@ -3,7 +3,7 @@
  * Controller responsible for management and use of AWBs
  * 
  */
-
+#TODO Create constant FS
 class AWBBatch extends Base
 {
 	private var $redis = null;
@@ -13,6 +13,37 @@ class AWBBatch extends Base
 	const AVAILABLE = 'available';
 	const ASSIGNED = 'assigned';
 	const FAILED = 'failed';
+	const FILE_PATH = '#TODO DEFINE THE PATH';
+
+
+	/**
+	 * Create a new AWB Batch record in the DB and process the AWB files.
+	 * 
+	 * @param string $filePath Local path of the file on disk
+	 * @param string $courierCompanyID Couier Company for which the 
+	 * AWB Batch is being created
+	 * @param string $accountID Account ID for which the 
+	 * AWB Batch is to be created [optional; default 0]
+	 * 
+	 * @throws Exception in case the $courierCompanyID is invalid
+	 * @throws Exception in case the $filePath is invalid/ empty
+	 * 
+	 * @return void
+	 */
+
+	function __construct($filePath, $courierCompanyID, $accountID = 0)
+	{
+		if (!is_file($filePath)) {
+			throw new Exception("File not found at given path $filePath");
+		}
+		if (filesize($filePath) == 0) {
+			throw new Exception("File empty at path $filePath");
+		}
+		#TODO Create entry in the DB
+		$this->model = '#TODO Create entry in DB';
+		$this->saveToPersistentStore($filePath, self::UPLOAD);
+	}
+
 
 	/**
 	 * Function to process the AWB batch and create the valid and invalid list 
@@ -21,63 +52,72 @@ class AWBBatch extends Base
 
 	public function processFile()
 	{
-		$this->getProcessingLock();
-		$file = $this->getFromPersistentStore('upload');
+		$this->getLock('PROCESSING', 'PENDING');
+		$file = $this->getFromPersistentStore(self::UPLOAD);
 		$existingBatchesSet = $this->loadExistingBatches();
 		$fp = fopen($file, 'r');
-		$validAWBFile = $this->getTempFile('valid');
+		$validAWBFile = $this->getTempFile(self::VALID);
 		file_put_contents($validAWBFile, '');
-		$invalidAWBFile = $this->getTempFile('invalid');
+		$invalidAWBFile = $this->getTempFile(self::INVALID);
 		file_put_contents($validAWBFile, '');
 		$validCount = 0;
 		$invalidCount = 0;
 		while($awb = fread($fp)) {
 			$awb = trim($awb);
-			$type = 'valid';
+			$type = self::VALID;
 			if ($this->redis->existsInSet($existingBatchesSet, $awb)) {
-				$type = 'invalid';
+				$type = self::INVALID;
+				$awb = $awb . FS . "DUPLICATE";
 			}
 			$fileName = $type . "AWBFile";
 			$counter = $type . "Count";
-			file_put_contents($fileName, $awb . "\t" . "DUPLICATE" . PHP_EOL, FILE_APPEND);
+			file_put_contents($fileName, $awb . PHP_EOL, FILE_APPEND);
 			$counter++;
 		}
 		$courier = new CourierCompany($this->getCourierCompanyId());
 		$awbFile = $courier->validateAWBFile($validAWBFile, $errorFile);
-		$this->markProcessed();
+		$this->markProcessed($validCount, $invalidCount);
 	}
 
+
 	/**
-	 * Function to obtain lock for processing the uploaded AWB file by marking
-	 * the batch status as PROCESSING
+	 * Function to obtain lock for processing the uploaded AWB file/ 
+	 * uploading to persistent store
+	 * 
+	 * @param string $operation Operation for which the lock is being obtained
+	 * @param string $allowedState Status on which the lock can be obtained
 	 * 
 	 * @throws Exception if the lock is already in use 
-	 * i.e. the batch status is already PROCESSING
-	 * @throws Exception if the batch is already processed
-	 * i.e. the batch status is already PROCESSED
+	 * i.e. the batch status is already same as $operation
+	 * @throws Exception if the lock cannot be obtained on the current state
+	 * i.e. the batch status is not $allowedState
 	 * 
 	 * @return void
-	 */ 
-	private function getProcessingLock()
+	 */
+
+	private function getLock($operation, $allowedState)
 	{
-		//get status
-		if ($status == 'PROCESSING') {
-			throw new Exception("Batch already under processing");
-		} else if ($status == 'PROCESSED') {
-			throw new Exception("Batch already processed");
+		#TODO get status from DB
+		if ($status == $operation) {
+			throw new Exception("Operation already running");
+		} else if ($status != $allowedState) {
+			throw new Exception("Cannot obtain lock for $operation operation from $status state");
 		}
-		//update status
+		#TODO update status to $operation
 	}
+
 
 	/**
 	 * Function to mark the status of the batch as processed (this is not required, should be in model)
 	 * 
 	 * @return void
 	 */
-	private function markProcessed()
+
+	private function markProcessed($validCount = null, $invalidCount = null)
 	{
-		//update status
+		#TODO update status to PROCESSED, count of valid, invalid if not null
 	}
+
 
 	/**
 	 * Function to get the file from S3 and load into redis set.
@@ -85,10 +125,11 @@ class AWBBatch extends Base
 	 * @param $customKey string (optional) name of the set to be loaded into
 	 * @throws Exception in case the AWB file fetch fails
 	 */ 
-	public function loadFile($type = 'available', $customKey = null)
+
+	public function loadFile($type = self::AVAILABLE, $customKey = null)
 	{
 		// Update the available AWB list with the existing log, if any
-		if ($type == 'available') {
+		if ($type == self::AVAILABLE) {
 			$this->updatePersistentStore();
 		}
 
@@ -104,14 +145,22 @@ class AWBBatch extends Base
 	public function getAWB()
 	{
 		$key = $this->getRedisSetKey('available');
-		$this->redis->exists()
-		// pop from Redis, update entries for available and used count in DB
+		if (!$this->redis->exists($key) || ($this->redis->sCard($key) == 0 && $this->model->getAvailableCount() != 0)) {
+			$this->loadFile();
+		}
+		$awb = $this->redis->sPop($key);
+		if ($awb === false) {
+			throw new Exception("No AWBs available in Batch");
+		}
 		$this->logAWBEvent('used', $awb);
 	}
 
 	public function updatePersistentStore()
 	{
-		//Put a lock mechanism to avoid issue due to multiple processes working on the same batch
+		// Lock mechanism to avoid issue due to multiple processes working on the same batch
+		$this->getLock('UPDATING', 'PROCESSED');
+		#TODO process the log file abd update to S3
+		$this->markProcessed();
 	}
 
 	/**
@@ -124,7 +173,7 @@ class AWBBatch extends Base
 	 */
 	private function logAWBEvent($event, $awb)
 	{
-		// Log timestamp, $awb, $event
+		file_put_contents($this->getLogFile(), time() . FS . $awb . FS . $event . PHP_EOL, FILE_APPEND);
 	}
 
 	/**
@@ -157,7 +206,7 @@ class AWBBatch extends Base
 	private function getFromPersistentStore($type)
 	{
 		$remoteFilePath = $this->getS3Path($type);
-		$localFilePath = TMP . DS . $this->id . $type . rand();
+		$localFilePath = TMP . DS . $this->model->getId() . $type . rand();
 		// #TODO Move the S3 code to separate class
 		shell_exec("s3 cp $remoteFilePath $localFilePath");
 		// Check if the copy was successful, else throw exception
@@ -178,7 +227,7 @@ class AWBBatch extends Base
 
 	private function loadExistingBatches()
 	{
-		$this->AWBBatch->find('all', //condition for processed AWB batches created within x time for the same courier company and account id);
+		$batches = $this->AWBBatch->find('all', //condition for processed AWB batches created within x time for the same courier company and account id);
 		$proccessingSetName = $this->getRedisSetKey("processing");
 		foreach($batches as $AWBBatch) {
 			$AWBBatch->loadFile($proccessingSetName);
@@ -188,17 +237,22 @@ class AWBBatch extends Base
 
 	private function getTempFile($type)
 	{
-		return TMP . DS . $this->id . $type . rand();
+		return TMP . DS . $this->model->getId() . $type . rand();
 	}
 
 	private function getS3Path($type)
 	{
-		return "s3://btpost/awb/$type/{$this->id}.txt";
+		return "s3://btpost/awb/$type/{$this->model->getId()}.txt";
 	}
 
 	private function getRedisSetKey($type)
 	{
-		return "{$this->id}_$type";
+		return "{$this->model->getId()}_$type";
+	}
+
+	private function getLogFile()
+	{
+		return self::FILE_PATH . "{$this->model->getId()}.log";
 	}
 }
 
