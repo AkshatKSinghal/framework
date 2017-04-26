@@ -15,6 +15,8 @@ class AWBBatch extends Base
 	const FAILED = 'failed';
 	const FILE_PATH = '#TODO DEFINE THE PATH';
 
+	const EVENT_USED = 'used';
+	const EVENT_FAILED = 'failed';
 
 	/**
 	 * Create a new AWB Batch record in the DB and process the AWB files.
@@ -47,7 +49,10 @@ class AWBBatch extends Base
 
 	/**
 	 * Function to process the AWB batch and create the valid and invalid list 
+	 * 
 	 * @throws Exception in case the batch is already being processed
+	 * 
+	 * @return void
 	 */
 
 	public function processFile()
@@ -72,10 +77,13 @@ class AWBBatch extends Base
 			$fileName = $type . "AWBFile";
 			$counter = $type . "Count";
 			file_put_contents($fileName, $awb . PHP_EOL, FILE_APPEND);
-			$counter++;
+			$$counter++;
 		}
 		$courier = new CourierCompany($this->getCourierCompanyId());
-		$awbFile = $courier->validateAWBFile($validAWBFile, $errorFile);
+		$awbFile = $courier->validateAWBFile($validAWBFile, $invalidAWBFile);
+		#TODO update the values of $validCount and $invalidCount after validation by Courier class
+		$this->saveToPersistentStore($validAWBFile, self::VALID);
+		$this->saveToPersistentStore($invalidAWBFile, self::INVALID);
 		$this->markProcessed($validCount, $invalidCount);
 	}
 
@@ -121,9 +129,13 @@ class AWBBatch extends Base
 
 	/**
 	 * Function to get the file from S3 and load into redis set.
+	 * 
 	 * @param $type string (optional) default value
 	 * @param $customKey string (optional) name of the set to be loaded into
+	 * 
 	 * @throws Exception in case the AWB file fetch fails
+	 * 
+	 * @return void
 	 */ 
 
 	public function loadFile($type = self::AVAILABLE, $customKey = null)
@@ -142,26 +154,59 @@ class AWBBatch extends Base
 		}
 	}
 
+
+	/**
+	 * Function to get AWB from a given AWB Batch
+	 * 
+	 * @throws Exception in case no AWBs are available in the batch
+	 * @throws Exception in case no AWBs are available in Redis
+	 * 
+	 * @return string $awb AWB from the batch
+	 */
 	public function getAWB()
 	{
 		$key = $this->getRedisSetKey('available');
-		if (!$this->redis->exists($key) || ($this->redis->sCard($key) == 0 && $this->model->getAvailableCount() != 0)) {
+		if ($this->model->getAvailableCount() == 0) {
+			throw new Exception("No AWBs available in Batch");
+		}
+		if ($this->redis->sCard($key) == 0) {
 			$this->loadFile();
 		}
 		$awb = $this->redis->sPop($key);
 		if ($awb === false) {
-			throw new Exception("No AWBs available in Batch");
+			throw new Exception("No AWBs available in Redis");
 		}
-		$this->logAWBEvent('used', $awb);
+		$this->logAWBEvent(self::EVENT_USED, $awb);
+		return $awb;
 	}
 
-	public function updatePersistentStore()
+
+	/**
+	 * Function to update the files in persistent store using the log
+	 * 
+	 * @throws Exception in case the operation is already running for the batch
+	 * 
+	 * @return void
+	 */
+
+	private function updatePersistentStore()
 	{
 		// Lock mechanism to avoid issue due to multiple processes working on the same batch
 		$this->getLock('UPDATING', 'PROCESSED');
+		$fileTypes = array(self::AVAILABLE, self::ASSIGNED, self::FAILED);
+		$used = array();
+		foreach ($fileTypes as $fileType) {
+			$$fileType = $this->getFromPersistentStore($fileType);
+			$used[$fileType] = array();
+		}
+		#TODO Handle too large log file
 		#TODO process the log file abd update to S3
+		foreach ($fileTypes as $fileType) {
+			$this->saveToPersistentStore($$fileType, $fileType);
+		}
 		$this->markProcessed();
 	}
+
 
 	/**
 	 * Log the AWB and associated event
@@ -171,11 +216,14 @@ class AWBBatch extends Base
 	 * 
 	 * @return void
 	 */
+
 	private function logAWBEvent($event, $awb)
 	{
 		file_put_contents($this->getLogFile(), time() . FS . $awb . FS . $event . PHP_EOL, FILE_APPEND);
 	}
 
+
+	#TODO Move the S3 code to separate class
 	/**
 	 * Update the persistent store (S3) with the latest list.
 	 * 
@@ -187,13 +235,15 @@ class AWBBatch extends Base
 	 * 
 	 * @return void
 	 */ 
+
 	private function saveToPersistentStore($filePath, $type)
 	{
 		$remoteFilePath = $this->getS3Path($type);
-		// #TODO Move the S3 code to separate class
-		shell_exec("s3 cp $filePath $remoteFilePath");
+		#TODO Move the S3 code to separate class
+		shell_exec("aws s3 cp $filePath $remoteFilePath");
 		// Check if the copy was successful, else throw exception
 	}
+
 
 	/**
 	 * Get the list of AWBs for given type from persistentStore (S3)
@@ -207,9 +257,8 @@ class AWBBatch extends Base
 	{
 		$remoteFilePath = $this->getS3Path($type);
 		$localFilePath = TMP . DS . $this->model->getId() . $type . rand();
-		// #TODO Move the S3 code to separate class
 		shell_exec("s3 cp $remoteFilePath $localFilePath");
-		// Check if the copy was successful, else throw exception
+		#TODO Check if the copy was successful, else throw exception
 		return $localFilePath;
 	}
 
