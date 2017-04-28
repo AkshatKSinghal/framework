@@ -43,6 +43,8 @@ class CacheManager extends Redis
 	 * @param string $id primary id of the model
 	 * @param array $fields list of fields to be saved [optional]
 	 * 
+	 * @throws Exception in case the save operation fails
+	 * 
 	 * @return void
 	 */
 	public static function setModelObject($model, $id, $fields = [])
@@ -63,17 +65,31 @@ class CacheManager extends Redis
 	/**
 	 * Function to get list of fields in the model table
 	 * 
+	 * @param string $modelClass Class Name of the Model
+	 * 
 	 * @throws CacheMissException in case key does not exist
+	 * 
 	 * @return array $list
 	 */
-	public static function getModelSchema($model)
+	public static function getModelSchema($modelClass)
 	{
 		$cache = self::getInstance();
-		$list = $cache->get(self::getModelPrefix($model));
-		if ($list === false) {
-			throw new CacheMissException("Not found", 1);
-		}
-		return $list;
+		return $cache->get(self::getModelPrefix($modelClass));
+	}
+
+	/**
+	 * Function to set the model schema 
+	 * 
+	 * @param string $modelClass Class Name of the Model
+	 * @param mixed $schema Schema of the model 
+	 * @throws Exception in case save operation fails
+	 * 
+	 * @return void
+	 */
+	public static function setModelSchema($modelClass, $schema)
+	{
+		$cache = self::getInstance();
+		$cache->set(self::getModelPrefix($modelClass), $schema);
 	}
 
 	/**
@@ -114,9 +130,9 @@ class CacheManager extends Redis
 			throw new CacheMissException("Not found");
 		}
 		if (!empty($fields)) {
-			$data = $cache->hmget($key, $fields);
+			$data = $cache->hMget($key, $fields);
 		} else {
-			$data = $cache->hgetall($key);
+			$data = $cache->hGetAll($key);
 		}
 		return $data;
 	}

@@ -5,13 +5,13 @@
 */
 class Base
 {
-	protected static var $tableName = '';
-	protected static var $primaryKey = 'id';
-	protected static var $uniqueKeys = [];
-	protected static var $searchableFields = [];
-	//protected static var $dbFields = [];
-	protected var $modifiedFields = [];
-	private var $new = true;
+	protected static $tableName = '';
+	protected static $primaryKey = 'id';
+	protected static $uniqueKeys = [];
+	protected static $searchableFields = [];
+	protected static $dbFields = [];
+	protected $modifiedFields = [];
+	protected $new = true;
 
 	/**
 	 * Constructor to create model instance of existing record
@@ -23,18 +23,21 @@ class Base
 	 * 
 	 */
 	function __construct($id = null, $data = null)
-	{	
+	{
 		if ($id != null) {
 			$this->new = false;
-			CacheManager()
-			if (!empty($data)){
-				foreach ($data as $key => $value) {
-					$this->$key = $value;
-				}
-			} else {
-				// get object from DB and instantiate the object				
+			try {
+				$this->data = CacheManager::getModelObject(__CLASS__, $id);	
+			} catch (Exception $ex) {
+				#TODO Query the DB and put values into $this->data
+				CacheManager::setModelObject($this, $this->getPrimaryKey());
+			}
+		} else if (!empty($data)) {
+			foreach ($data as $key => $value) {
+				$this->$key = $value;
 			}
 		}
+
 	}
 
 	/**
@@ -95,7 +98,7 @@ class Base
 	protected function save($validate = true, $fields = [])
 	{
 		if ($this->new) {
-			$fields = $this->dbFields;
+			$fields = $this->dbFields();
 		} else if (empty($fields)) {
 			$fields = $this->modifiedFields;
 		}
@@ -103,7 +106,7 @@ class Base
 		if ($validate) {
 			$this->validate($fields);	
 		}
-
+		CacheManager::setModelObject(__CLASS__, $this->getPrimaryKey());
 		return MySql::saveObject($this, $fields);
 	}
 
@@ -150,15 +153,56 @@ class Base
 	 */
 	protected static function dbFields()
 	{
-		try {
-			$fields = CacheManager::getModelSchema(__CLASS__);
-		} catch (Exception $e) {
-			// Get from DB and save to 
-		} finally {
-			return $fields;
+		if (!isset($this->dbFields)) {
+			try {
+				$fields = CacheManager::getModelSchema(__CLASS__);
+			} catch (Exception $e) {
+				$fields = '#TODO Get from DB';
+				CacheManager::setModelSchema(__CLASS__, $fields);
+			} finally {
+				$this->dbFields = $fields;
+			}	
 		}
-		
+		return $this->dbFields;
 	}
+
+	/**
+	 * Function to get the primary key of the object
+	 * 
+	 * @throws Exception in case the primary key does not exist (new object)
+	 * 
+	 * @return string $value Primary key of the object
+	 */
+	public function getPrimaryKey()
+	{
+		return $this->{"get".$this->getPrimaryKeyName()};
+	}
+
+	/**
+	 * Function to get a given field in the object
+	 * 
+	 * @throws Exception in case the field name is invalid
+	 * 
+	 * @return mixed $value Value of the field
+	 */
+	public function __get($name)
+    {
+    	if (!array_key_exists($name, $this->data)) {
+    		throw new Exception("Invalid field name");
+    	}
+        return $this->data[$name];
+    }
+
+    /**
+     * Function to set the value for a given field
+     * 
+     * @return void
+     */
+    public function __set($name, $value)
+    {
+    	$this->data[$name] = $value;
+    	$this->modifiedFields[] = $name;
+    }
 }
 
 /**
@@ -166,8 +210,7 @@ class Base
 */
 class ModelException extends Exception
 {
-	public const DUPLICATE;
-	public const FOREIGN_KEY;
-	public const SYNTAX;
-	public const DUPLICATE;
+	public const DUPLICATE = 'DUPLICATE';
+	public const FOREIGN_KEY = 'FOREIGN_KEY';
+	public const SYNTAX = 'SYNTAX';
 }
