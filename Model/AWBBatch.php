@@ -31,4 +31,10 @@ class AWBBatch extends Base
     	$this[$name] = $value;
         return null;
     }
+
+    public function findByCourier()
+    {
+    	return $this->id;
+    	//write query to find by $courierCompanyID and $accountID
+    }
 }

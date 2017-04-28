@@ -63,7 +63,7 @@ class AWBBatch extends Base
 	public function processFile()
 	{
 		#TODO need to think of lock at account and courier level.
-		$batchId = $this->model->getId();
+		// $batchId = $this->model->getId();
 		$this->getLock('PROCESSING', 'PENDING');
 		$file = $this->getFromPersistentStore(self::UPLOAD);
 		$existingBatchesSet = $this->loadExistingBatches();
@@ -112,13 +112,16 @@ class AWBBatch extends Base
 
 	private function getLock($operation, $allowedState)
 	{
-		#TODO get status from DB
+		#TODO get status from DB #done
+		$status = $this->model->status;
 		if ($status == $operation) {
 			throw new Exception("Operation already running");
 		} else if ($status != $allowedState) {
 			throw new Exception("Cannot obtain lock for $operation operation from $status state");
 		}
-		#TODO update status to $operation
+		#TODO update status to $operation #done
+		$this->model->setStatus($operation);
+		$this->model->save();
 	}
 
 
@@ -252,7 +255,6 @@ class AWBBatch extends Base
 		// Check if the copy was successful, else throw exception
 	}
 
-
 	/**
 	 * Get the list of AWBs for given type from persistentStore (S3)
 	 * 
@@ -268,6 +270,9 @@ class AWBBatch extends Base
 		// shell_exec("s3 cp $remoteFilePath $localFilePath");
 		shell_exec("cp $remoteFilePath $localFilePath");
 		#TODO Check if the copy was successful, else throw exception
+		if (!file_exists($localFilePath)) {
+			throw new S3Exception("S3 Copy file not successful");
+		}
 		return $localFilePath;
 	}
 
@@ -285,11 +290,13 @@ class AWBBatch extends Base
 
 	private function loadExistingBatches()
 	{
-		$batches = $this->model->find();
-		$batches = $this->AWBBatch->find('all', //condition for processed AWB batches created within x time for the same courier company and account id);
+		$batches = $this->model->findByCourier();
+		// $batches = $this->AWBBatch->find('all', //condition for processed AWB batches created within x time for the same courier company and account id);
+			//not pending
 		$proccessingSetName = $this->getRedisSetKey("processing");
 		foreach($batches as $AWBBatch) {
-			$AWBBatch->loadFile($proccessingSetName);
+			// $AWBBatch->loadFile($proccessingSetName);
+			$AWBBatch->loadFile();
 		}
 		return $proccessingSetName;
 	}
