@@ -13,11 +13,11 @@ class AWBBatch extends Base
 	const AVAILABLE = 'available';
 	const ASSIGNED = 'assigned';
 	const FAILED = 'failed';
-	const FILE_PATH = '#TODO DEFINE THE PATH';
+	const FILE_PATH = '~/Desktop/awb.csv';
 
 	const EVENT_USED = 'used';
 	const EVENT_FAILED = 'failed';
-
+	
 	/**
 	 * Create a new AWB Batch record in the DB and process the AWB files.
 	 * 
@@ -42,8 +42,13 @@ class AWBBatch extends Base
 			throw new Exception("File empty at path $filePath");
 		}
 		#TODO Create entry in the DB
-		$this->model = '#TODO Create entry in DB';
+		// $this->model = '#TODO Create entry in DB';
+		$this->model = new AWBUpload();
+		$this->model->courierCompanyID = $courierCompanyID;
+		$this->model->accountID = $accountID;
+		$this->model->save();
 		$this->saveToPersistentStore($filePath, self::UPLOAD);
+		$this->processFile();
 	}
 
 
@@ -57,6 +62,8 @@ class AWBBatch extends Base
 
 	public function processFile()
 	{
+		#TODO need to think of lock at account and courier level.
+		$batchId = $this->model->getId();
 		$this->getLock('PROCESSING', 'PENDING');
 		$file = $this->getFromPersistentStore(self::UPLOAD);
 		$existingBatchesSet = $this->loadExistingBatches();
@@ -240,7 +247,8 @@ class AWBBatch extends Base
 	{
 		$remoteFilePath = $this->getS3Path($type);
 		#TODO Move the S3 code to separate class
-		shell_exec("aws s3 cp $filePath $remoteFilePath");
+		// shell_exec("aws s3 cp $filePath $remoteFilePath");
+		shell_exec("cp $filePath $remoteFilePath");
 		// Check if the copy was successful, else throw exception
 	}
 
@@ -257,7 +265,8 @@ class AWBBatch extends Base
 	{
 		$remoteFilePath = $this->getS3Path($type);
 		$localFilePath = TMP . DS . $this->model->getId() . $type . rand();
-		shell_exec("s3 cp $remoteFilePath $localFilePath");
+		// shell_exec("s3 cp $remoteFilePath $localFilePath");
+		shell_exec("cp $remoteFilePath $localFilePath");
 		#TODO Check if the copy was successful, else throw exception
 		return $localFilePath;
 	}
@@ -276,6 +285,7 @@ class AWBBatch extends Base
 
 	private function loadExistingBatches()
 	{
+		$batches = $this->model->find();
 		$batches = $this->AWBBatch->find('all', //condition for processed AWB batches created within x time for the same courier company and account id);
 		$proccessingSetName = $this->getRedisSetKey("processing");
 		foreach($batches as $AWBBatch) {
@@ -291,7 +301,15 @@ class AWBBatch extends Base
 
 	private function getS3Path($type)
 	{
-		return "s3://btpost/awb/$type/{$this->model->getId()}.txt";
+		// return "s3://btpost/awb/$type/{$this->model->getId()}.txt";
+
+		//the following code will be removed when s3 is started using
+		// $path = "~/Desktop/btpost/awb/$type/{$this->model->getId()}.txt";
+		// if (!is_dir($path) || !file_exists($path)) {
+
+		// }
+
+		return "~/Desktop/btpost/awb/$type/{$this->model->getId()}.txt";
 	}
 
 	private function getRedisSetKey($type)

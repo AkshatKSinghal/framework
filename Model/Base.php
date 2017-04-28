@@ -25,7 +25,7 @@ class Base
 	function __construct($id = null, $data = null)
 	{	
 		if ($id != null) {
-			$new = false;
+			$this->new = false;
 			CacheManager()
 			if (!empty($data)){
 				foreach ($data as $key => $value) {
@@ -97,7 +97,7 @@ class Base
 		if ($this->new) {
 			$fields = $this->dbFields;
 		} else if (empty($fields)) {
-			$fields = $modifiedFields;
+			$fields = $this->modifiedFields;
 		}
 
 		if ($validate) {
