@@ -9,6 +9,8 @@ class AWBBatch extends Base
 	protected var $courierCompanyID;
 	protected var $accountID;
 	protected var $status;
+    protected var $validCount;
+    protected var $invalidCount;
 
 	function __construct($courierCompanyID, $accountID)
 	{

@@ -40,6 +40,12 @@ class CourierCompany
 		return $filePath;
 	}
 
+
+	public function validateAWBFile($validFile, $invalidFile)
+	{
+		return ['valid' => 12, 'invalid' => 23];
+	}
+
 	/**
 	 * Function to return if the Courier Company allows AWB pre-allocation or not
 	 * 

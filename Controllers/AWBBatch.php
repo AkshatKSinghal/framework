@@ -84,11 +84,15 @@ class AWBBatch extends Base
 			$fileName = $type . "AWBFile";
 			$counter = $type . "Count";
 			file_put_contents($fileName, $awb . PHP_EOL, FILE_APPEND);
-			$$counter++;
+			$counter++;
 		}
-		$courier = new CourierCompany($this->getCourierCompanyId());
+		$courier = new CourierCompany($this->model->getCourierCompanyId());
 		$awbFile = $courier->validateAWBFile($validAWBFile, $invalidAWBFile);
 		#TODO update the values of $validCount and $invalidCount after validation by Courier class
+
+		$this->model->setValidCount($awbFile['valid']);
+		$this->model->setInvalidCount($awbFile['invalid']);
+		$this->model->save();
 		$this->saveToPersistentStore($validAWBFile, self::VALID);
 		$this->saveToPersistentStore($invalidAWBFile, self::INVALID);
 		$this->markProcessed($validCount, $invalidCount);
@@ -148,7 +152,7 @@ class AWBBatch extends Base
 	 * @return void
 	 */ 
 
-	public function loadFile($type = self::AVAILABLE, $customKey = null)
+	public function loadFile($customKey = null, $type = self::AVAILABLE)
 	{
 		// Update the available AWB list with the existing log, if any
 		if ($type == self::AVAILABLE) {
@@ -157,7 +161,7 @@ class AWBBatch extends Base
 
 		$key = ($customKey != null) ? $customKey : $this->getRedisSetKey($type);
 
-		$localFilePath = $this->getFromPersistentStore($valid);
+		$localFilePath = $this->getFromPersistentStore($type);
 		$fp = fopen($localFilePath, 'r');
 		while ($awb = fgets($fp)) {
 			$this->redis->addToSet($key, trim($awb));
@@ -211,6 +215,7 @@ class AWBBatch extends Base
 		}
 		#TODO Handle too large log file
 		#TODO process the log file abd update to S3
+		
 		foreach ($fileTypes as $fileType) {
 			$this->saveToPersistentStore($$fileType, $fileType);
 		}
@@ -295,15 +300,15 @@ class AWBBatch extends Base
 			//not pending
 		$proccessingSetName = $this->getRedisSetKey("processing");
 		foreach($batches as $AWBBatch) {
-			// $AWBBatch->loadFile($proccessingSetName);
-			$AWBBatch->loadFile();
+			$AWBBatch->loadFile($proccessingSetName);
+			// $AWBBatch->loadFile();
 		}
 		return $proccessingSetName;
 	}
 
 	private function getTempFile($type)
 	{
-		return TMP . DS . $this->model->getId() . $type . rand();
+		return TMP . DS . $this->model->getId() . $type . '.txt';
 	}
 
 	private function getS3Path($type)
