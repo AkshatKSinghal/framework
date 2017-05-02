@@ -175,7 +175,35 @@ class Base
 	 */
 	public function getPrimaryKey()
 	{
-		return $this->{"get".$this->getPrimaryKeyName()};
+		return $this->get($this->getPrimaryKeyName());
+	}
+
+	/**
+	 * 
+	 * Magic method to catch all get and set function calls
+	 * 
+	 * @param string $functionName Name of the function being called
+	 * @param array $arguments list of arguments passed
+	 * 
+	 * @throws Exception in case the argument count is incorrects
+	 * 
+	 * @return mixed $response Response on the setter/ getter
+	 */
+	public function __call($functionName, $arguments)
+	{
+		$parameterName = substr($functionName, 3);
+		$functionName = substr($functionName, 0, 3);
+
+		if ($functionName == 'get'){
+			return $this->get($parameterName);
+		} else if ($functionName == 'set') {
+			if (!isset($arguments[0])) {
+				throw new Exception("Missing value");
+			}
+			return $this->set($parameterName, $arguments);
+		} else {
+			throw new Exception("Invalid function");
+		}
 	}
 
 	/**
@@ -185,7 +213,7 @@ class Base
 	 * 
 	 * @return mixed $value Value of the field
 	 */
-	public function __get($name)
+	private function get($name)
     {
     	if (!array_key_exists($name, $this->data)) {
     		throw new Exception("Invalid field name");
@@ -198,10 +226,30 @@ class Base
      * 
      * @return void
      */
-    public function __set($name, $value)
+    private function set($name, $value)
     {
     	$this->data[$name] = $value;
     	$this->modifiedFields[] = $name;
+    }
+
+    /**
+     * Function to query the DB (table) based on given parameters
+     * 
+     * @param mixed $parameters Associative array containing the search parameters
+     * @param array $fields List of fields to be fetched 
+     * [optional, all fields would be fetched by default]
+     * @param int $limit Limit on number of records fetched [optional, default value 10]
+     * Passing zero would give all the results
+     * @param int $offset Offset for the results to be returned
+     * @param string $orderBy Field to sort the results by
+     * [optional, defaults to primary key of the table]
+     * @param bool $orderByAsc Flag if the results are to be sorted in asc or desc
+     * 
+     * @return array 
+     */
+    public function find($parameters, $fields = array(), $limit = 10, $offset = 0, $orderBy = null, $orderByAsc = true)
+    {
+
     }
 }
 
