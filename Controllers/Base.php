@@ -8,7 +8,7 @@ namespace Controllers;
 
 class Base
 {
-	private var $model;
+	private $model;
 
 	function __construct($request)
 	{

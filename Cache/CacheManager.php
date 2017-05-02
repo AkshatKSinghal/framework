@@ -1,12 +1,13 @@
 <?php
 
+namespace Cache;
 /**
 * Class to manage caching of objects
 */
-class CacheManager extends Redis
+class CacheManager extends \Redis
 {
 	private static $singleton = null;
-	public const DEFAULT_EXPIRY = 3 * 24 * 60 * 60;
+	const DEFAULT_EXPIRY = 3 * 24 * 60 * 60;
 	/**
 	 * Function to instantiate, if not already done, 
 	 * and return the singleton object

@@ -1,5 +1,7 @@
 <?php
 
+namespace Model;
+
 /**
 * CRUD Operations
 */
@@ -11,6 +13,7 @@ class Base
 	protected static $searchableFields = [];
 	protected static $dbFields = [];
 	protected $modifiedFields = [];
+	protected $data = [];
 	protected $new = true;
 
 	/**
@@ -95,7 +98,7 @@ class Base
 	 * 
 	 * @return string $id Primary Key of the record in the DB
 	 */
-	protected function save($validate = true, $fields = [])
+	public function save($validate = true, $fields = [])
 	{
 		if ($this->new) {
 			$fields = $this->dbFields();
@@ -106,8 +109,10 @@ class Base
 		if ($validate) {
 			$this->validate($fields);	
 		}
-		CacheManager::setModelObject(__CLASS__, $this->getPrimaryKey());
-		return MySql::saveObject($this, $fields);
+		// #TODO redis cache manager
+		// \Cache\CacheManager::setModelObject(__CLASS__, $this->getPrimaryKey());
+		// return MySql::saveObject($this, $fields);
+		return [];
 	}
 
 	/**
@@ -153,17 +158,17 @@ class Base
 	 */
 	protected static function dbFields()
 	{
-		if (!isset($this->dbFields)) {
+		if (!isset(self::$dbFields)) {
 			try {
 				$fields = CacheManager::getModelSchema(__CLASS__);
 			} catch (Exception $e) {
 				$fields = '#TODO Get from DB';
 				CacheManager::setModelSchema(__CLASS__, $fields);
 			} finally {
-				$this->dbFields = $fields;
+				self::$dbFields = $fields;
 			}	
 		}
-		return $this->dbFields;
+		return self::$dbFields;
 	}
 
 	/**
@@ -202,7 +207,7 @@ class Base
 			}
 			return $this->set($parameterName, $arguments);
 		} else {
-			throw new Exception("Invalid function");
+			throw new \Exception("Invalid function ". $functionName);
 		}
 	}
 
@@ -216,7 +221,7 @@ class Base
 	private function get($name)
     {
     	if (!array_key_exists($name, $this->data)) {
-    		throw new Exception("Invalid field name");
+    		throw new \Exception("Invalid field name : " . $name);
     	}
         return $this->data[$name];
     }
@@ -228,7 +233,9 @@ class Base
      */
     private function set($name, $value)
     {
-    	$this->data[$name] = $value;
+    	// print_r($value);
+    	// exit;
+    	$this->data[$name] = $value[0];
     	$this->modifiedFields[] = $name;
     }
 
@@ -256,9 +263,9 @@ class Base
 /**
 * Exceptions Related to Models
 */
-class ModelException extends Exception
+class ModelException extends \Exception
 {
-	public const DUPLICATE = 'DUPLICATE';
-	public const FOREIGN_KEY = 'FOREIGN_KEY';
-	public const SYNTAX = 'SYNTAX';
+	const DUPLICATE = 'DUPLICATE';
+	const FOREIGN_KEY = 'FOREIGN_KEY';
+	const SYNTAX = 'SYNTAX';
 }

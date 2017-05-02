@@ -6,11 +6,12 @@
 namespace Controllers;
 
 use \Model\AWBBatchModel as AWBBatchModel;
+use \Controllers\Base as BaseController;
 
-require '/home/browntape/Projects/btpost/Model/AWBBatchModel.php';
+// require '/home/browntape/Projects/btpost/Model/AWBBatchModel.php';
 
 // TODO Create constant FS, DS, TMP in env file
-class AWBBatch extends Base
+class AWBBatch extends BaseController
 {
 	private $redis = null;
 	const UPLOAD = 'upload';
@@ -52,8 +53,11 @@ class AWBBatch extends Base
 		// #TODO Create entry in the DB
 		// $this->model = '#TODO Create entry in DB';
 		$this->model = new AWBBatchModel();
-		// $this->model->setCourierCompanyID($courierCompanyID);
-		// $this->model->setAccountID($accountID);
+		$this->model->setCourierCompanyID($courierCompanyID);
+		$this->model->setAccountID($accountID);
+		// #TODO remove setId and setstatus
+		$this->model->setId('1');
+		$this->model->setStatus('PENDING');
 		$this->model->save();
 		$this->saveToPersistentStore($filePath, self::UPLOAD);
 		$this->processFile();
@@ -75,6 +79,7 @@ class AWBBatch extends Base
 		$this->getLock('PROCESSING', 'PENDING');
 		$file = $this->getFromPersistentStore(self::UPLOAD);
 		$existingBatchesSet = $this->loadExistingBatches();
+		echo $file;
 		$fp = fopen($file, 'r');
 		$validAWBFile = $this->getTempFile(self::VALID);
 		file_put_contents($validAWBFile, '');
@@ -82,10 +87,12 @@ class AWBBatch extends Base
 		file_put_contents($validAWBFile, '');
 		$validCount = 0;
 		$invalidCount = 0;
-		while($awb = fread($fp)) {
+
+		while($awb = fread($fp, filesize($file))) {
 			$awb = trim($awb);
 			$type = self::VALID;
-			if ($this->redis->existsInSet($existingBatchesSet, $awb)) {
+			// if ($this->redis->existsInSet($existingBatchesSet, $awb)) {
+			if (true){
 				$type = self::INVALID;
 				$awb = $awb . FS . "DUPLICATE";
 			}
@@ -94,7 +101,7 @@ class AWBBatch extends Base
 			file_put_contents($fileName, $awb . PHP_EOL, FILE_APPEND);
 			$counter++;
 		}
-		$courier = new CourierCompany($this->model->getCourierCompanyId());
+		$courier = new \Controllers\CourierCompany($this->model->getCourierCompanyId());
 		$awbFile = $courier->validateAWBFile($validAWBFile, $invalidAWBFile);
 		// #TODO update the values of $validCount and $invalidCount after validation by Courier class
 
@@ -125,11 +132,11 @@ class AWBBatch extends Base
 	private function getLock($operation, $allowedState)
 	{
 		// #TODO get status from DB #done
-		$status = $this->model->status;
+		$status = $this->model->getStatus();
 		if ($status == $operation) {
-			throw new Exception("Operation already running");
+			throw new \Exception("Operation already running");
 		} else if ($status != $allowedState) {
-			throw new Exception("Cannot obtain lock for $operation operation from $status state");
+			throw new \Exception("Cannot obtain lock for $operation operation from $status state");
 		}
 		// #TODO update status to $operation #done
 		$this->model->setStatus($operation);
@@ -166,7 +173,6 @@ class AWBBatch extends Base
 		if ($type == self::AVAILABLE) {
 			$this->updatePersistentStore();
 		}
-
 		$key = ($customKey != null) ? $customKey : $this->getRedisSetKey($type);
 
 		$localFilePath = $this->getFromPersistentStore($type);
@@ -279,12 +285,13 @@ class AWBBatch extends Base
 	private function getFromPersistentStore($type)
 	{
 		$remoteFilePath = $this->getS3Path($type);
-		$localFilePath = TMP . DS . $this->model->getId() . $type . rand();
+		$localFilePath = "/home/browntape/Desktop/btpost/tmp/" . $this->model->getId() . $type . '.txt';
+		// $localFilePath = TMP . DS . $this->model->getId() . $type . '.txt';
 		// shell_exec("s3 cp $remoteFilePath $localFilePath");
 		shell_exec("cp $remoteFilePath $localFilePath");
 		// #TODO Check if the copy was successful, else throw exception
 		if (!file_exists($localFilePath)) {
-			throw new S3Exception("S3 Copy file not successful");
+			// throw new S3Exception("S3 Copy file not successful " . $localFilePath);
 		}
 		return $localFilePath;
 	}
@@ -318,7 +325,8 @@ class AWBBatch extends Base
 
 	private function getTempFile($type)
 	{
-		return TMP . DS . $this->model->getId() . $type . '.txt';
+		return '/home/browntape/Desktop/btpost/tmp/' . $this->model->getId() . $type . '.txt';
+		// return TMP . DS . $this->model->getId() . $type . '.txt';
 	}
 
 	private function getS3Path($type)
@@ -330,7 +338,6 @@ class AWBBatch extends Base
 		// if (!is_dir($path) || !file_exists($path)) {
 
 		// }
-
 		return "~/Desktop/btpost/awb/$type/{$this->model->getId()}.txt";
 	}
 
@@ -348,7 +355,7 @@ class AWBBatch extends Base
 /**
 * 
 */
-class S3Exception extends Exception
+class S3Exception extends \Exception
 {
 
 }

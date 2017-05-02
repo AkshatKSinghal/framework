@@ -1,11 +1,13 @@
 <?php
 
+namespace Model;
 /**
 * CRUD for AWB Batch
 */
-require 'Base.php';
+// require 'Base.php';
 
-class AWBBatchModel extends Base
+
+class AWBBatchModel extends \Model\Base
 {
 	protected $id;
 	protected $courierCompanyID;
@@ -24,7 +26,8 @@ class AWBBatchModel extends Base
 
     public function findByCourier()
     {
-    	return [2,3,4];
+        return [];
+    	// return [2,3,4];
         //returns ids
     	//write query to find by $courierCompanyID and $accountID
     }

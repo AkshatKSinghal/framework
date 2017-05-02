@@ -1,16 +1,16 @@
 <?php
 
+namespace Controllers;
 /**
 * 
 */
 class CourierCompany
 {
-	protected var $name;
-	protected var $shortCode;
-	protected var $status;
-	protected var $info;
-
-	protected var $courier;
+	protected $name;
+	protected $shortCode;
+	protected $status;
+	protected $info;
+	protected $courier;
 
 	/**
 	 * Function for handling the calls to the courier classes
