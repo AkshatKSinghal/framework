@@ -1,12 +1,18 @@
-<?
+<?php
 /**
  * Controller responsible for management and use of AWBs
  * 
  */
-#TODO Create constant FS
+namespace Controllers;
+
+use \Model\AWBBatchModel as AWBBatchModel;
+
+require '/home/browntape/Projects/btpost/Model/AWBBatchModel.php';
+
+// TODO Create constant FS, DS, TMP in env file
 class AWBBatch extends Base
 {
-	private var $redis = null;
+	private $redis = null;
 	const UPLOAD = 'upload';
 	const INVALID = 'invalid';
 	const VALID = 'valid';
@@ -31,21 +37,23 @@ class AWBBatch extends Base
 	 * @throws Exception in case the $filePath is invalid/ empty
 	 * 
 	 * @return void
+	 *
 	 */
 
-	function __construct($filePath, $courierCompanyID, $accountID = 0)
+	public function createBatch($filePath, $courierCompanyID, $accountID = 0)
 	{
 		if (!is_file($filePath)) {
 			throw new Exception("File not found at given path $filePath");
 		}
+		echo 'in create batch';
 		if (filesize($filePath) == 0) {
 			throw new Exception("File empty at path $filePath");
 		}
-		#TODO Create entry in the DB
+		// #TODO Create entry in the DB
 		// $this->model = '#TODO Create entry in DB';
-		$this->model = new AWBUpload();
-		$this->model->courierCompanyID = $courierCompanyID;
-		$this->model->accountID = $accountID;
+		$this->model = new AWBBatchModel();
+		// $this->model->setCourierCompanyID($courierCompanyID);
+		// $this->model->setAccountID($accountID);
 		$this->model->save();
 		$this->saveToPersistentStore($filePath, self::UPLOAD);
 		$this->processFile();
@@ -62,7 +70,7 @@ class AWBBatch extends Base
 
 	public function processFile()
 	{
-		#TODO need to think of lock at account and courier level.
+		// #TODO need to think of lock at account and courier level.
 		// $batchId = $this->model->getId();
 		$this->getLock('PROCESSING', 'PENDING');
 		$file = $this->getFromPersistentStore(self::UPLOAD);
@@ -88,7 +96,7 @@ class AWBBatch extends Base
 		}
 		$courier = new CourierCompany($this->model->getCourierCompanyId());
 		$awbFile = $courier->validateAWBFile($validAWBFile, $invalidAWBFile);
-		#TODO update the values of $validCount and $invalidCount after validation by Courier class
+		// #TODO update the values of $validCount and $invalidCount after validation by Courier class
 
 		$this->model->setValidCount($awbFile['valid']);
 		$this->model->setInvalidCount($awbFile['invalid']);
@@ -116,14 +124,14 @@ class AWBBatch extends Base
 
 	private function getLock($operation, $allowedState)
 	{
-		#TODO get status from DB #done
+		// #TODO get status from DB #done
 		$status = $this->model->status;
 		if ($status == $operation) {
 			throw new Exception("Operation already running");
 		} else if ($status != $allowedState) {
 			throw new Exception("Cannot obtain lock for $operation operation from $status state");
 		}
-		#TODO update status to $operation #done
+		// #TODO update status to $operation #done
 		$this->model->setStatus($operation);
 		$this->model->save();
 	}
@@ -137,7 +145,7 @@ class AWBBatch extends Base
 
 	private function markProcessed($validCount = null, $invalidCount = null)
 	{
-		#TODO update status to PROCESSED, count of valid, invalid if not null
+		// #TODO update status to PROCESSED, count of valid, invalid if not null
 	}
 
 
@@ -213,8 +221,8 @@ class AWBBatch extends Base
 			$$fileType = $this->getFromPersistentStore($fileType);
 			$used[$fileType] = array();
 		}
-		#TODO Handle too large log file
-		#TODO process the log file abd update to S3
+		// #TODO Handle too large log file
+		// #TODO process the log file abd update to S3
 		
 		foreach ($fileTypes as $fileType) {
 			$this->saveToPersistentStore($$fileType, $fileType);
@@ -238,7 +246,7 @@ class AWBBatch extends Base
 	}
 
 
-	#TODO Move the S3 code to separate class
+	// #TODO Move the S3 code to separate class
 	/**
 	 * Update the persistent store (S3) with the latest list.
 	 * 
@@ -254,7 +262,7 @@ class AWBBatch extends Base
 	private function saveToPersistentStore($filePath, $type)
 	{
 		$remoteFilePath = $this->getS3Path($type);
-		#TODO Move the S3 code to separate class
+		// #TODO Move the S3 code to separate class
 		// shell_exec("aws s3 cp $filePath $remoteFilePath");
 		shell_exec("cp $filePath $remoteFilePath");
 		// Check if the copy was successful, else throw exception
@@ -274,7 +282,7 @@ class AWBBatch extends Base
 		$localFilePath = TMP . DS . $this->model->getId() . $type . rand();
 		// shell_exec("s3 cp $remoteFilePath $localFilePath");
 		shell_exec("cp $remoteFilePath $localFilePath");
-		#TODO Check if the copy was successful, else throw exception
+		// #TODO Check if the copy was successful, else throw exception
 		if (!file_exists($localFilePath)) {
 			throw new S3Exception("S3 Copy file not successful");
 		}
@@ -296,10 +304,12 @@ class AWBBatch extends Base
 	private function loadExistingBatches()
 	{
 		$batches = $this->model->findByCourier();
+		//findByCourier has to return all batches according to the courierID and accountID
 		// $batches = $this->AWBBatch->find('all', //condition for processed AWB batches created within x time for the same courier company and account id);
 			//not pending
 		$proccessingSetName = $this->getRedisSetKey("processing");
-		foreach($batches as $AWBBatch) {
+		foreach($batches as $AWBBatchId) {
+			$AWBBatch = new AWBBatch([$AWBBatchId]);
 			$AWBBatch->loadFile($proccessingSetName);
 			// $AWBBatch->loadFile();
 		}

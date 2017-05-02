@@ -1,4 +1,4 @@
-<?
+<?php
 
 /**
  * Controller for all external communications of the BTPost System

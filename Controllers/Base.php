@@ -3,6 +3,9 @@
 /**
 * Base Controller for BTPost
 */
+
+namespace Controllers;
+
 class Base
 {
 	private var $model;
