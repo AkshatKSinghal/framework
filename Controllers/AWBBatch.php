@@ -5,8 +5,9 @@
  */
 namespace Controllers;
 
-use \Model\AWBBatchModel as AWBBatchModel;
+use \Model\AWBBatch as AWBBatchModel;
 use \Controllers\Base as BaseController;
+use \Cache\CacheManager as CacheManager;
 
 // require '/home/browntape/Projects/btpost/Model/AWBBatchModel.php';
 
@@ -24,6 +25,11 @@ class AWBBatch extends BaseController
 
 	const EVENT_USED = 'used';
 	const EVENT_FAILED = 'failed';
+
+	private static function redis()
+	{
+		return CacheManager::getInstance();
+	}
 	
 	/**
 	 * Create a new AWB Batch record in the DB and process the AWB files.
@@ -56,11 +62,29 @@ class AWBBatch extends BaseController
 		$this->model->setCourierCompanyID($courierCompanyID);
 		$this->model->setAccountID($accountID);
 		// #TODO remove setId and setstatus
-		$this->model->setId('1');
+		$this->model->setId('2');
 		$this->model->setStatus('PENDING');
 		$this->model->save();
 		$this->saveToPersistentStore($filePath, self::UPLOAD);
 		$this->processFile();
+	}
+	/**
+	 * Function to perform basic validations on the file
+	 * i.e. Duplicates within the file, Invalid Characters, Empty lines etc
+	 * 
+	 * @param string $filePath Path of the file on disk
+	 * 
+	 * @throws Exception in case the file contains duplicates or invalid characters
+	 * 
+	 * @return void
+	 */
+	private function basicValidateFile($filePath)
+	{
+		#TODO Check for duplicates, throw exception in case duplicates within file are found
+		#done
+		$lines = file($filePath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+		$lines = array_unique($lines);
+		file_put_contents($filePath, $lines);
 	}
 
 
@@ -78,28 +102,33 @@ class AWBBatch extends BaseController
 		// $batchId = $this->model->getId();
 		$this->getLock('PROCESSING', 'PENDING');
 		$file = $this->getFromPersistentStore(self::UPLOAD);
+		// within the file duplicates check
 		$existingBatchesSet = $this->loadExistingBatches();
 		echo $file;
 		$fp = fopen($file, 'r');
+		$this->basicValidateFile($file);
 		$validAWBFile = $this->getTempFile(self::VALID);
 		file_put_contents($validAWBFile, '');
 		$invalidAWBFile = $this->getTempFile(self::INVALID);
-		file_put_contents($validAWBFile, '');
+		file_put_contents($invalidAWBFile, '');
 		$validCount = 0;
 		$invalidCount = 0;
 
 		while($awb = fread($fp, filesize($file))) {
 			$awb = trim($awb);
 			$type = self::VALID;
-			// if ($this->redis->existsInSet($existingBatchesSet, $awb)) {
-			if (true){
+			if (CacheManager::existsInSet($existingBatchesSet, $awb)) {
+			// if (true){
 				$type = self::INVALID;
-				$awb = $awb . FS . "DUPLICATE";
+				// $awb = $awb . FS . "DUPLICATE";
+				$awb = $awb . '\t' . "DUPLICATE";
+			} else {
+				file_put_contents($validAWBFile, $awb);				
 			}
 			$fileName = $type . "AWBFile";
 			$counter = $type . "Count";
-			file_put_contents($fileName, $awb . PHP_EOL, FILE_APPEND);
-			$counter++;
+			file_put_contents($$fileName, $awb . PHP_EOL, FILE_APPEND);
+			$$counter++;
 		}
 		$courier = new \Controllers\CourierCompany($this->model->getCourierCompanyId());
 		$awbFile = $courier->validateAWBFile($validAWBFile, $invalidAWBFile);
@@ -325,7 +354,18 @@ class AWBBatch extends BaseController
 
 	private function getTempFile($type)
 	{
-		return '/home/browntape/Desktop/btpost/tmp/' . $this->model->getId() . $type . '.txt';
+		$dir = '/home/browntape/Desktop/btpost/tmp/';
+		$filename = $this->model->getId() . $type . '.txt';
+		
+		if (!is_dir($dir)) {
+			mkdir($dir);
+		}
+
+		if (!file_exists($dir . $filename)) {
+			fclose(fopen($dir . $filename, 'w'));
+		}
+		return $dir . $filename;
+		// #TODO start using TMP DS from env file
 		// return TMP . DS . $this->model->getId() . $type . '.txt';
 	}
 

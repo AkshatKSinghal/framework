@@ -14,12 +14,14 @@ class CacheManager extends \Redis
 	 * 
 	 * @return object $cache CacheManager Object
 	 */
-	private static function getInstance()
+	public static function getInstance()
 	{
-		if ($this->singleton == null) {
+		if (self::$singleton == null) {
 			// instantiate the object
+			self::$singleton = new \Redis(); 
+			self::$singleton->connect('127.0.0.1', 6379); 
 		}
-		return $this->singleton;
+		return self::$singleton;
 	}
 	/**
 	 * Function to get object data from cache for the given id
@@ -182,5 +184,10 @@ class CacheManager extends \Redis
 				throw new CacheManagerTypeException("Cannot save data of type ". gettype($value) ." without serialization");
 		}
 		parent::set($key, $value, $expiry);
+	}
+
+	public static function existsInSet($existingSet, $awb)
+	{
+		
 	}
 }

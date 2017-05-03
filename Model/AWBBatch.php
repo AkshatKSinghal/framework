@@ -7,7 +7,7 @@ namespace Model;
 // require 'Base.php';
 
 
-class AWBBatchModel extends \Model\Base
+class AWBBatch extends \Model\Base
 {
 	protected $id;
 	protected $courierCompanyID;
@@ -26,14 +26,9 @@ class AWBBatchModel extends \Model\Base
 
     public function findByCourier()
     {
-        return [];
+        return [1];
     	// return [2,3,4];
         //returns ids
     	//write query to find by $courierCompanyID and $accountID
-    }
-
-    public function loadFile()
-    {
-
     }
 }
