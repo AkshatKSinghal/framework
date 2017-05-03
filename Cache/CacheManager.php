@@ -113,7 +113,7 @@ class CacheManager extends \Redis
 	 */
 	private static function getObjectKey($model, $id)
 	{
-		return $this->getModelPrefix($model) . ":$id";
+		return Self::getModelPrefix($model) . ":$id";
 	}
 
 	/**
@@ -128,7 +128,7 @@ class CacheManager extends \Redis
 	 */
 	public static function getHashData($key, $fields = [])
 	{
-		$cache = $this->getInstance();
+		$cache = Self::getInstance();
 		if ($cache->exists($key)) {
 			throw new CacheMissException("Not found");
 		}
@@ -188,6 +188,6 @@ class CacheManager extends \Redis
 
 	public static function existsInSet($existingSet, $awb)
 	{
-		
+
 	}
 }

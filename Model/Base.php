@@ -2,12 +2,14 @@
 
 namespace Model;
 
+use \Cache\CacheManager as CacheManager;
+use \DB\DB as DBManager;
 /**
 * CRUD Operations
 */
 class Base
 {
-	protected static $tableName = '';
+	protected $tableName = '';
 	protected static $primaryKey = 'id';
 	protected static $uniqueKeys = [];
 	protected static $searchableFields = [];
@@ -31,8 +33,17 @@ class Base
 			$this->new = false;
 			try {
 				$this->data = CacheManager::getModelObject(__CLASS__, $id);	
-			} catch (Exception $ex) {
+				print_r($this->data);
+			} catch (\Exception $ex) {
 				#TODO Query the DB and put values into $this->data
+				DBManager::getInstance();
+				$response = DBManager::executeQuery('select * from '. $this->tableName. ' where id = ' . $id);
+				// echo 'in model contruct for db manager';
+				// die;
+				$this->data = $response;
+				if (empty($response)) {
+					throw new \Exception("Invalid Id");
+				}
 				CacheManager::setModelObject($this, $this->getPrimaryKey());
 			}
 		} else if (!empty($data)) {

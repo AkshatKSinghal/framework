@@ -52,7 +52,6 @@ class AWBBatch extends BaseController
 		if (!is_file($filePath)) {
 			throw new Exception("File not found at given path $filePath");
 		}
-		echo 'in create batch';
 		if (filesize($filePath) == 0) {
 			throw new Exception("File empty at path $filePath");
 		}
@@ -92,7 +91,7 @@ class AWBBatch extends BaseController
 	 * Function to process the AWB batch and create the valid and invalid list 
 	 * 
 	 * @throws Exception in case the batch is already being processed
-	 * 
+	 *  
 	 * @return void
 	 */
 
@@ -104,7 +103,7 @@ class AWBBatch extends BaseController
 		$file = $this->getFromPersistentStore(self::UPLOAD);
 		// within the file duplicates check
 		$existingBatchesSet = $this->loadExistingBatches();
-		echo $file;
+		// echo $file;
 		$fp = fopen($file, 'r');
 		$this->basicValidateFile($file);
 		$validAWBFile = $this->getTempFile(self::VALID);
@@ -161,6 +160,10 @@ class AWBBatch extends BaseController
 	private function getLock($operation, $allowedState)
 	{
 		// #TODO get status from DB #done
+		// echo $operation;
+		// echo $allowedState;
+		// echo '<br>';
+		// print_r($this->model);
 		$status = $this->model->getStatus();
 		if ($status == $operation) {
 			throw new \Exception("Operation already running");
@@ -199,6 +202,8 @@ class AWBBatch extends BaseController
 	public function loadFile($customKey = null, $type = self::AVAILABLE)
 	{
 		// Update the available AWB list with the existing log, if any
+		echo 'CUSTOM1-';
+		echo $customKey;
 		if ($type == self::AVAILABLE) {
 			$this->updatePersistentStore();
 		}
@@ -224,14 +229,14 @@ class AWBBatch extends BaseController
 	{
 		$key = $this->getRedisSetKey('available');
 		if ($this->model->getAvailableCount() == 0) {
-			throw new Exception("No AWBs available in Batch");
+			throw new \Exception("No AWBs available in Batch");
 		}
 		if ($this->redis->sCard($key) == 0) {
 			$this->loadFile();
 		}
 		$awb = $this->redis->sPop($key);
 		if ($awb === false) {
-			throw new Exception("No AWBs available in Redis");
+			throw new \Exception("No AWBs available in Redis");
 		}
 		$this->logAWBEvent(self::EVENT_USED, $awb);
 		return $awb;
@@ -249,6 +254,8 @@ class AWBBatch extends BaseController
 	private function updatePersistentStore()
 	{
 		// Lock mechanism to avoid issue due to multiple processes working on the same batch
+	    // var_dump(debug_backtrace());
+		echo 'sadasdada';
 		$this->getLock('UPDATING', 'PROCESSED');
 		$fileTypes = array(self::AVAILABLE, self::ASSIGNED, self::FAILED);
 		$used = array();
@@ -342,7 +349,7 @@ class AWBBatch extends BaseController
 		$batches = $this->model->findByCourier();
 		//findByCourier has to return all batches according to the courierID and accountID
 		// $batches = $this->AWBBatch->find('all', //condition for processed AWB batches created within x time for the same courier company and account id);
-			//not pending
+		//not pending
 		$proccessingSetName = $this->getRedisSetKey("processing");
 		foreach($batches as $AWBBatchId) {
 			$AWBBatch = new AWBBatch([$AWBBatchId]);
