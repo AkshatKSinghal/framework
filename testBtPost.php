@@ -1,8 +1,9 @@
 <?php
 	error_reporting(E_ALL);
 	ini_set('display_errors', 1);
-
-	require '/home/browntape/Projects/btpost' . '/autoloader/autoloader.php';
+	require __DIR__ . '/vendor/autoload.php';
+	require __DIR__ . '/vendor/malkusch/php-autoloader/autoloader.php';
+	// require '/home/browntape/Projects/btpost' . '/autoloader/autoloader.php';
 
 	// require_once('/home/browntape/Projects/btpost/Controllers/AWBBatch.php');
 	try {
