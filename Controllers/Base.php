@@ -7,9 +7,23 @@ class Base
 {
 	private var $model;
 
+	/**
+	 * Function to instantiate controller
+	 * 
+	 * @param mixed $request Request Data
+	 * 
+	 * @throws Exception in case the ID passed in the request is invalid
+	 * 
+	 * @return void
+	 */
 	function __construct($request)
 	{
-		// Create Model if there is ID in the request
+		#TODO change the request data type
+		if (empty($request)) {
+			return;
+		}
+		$modelClass = $this->getModelClass();
+		$this->model = new $modelClass($request[0]);
 	}
 
 	/**
@@ -25,6 +39,16 @@ class Base
 	 */ 
 	public function save($validate = true, $fields = null)
 	{
+		$this->model->save();
+	}
 
+	/**
+	 * Function to get the Model Clas for the given controller
+	 * 
+	 * @return string $className Name of the model class
+	 */
+	protected static function getModelClass()
+	{
+		return str_replace("/Controllers/", "/Model/", __CLASS__);
 	}
 }
