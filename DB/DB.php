@@ -57,9 +57,10 @@ class DB
 			$data[$key] = $object->{"get$field"}();
 		}
 
+		print_r($data);
 		if ($object->isNew()) {
 			$keys = implode(", ", array_keys($data));
-			$values = implode(", ", array_values($data));
+			$values = "'".implode("', '", array_values($data)) . "'";
 			$query = "INSERT INTO $tableName ($keys) VALUES ($values)";
 		} else {
 			$id = $object->getPrimaryKey();
