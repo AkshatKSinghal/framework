@@ -50,10 +50,10 @@ class AWBBatch extends BaseController
 	public function createBatch($filePath, $courierCompanyID, $accountID = 0)
 	{
 		if (!is_file($filePath)) {
-			throw new Exception("File not found at given path $filePath");
+			throw new \Exception("File not found at given path $filePath");
 		}
 		if (filesize($filePath) == 0) {
-			throw new Exception("File empty at path $filePath");
+			throw new \Exception("File empty at path $filePath");
 		}
 		// #TODO Create entry in the DB
 		// $this->model = '#TODO Create entry in DB';
