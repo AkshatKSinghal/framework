@@ -74,7 +74,10 @@ class DB
 			$updateQuery = implode(", ", $updateValues);
 			$query = "UPDATE $tableName SET $updateQuery WHERE `$primaryKey` = '$id'";
 		}
-		return self::executeQuery($query);
+		self::executeQuery($query);
+		if ($object->isNew()) {
+			return self::getInstance()->insert_id;
+		}
 	}
 
 	/**

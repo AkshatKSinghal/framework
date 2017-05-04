@@ -36,9 +36,8 @@ class Base
 			} catch (\Exception $ex) {
 				$response = DBManager::get(get_called_class(), $id);
 		        if ($response->num_rows == 0) {
-		        	throw new Exception("Invalid " . $this->primaryKeyName());
+		        	throw new \Exception("Invalid " . $this->primaryKeyName());
 		        }
-		            // output data of each row
 	            while($row = $response->fetch_assoc()) {
 	            	foreach ($row as $key => $value) {
 	            		$fieldName = $this->convertToPropertyName($key);
@@ -112,10 +111,14 @@ class Base
 		if ($validate) {
 			$this->validate($fields);	
 		}
-		return DBManager::saveObject($this, $fields);
-		// #TODO redis cache manager
-		// \Cache\CacheManager::setModelObject(__CLASS__, $this->getPrimaryKey());
-		// return MySql::saveObject($this, $fields);
+		$this->new = false;
+		$result = DBManager::saveObject($this, $fields);
+		if ($this->new && $result) {
+			$this->data[$this->primaryKeyName()] = $result;
+			$this->new = false;
+		}
+		\Cache\CacheManager::setModelObject($this);
+		return $this->getPrimaryKey();
 	}
 
 	/**
