@@ -58,7 +58,7 @@ class AWBBatch extends BaseController
 		$this->model->setCourierCompanyID($courierCompanyID);
 		$this->model->setAccountID($accountID);
 		// #TODO remove setId and setstatus
-		$this->model->setId('3');
+		// $this->model->setId('3');
 		$this->model->setStatus('PENDING');
 		$this->model->save();
 		$this->saveToPersistentStore($filePath, self::UPLOAD);
@@ -115,7 +115,7 @@ class AWBBatch extends BaseController
 			if (CacheManager::existsInSet($existingBatchesSet, $awb)) {
 				$type = self::INVALID;
 				// $awb = $awb . FS . "DUPLICATE";
-				$awb = $awb . '\t' . "DUPLICATE";
+				$awb = $awb . "\t" . "DUPLICATE";
 				echo 'duplicates';
 			}
 			$fileName = $type . "AWBFile";
@@ -175,6 +175,8 @@ class AWBBatch extends BaseController
 	private function markProcessed($validCount = null, $invalidCount = null)
 	{
 		// #TODO update status to PROCESSED, count of valid, invalid if not null
+		$this->model->setStatus('PROCESSED');
+		$this->model->save();
 	}
 
 
