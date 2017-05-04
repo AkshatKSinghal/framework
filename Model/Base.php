@@ -64,7 +64,7 @@ class Base
 	 * @return string $dbFieldName Converted DB Field Name
 	 */
 
-	private function convertToDBField($input)
+	public function convertToDBField($input)
 	{
 		preg_match_all('!([A-Z][A-Z0-9]*(?=$|[A-Z][a-z0-9])|[A-Za-z][a-z0-9]+)!', $input, $matches);
 		$ret = $matches[0];
@@ -84,7 +84,7 @@ class Base
 	 * @return string $propertyName converted string
 	 */
 
-	private function convertToPropertyName($input)
+	public function convertToPropertyName($input)
 	{
 		$propertyName = lcfirst(str_replace('_', '', ucwords($input, '_')));
 		return $propertyName;
@@ -104,7 +104,8 @@ class Base
 	{
 		if ($this->new) {
 			$fields = $this->dbFields();
-		} else if (empty($fields)) {
+		}
+		if (empty($fields)) {
 			$fields = $this->modifiedFields;
 		}
 
