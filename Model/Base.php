@@ -31,18 +31,39 @@ class Base
 	{
 		if ($id != null) {
 			$this->new = false;
+			// echo get_called_class();
 			try {
-				$this->data = CacheManager::getModelObject(__CLASS__, $id);	
-				print_r($this->data);
+				$this->data = CacheManager::getModelObject(__CLASS__, $id);
+				// echo 'base model';
+				$this->data['CourierCompanyID'] = 1;
+				$this->data['AccountID'] = 1;
+				$this->data['Id'] = 1;
+				$this->data['Status'] = 'PROCESSED';
+				// print_r($this->data);
 			} catch (\Exception $ex) {
 				#TODO Query the DB and put values into $this->data
 				DBManager::getInstance();
 				$response = DBManager::executeQuery('select * from '. $this->tableName. ' where id = ' . $id);
 				// echo 'in model contruct for db manager';
 				// die;
-				$this->data = $response;
-				if (empty($response)) {
+		        $data = [];
+		        if ($response->num_rows > 0) {
+		            // output data of each row
+		            while($row = $response->fetch_assoc()) {
+		                $data['id'] = $row['id'];
+		                $data['courierCompanyID'] = $row['courier_company_id'];
+		                $data['accountID'] = $row['account_id'];
+		                $data['status'] = $row['status'];
+		                $data['valid_count'] = $row['valid_count'];
+		                $data['invalid_count'] = $row['invalid_count'];
+		            }
+		        } else {
+		            // echo "0 results";
+		        }
+				if (empty($data)) {
 					throw new \Exception("Invalid Id");
+				} else {
+					$this->data = $data;				
 				}
 				CacheManager::setModelObject($this, $this->getPrimaryKey());
 			}
@@ -231,6 +252,10 @@ class Base
 	 */
 	private function get($name)
     {
+    	// echo 'in get model';
+    	// echo $name;
+    	// print_r($this);
+    	// die;
     	if (!array_key_exists($name, $this->data)) {
     		throw new \Exception("Invalid field name : " . $name);
     	}

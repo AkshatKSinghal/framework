@@ -15,14 +15,16 @@ class DB /*extends \mysqli*/
 	{
 		if (self::$singleton == null) {
 			//Initiate DB singleton here
-			$link = mysql_connect('localhost', 'root', 'archit@2905');
-			$db_selected = mysql_select_db('btpost', $link);
-			if (!$link) {
-			    die('Could not connect: ' . mysql_error());
+		    $mysqli = new \mysqli("localhost", "root", "archit@2905", "btpost");
+
+			// $link = mysql_connect('localhost', 'root', 'archit@2905');
+			// $db_selected = mysql_select_db('btpost', $link);
+			if (!$mysqli) {
+			    throw new Exception("Error Connecting to DB");
 			}
-			self::$singleton = $link;
+			self::$singleton = $mysqli;
 		}
-		return $singleton;
+		return self::$singleton;
 	}
 
 	/**
@@ -81,8 +83,7 @@ class DB /*extends \mysqli*/
 		$filterQuery = implode(" AND ", $filterQuery);
 		$offset = ($page - 1) * $limit;
 		$query = "SELECT $fieldList FROM $table WHERE $filterQuery LIMIT $offset, $limit";
-		$mysql = self::getInstance();
-		return $mysql->mysqli_query($query);
+		return self::executeQuery($query);
 	}
 
 	/**
@@ -113,6 +114,6 @@ class DB /*extends \mysqli*/
 	 */
 	public static function executeQuery($query)
 	{
-		return self::getInstance()->mysqli_query($query);
+		return self::getInstance()->query($query);
 	}
 }
