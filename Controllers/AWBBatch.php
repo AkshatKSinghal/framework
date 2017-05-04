@@ -5,6 +5,7 @@
  */
 namespace Controllers;
 
+// #TODO handle case of  0000 getting converted to 0 in db
 use \Model\AWBBatch as AWBBatchModel;
 use \Controllers\Base as BaseController;
 use \Cache\CacheManager as CacheManager;
@@ -108,7 +109,7 @@ class AWBBatch extends BaseController
 		$invalidCount = 0;
 		$fp = fopen($file, 'r');
 		// while($awb = fgets($fp)) {
-		$awbs = [12,333,443,5454];
+		$awbs = [12,333,443,5454, 000, 99];
 		foreach ($awbs as $awb) {
  			// $awb = trim($awb);
 			$type = self::VALID;
@@ -124,11 +125,12 @@ class AWBBatch extends BaseController
 			$$counter++;
 		}
 		$courier = new \Controllers\CourierCompany($this->model->getCourierCompanyId());
-		$awbFile = $courier->validateAWBFile($validAWBFile, $invalidAWBFile);
+		// #TODO
+		// $awbFile = $courier->validateAWBFile($validCount, $invalidAWBFile);
 		// #TODO update the values of $validCount and $invalidCount after validation by Courier class
 
-		$this->model->setValidCount($awbFile['valid']);
-		$this->model->setInvalidCount($awbFile['invalid']);
+		$this->model->setValidCount($validCount);
+		$this->model->setInvalidCount($invalidCount);
 		$this->model->save();
 		$this->saveToPersistentStore($validAWBFile, self::VALID);
 		$this->saveToPersistentStore($validAWBFile, self::AVAILABLE);

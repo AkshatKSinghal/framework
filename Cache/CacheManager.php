@@ -213,7 +213,6 @@ class CacheManager extends \Redis
 	 */
 	public static function addToSet($key, $awbSet)
 	{
-		// print_r($awbSet);
 		foreach ($awbSet as $awb) {
 			self::getInstance()->sAdd($key, $awb);
 		}
