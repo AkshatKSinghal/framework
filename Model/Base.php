@@ -33,12 +33,6 @@ class Base
 			$this->new = false;
 			try {
 				$this->data = CacheManager::getModelObject(get_called_class(), $id);
-				// echo 'base model';
-				$this->data['CourierCompanyID'] = 1;
-				$this->data['AccountID'] = 1;
-				$this->data['Id'] = 1;
-				$this->data['Status'] = 'PROCESSED';
-				// print_r($this->data);
 			} catch (\Exception $ex) {
 				$response = DBManager::get(self, $id);
 				$data = [];
