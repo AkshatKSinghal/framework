@@ -31,7 +31,6 @@ class Base
 	{
 		if ($id != null) {
 			$this->new = false;
-			// echo get_called_class();
 			try {
 				$this->data = CacheManager::getModelObject(__CLASS__, $id);
 				// echo 'base model';

@@ -200,20 +200,33 @@ class AWBBatch extends BaseController
 			$this->updatePersistentStore();
 		}
 		$key = ($customKey != null) ? $customKey : $this->getRedisSetKey($type);
-
+		echo 'type';
+		echo $type;
+		echo $customKey;
+		print_r($this);
+		// die;
 		$localFilePath = $this->getFromPersistentStore($type);
+		echo $localFilePath;
 		$fp = fopen($localFilePath, 'r');
 		$awbSet = [];
 		$i = 0;
+		// echo 'AWB loadfile:';
 		while ($awb = fgets($fp)) {
-			// $this->redis->addToSet($key, trim($awb));
 			$awbSet[] = trim($awb);
+			// echo $awb;
 			if ($i == 1000) {
 				CacheManager::addToSet($customKey, trim($awbSet));
 				$i = 0;
 				$awbSet = [];
 			}
+			$i++;
 		}
+		if ($i !=0) {
+			CacheManager::addToSet($customKey, $awbSet);
+			$i = 0;
+			$awbSet = [];
+		}
+		echo 'load file in :' . $customKey;
 	}
 
 
@@ -320,6 +333,8 @@ class AWBBatch extends BaseController
 	private function getFromPersistentStore($type)
 	{
 		$remoteFilePath = $this->getS3Path($type);
+		print_r($this->model);
+		echo 'persistentStore';
 		$localFilePath = "/home/browntape/Desktop/btpost/tmp/" . $this->model->getId() . $type . '.txt';
 		// $localFilePath = TMP . DS . $this->model->getId() . $type . '.txt';
 		// shell_exec("s3 cp $remoteFilePath $localFilePath");
@@ -337,7 +352,7 @@ class AWBBatch extends BaseController
 			// Replace this function with correct function
 			$this->redis = getRedisInstance();
 			if ($this->redis == null) {
-				throw new Exception("Unable to connect to Redis", 400);
+				throw new \Exception("Unable to connect to Redis", 400);
 			}
 		}
 		return $this->redis;
@@ -352,6 +367,7 @@ class AWBBatch extends BaseController
 		$proccessingSetName = $this->getRedisSetKey("processing");
 		foreach($batches as $AWBBatchId) {
 			$AWBBatch = new AWBBatch([$AWBBatchId]);
+			echo 'load exisiting batch: ' . $AWBBatchId;
 			$AWBBatch->loadFile($proccessingSetName);
 			// $AWBBatch->loadFile();
 		}

@@ -4,7 +4,6 @@ namespace Model;
 /**
 * CRUD for AWB Batch
 */
-// require 'Base.php';
 use \DB\DB as DBManager;
 
 class AWBBatch extends \Model\Base
@@ -24,13 +23,13 @@ class AWBBatch extends \Model\Base
 //             }
 // =======
         $searchCondition = array(
-            'courier_company_id' => $this->get('courierCompanyID'),
-            'account_id' => $this->get('accountID'),
+            'courier_company_id' => $this->getCourierCompanyID(),
+            'account_id' => $this->getAccountID(),
             );
-        $response = DBManager::search($this->tableName(), $searchCondition, array($this->primaryKey()));
+        $response = DBManager::search($this->tableName(), $searchCondition, array($this->primaryKeyName()));
         $data = [];
         while($row = $response->fetch_assoc()) {
-            $data[] = $row[$this->primaryKey()];
+            $data[] = $row[$this->primaryKeyName()];
         }
         return $data;
     }

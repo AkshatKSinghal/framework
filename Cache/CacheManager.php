@@ -35,7 +35,7 @@ class CacheManager extends \Redis
 	public static function getModelObject($model, $id)
 	{
 		$data = self::getHashData(self::getObjectKey($model, $id));
-		$data[$model::getPrimaryKeyName()] = $id;
+		$data[$model::primaryKeyName()] = $id;
 		return $data;
 	}
 
