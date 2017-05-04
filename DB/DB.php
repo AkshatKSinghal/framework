@@ -15,15 +15,16 @@ class DB /*extends \mysqli*/
 	{
 		if (self::$singleton == null) {
 			//Initiate DB singleton here
-			$link = mysql_connect('localhost', 'root', 'archit@2905');
-			$db_selected = mysql_select_db('btpost', $link);
-			if (!$link) {
+		    $mysqli = new \mysqli("localhost", "root", "archit@2905", "btpost");
+
+			// $link = mysql_connect('localhost', 'root', 'archit@2905');
+			// $db_selected = mysql_select_db('btpost', $link);
+			if (!$mysqli) {
 			    die('Could not connect: ' . mysql_error());
 			}
-			self::$singleton = $link;
-			echo 'Connected successfully';
+			self::$singleton = $mysqli;
 		}
-		return $singleton;
+		return self::$singleton;
 	}
 
 	/**
@@ -98,6 +99,6 @@ class DB /*extends \mysqli*/
 	 */
 	public static function executeQuery($query)
 	{
-		return self::$singleton->mysqli_query($query);
+		return self::$singleton->query($query);
 	}
 }

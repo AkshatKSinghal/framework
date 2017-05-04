@@ -61,7 +61,7 @@ class AWBBatch extends BaseController
 		$this->model->setCourierCompanyID($courierCompanyID);
 		$this->model->setAccountID($accountID);
 		// #TODO remove setId and setstatus
-		$this->model->setId('2');
+		$this->model->setId('3');
 		$this->model->setStatus('PENDING');
 		$this->model->save();
 		$this->saveToPersistentStore($filePath, self::UPLOAD);
@@ -98,13 +98,10 @@ class AWBBatch extends BaseController
 	public function processFile()
 	{
 		// #TODO need to think of lock at account and courier level.
-		// $batchId = $this->model->getId();
 		$this->getLock('PROCESSING', 'PENDING');
 		$file = $this->getFromPersistentStore(self::UPLOAD);
 		// within the file duplicates check
 		$existingBatchesSet = $this->loadExistingBatches();
-		// echo $file;
-		$fp = fopen($file, 'r');
 		$this->basicValidateFile($file);
 		$validAWBFile = $this->getTempFile(self::VALID);
 		file_put_contents($validAWBFile, '');
@@ -112,20 +109,21 @@ class AWBBatch extends BaseController
 		file_put_contents($invalidAWBFile, '');
 		$validCount = 0;
 		$invalidCount = 0;
-
-		while($awb = fread($fp, filesize($file))) {
-			$awb = trim($awb);
+		$fp = fopen($file, 'r');
+		// while($awb = fgets($fp)) {
+		$awbs = [12,333,443,5454];
+		foreach ($awbs as $awb) {
+ 			// $awb = trim($awb);
 			$type = self::VALID;
 			if (CacheManager::existsInSet($existingBatchesSet, $awb)) {
-			// if (true){
 				$type = self::INVALID;
 				// $awb = $awb . FS . "DUPLICATE";
 				$awb = $awb . '\t' . "DUPLICATE";
-			} else {
-				file_put_contents($validAWBFile, $awb);				
+				echo 'duplicates';
 			}
 			$fileName = $type . "AWBFile";
 			$counter = $type . "Count";
+			print_r($awb);
 			file_put_contents($$fileName, $awb . PHP_EOL, FILE_APPEND);
 			$$counter++;
 		}
@@ -137,10 +135,10 @@ class AWBBatch extends BaseController
 		$this->model->setInvalidCount($awbFile['invalid']);
 		$this->model->save();
 		$this->saveToPersistentStore($validAWBFile, self::VALID);
+		$this->saveToPersistentStore($validAWBFile, self::AVAILABLE);
 		$this->saveToPersistentStore($invalidAWBFile, self::INVALID);
 		$this->markProcessed($validCount, $invalidCount);
 	}
-
 
 	/**
 	 * Function to obtain lock for processing the uploaded AWB file/ 
@@ -160,11 +158,7 @@ class AWBBatch extends BaseController
 	private function getLock($operation, $allowedState)
 	{
 		// #TODO get status from DB #done
-		// echo $operation;
-		// echo $allowedState;
-		// echo '<br>';
-		// print_r($this->model);
-		$status = $this->model->getStatus();
+ 		$status = $this->model->getStatus();
 		if ($status == $operation) {
 			throw new \Exception("Operation already running");
 		} else if ($status != $allowedState) {
@@ -202,8 +196,6 @@ class AWBBatch extends BaseController
 	public function loadFile($customKey = null, $type = self::AVAILABLE)
 	{
 		// Update the available AWB list with the existing log, if any
-		echo 'CUSTOM1-';
-		echo $customKey;
 		if ($type == self::AVAILABLE) {
 			$this->updatePersistentStore();
 		}
@@ -211,8 +203,16 @@ class AWBBatch extends BaseController
 
 		$localFilePath = $this->getFromPersistentStore($type);
 		$fp = fopen($localFilePath, 'r');
+		$awbSet = [];
+		$i = 0;
 		while ($awb = fgets($fp)) {
-			$this->redis->addToSet($key, trim($awb));
+			// $this->redis->addToSet($key, trim($awb));
+			$awbSet[] = trim($awb);
+			if ($i == 1000) {
+				CacheManager::addToSet($customKey, trim($awbSet));
+				$i = 0;
+				$awbSet = [];
+			}
 		}
 	}
 
@@ -255,7 +255,6 @@ class AWBBatch extends BaseController
 	{
 		// Lock mechanism to avoid issue due to multiple processes working on the same batch
 	    // var_dump(debug_backtrace());
-		echo 'sadasdada';
 		$this->getLock('UPDATING', 'PROCESSED');
 		$fileTypes = array(self::AVAILABLE, self::ASSIGNED, self::FAILED);
 		$used = array();
@@ -356,6 +355,7 @@ class AWBBatch extends BaseController
 			$AWBBatch->loadFile($proccessingSetName);
 			// $AWBBatch->loadFile();
 		}
+		die;
 		return $proccessingSetName;
 	}
 

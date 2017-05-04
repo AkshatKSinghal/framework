@@ -1,6 +1,9 @@
  <?php
+
 	error_reporting(E_ALL);
 	ini_set('display_errors', 1);
+	ini_set("auto_detect_line_endings", true);
+
 	require __DIR__ . '/vendor/autoload.php';
 	require __DIR__ . '/vendor/malkusch/php-autoloader/autoloader.php';
 	// require '/home/browntape/Projects/btpost' . '/autoloader/autoloader.php';
