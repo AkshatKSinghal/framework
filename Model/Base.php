@@ -252,10 +252,6 @@ class Base
 	 */
 	private function get($name)
     {
-    	// echo 'in get model';
-    	// echo $name;
-    	// print_r($this);
-    	// die;
     	if (!array_key_exists($name, $this->data)) {
     		throw new \Exception("Invalid field name : " . $name);
     	}

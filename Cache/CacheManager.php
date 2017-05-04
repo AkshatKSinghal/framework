@@ -128,7 +128,7 @@ class CacheManager extends \Redis
 	 */
 	public static function getHashData($key, $fields = [])
 	{
-		$cache = Self::getInstance();
+		$cache = self::getInstance();
 		if ($cache->exists($key)) {
 			throw new CacheMissException("Not found");
 		}
@@ -210,6 +210,7 @@ class CacheManager extends \Redis
 	 */
 	public static function addToSet($key, $awbSet)
 	{
-		call_user_func_array([$this, 'sAdd'], $awbSet);
+		// print_r($awbSet);
+		call_user_func_array([self::getInstance(), 'sAdd'], [$key, $awbSet]);
 	}
 }
