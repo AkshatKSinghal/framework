@@ -56,15 +56,17 @@ class DB
 			$field = ucfirst($field);
 			$data[$key] = $object->{"get$field"}();
 		}
+		$primaryKey = $object->primaryKeyName();
+		$primaryKeyField = $object->convertToDBField($primaryKey);
+		unset($data[$primaryKeyField]);
 
-		print_r($data);
 		if ($object->isNew()) {
 			$keys = implode(", ", array_keys($data));
 			$values = "'".implode("', '", array_values($data)) . "'";
 			$query = "INSERT INTO $tableName ($keys) VALUES ($values)";
 		} else {
 			$id = $object->getPrimaryKey();
-			$primaryKey = $object->primaryKeyName();
+			
 			$updateValues = [];
 			foreach ($data as $field => $value) {
 				$updateValues[] = " `$field` = '$value'";
