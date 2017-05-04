@@ -17,7 +17,7 @@ class AWBBatch extends \Model\Base
             'courier_company_id' => $this->get('courierCompanyID'),
             'account_id' => $this->get('accountID'),
             );
-        $response = DBManager::search($this->tableName(), $searchCondition);
+        $response = DBManager::search($this->tableName(), $searchCondition, array($this->primaryKey()));
         $data = [];
         while($row = $response->fetch_assoc()) {
             $data[] = $row[$this->primaryKey()];
