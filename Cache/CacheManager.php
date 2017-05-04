@@ -215,3 +215,7 @@ class CacheManager extends \Redis
 		call_user_func_array([$this, 'sAdd'], $awbSet);
 	}
 }
+
+class CacheMissException extends \Exception
+{
+}
