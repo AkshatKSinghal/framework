@@ -21,7 +21,6 @@ class DB /*extends \mysqli*/
 			    die('Could not connect: ' . mysql_error());
 			}
 			self::$singleton = $link;
-			echo 'Connected successfully';
 		}
 		return $singleton;
 	}
@@ -67,7 +66,23 @@ class DB /*extends \mysqli*/
 	 */
 	public function search($table, $queryParams, $fieldList = [], $limit = 100, $page = 1)
 	{
-
+		if (empty($queryParams)) {
+			throw new Exception("Filter parameters mandatory");
+		}
+		if (empty($fieldList)) {
+			$fieldList = "*";
+		} else {
+			$fieldList = implode(", ", $fieldList);
+		}
+		$filterQuery = array();
+		foreach ($queryParams as $field => $value) {
+			$filterQuery[] = " $field = '$value' ";
+		}
+		$filterQuery = implode(" AND ", $filterQuery);
+		$offset = ($page - 1) * $limit;
+		$query = "SELECT $fieldList FROM $table WHERE $filterQuery LIMIT $offset, $limit";
+		$mysql = self::getInstance();
+		return $mysql->mysqli_query($query);
 	}
 
 	/**
@@ -98,6 +113,6 @@ class DB /*extends \mysqli*/
 	 */
 	public static function executeQuery($query)
 	{
-		return self::$singleton->mysqli_query($query);
+		return self::getInstance()->mysqli_query($query);
 	}
 }
