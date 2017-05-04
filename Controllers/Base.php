@@ -22,13 +22,9 @@ class Base
 	function __construct($request)
 	{
 		#TODO change the request data type
-		if (empty($request)) {
-			return;
-		}
+		$id = isset($request[0]) ? $request[0] : null;
 		$modelClass = $this->getModelClass();
-		$this->model = new $modelClass($request[0]);
-		// print_r($this);
-		// die;
+		$this->model = new $modelClass($id);
 	}
 
 	/**

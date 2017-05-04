@@ -50,14 +50,16 @@ class CacheManager extends \Redis
 	 * 
 	 * @return void
 	 */
-	public static function setModelObject($model, $id, $fields = [])
+	public static function setModelObject($object, $fields = [])
 	{
 		if (empty($fields)) {
-			// $fields = serialise $model object to get all fields except primary key
+			$fields = $object->allFields();
 		}
+		$id = $Object->getPrimaryKey();
 		$data = [];
 		foreach ($fields as $field) {
-			$data[$field] = $model->{"get$field"};
+			$field = ucfirst($field);
+			$data[$field] = $object->{"get$field"}();
 		}
 		$cache = self::getInstance();
 		$key = self::getObjectKey($model, $id);
