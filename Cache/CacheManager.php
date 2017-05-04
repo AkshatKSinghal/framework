@@ -58,8 +58,9 @@ class CacheManager extends \Redis
 		$id = $object->getPrimaryKey();
 		$data = [];
 		foreach ($fields as $field) {
+			$fieldKey = $field;
 			$field = ucfirst($field);
-			$data[$field] = $object->{"get$field"}();
+			$data[$fieldKey] = $object->{"get$field"}();
 		}
 		$cache = self::getInstance();
 		$key = self::getObjectKey(get_class($object), $id);

@@ -123,7 +123,6 @@ class AWBBatch extends BaseController
 			}
 			$fileName = $type . "AWBFile";
 			$counter = $type . "Count";
-			print_r($awb);
 			file_put_contents($$fileName, $awb . PHP_EOL, FILE_APPEND);
 			$$counter++;
 		}
@@ -200,13 +199,7 @@ class AWBBatch extends BaseController
 			$this->updatePersistentStore();
 		}
 		$key = ($customKey != null) ? $customKey : $this->getRedisSetKey($type);
-		echo 'type';
-		echo $type;
-		echo $customKey;
-		print_r($this);
-		// die;
 		$localFilePath = $this->getFromPersistentStore($type);
-		echo $localFilePath;
 		$fp = fopen($localFilePath, 'r');
 		$awbSet = [];
 		$i = 0;
@@ -226,7 +219,6 @@ class AWBBatch extends BaseController
 			$i = 0;
 			$awbSet = [];
 		}
-		echo 'load file in :' . $customKey;
 	}
 
 
@@ -333,8 +325,6 @@ class AWBBatch extends BaseController
 	private function getFromPersistentStore($type)
 	{
 		$remoteFilePath = $this->getS3Path($type);
-		print_r($this->model);
-		echo 'persistentStore';
 		$localFilePath = "/home/browntape/Desktop/btpost/tmp/" . $this->model->getId() . $type . '.txt';
 		// $localFilePath = TMP . DS . $this->model->getId() . $type . '.txt';
 		// shell_exec("s3 cp $remoteFilePath $localFilePath");
@@ -367,11 +357,9 @@ class AWBBatch extends BaseController
 		$proccessingSetName = $this->getRedisSetKey("processing");
 		foreach($batches as $AWBBatchId) {
 			$AWBBatch = new AWBBatch([$AWBBatchId]);
-			echo 'load exisiting batch: ' . $AWBBatchId;
 			$AWBBatch->loadFile($proccessingSetName);
 			// $AWBBatch->loadFile();
 		}
-		die;
 		return $proccessingSetName;
 	}
 

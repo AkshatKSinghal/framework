@@ -46,7 +46,7 @@ class Base
 	            		$this->data[$fieldName] = $value;
 	            	}
 	            }
-				CacheManager::setModelObject($this, $this->getPrimaryKey());
+				CacheManager::setModelObject($this);
 			}
 		} else if (!empty($data)) {
 			foreach ($data as $key => $value) {
@@ -209,7 +209,7 @@ class Base
 	 */
 	public function __call($functionName, $arguments)
 	{
-		$parameterName = ucfirst(substr($functionName, 3));
+		$parameterName = lcfirst(substr($functionName, 3));
 		$functionName = substr($functionName, 0, 3);
 
 		if ($functionName == 'get'){

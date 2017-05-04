@@ -19,9 +19,12 @@ class AWBBatch extends \Model\Base
             );
         $response = DBManager::search($this->tableName(), $searchCondition);
         $data = [];
+        echo 'model';
         while($row = $response->fetch_assoc()) {
+            // print_r($row);
             $data[] = $row[$this->primaryKeyName()];
         }
+        // die;
         return $data;
     }
 }
