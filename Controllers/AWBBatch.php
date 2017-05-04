@@ -9,9 +9,6 @@ use \Model\AWBBatch as AWBBatchModel;
 use \Controllers\Base as BaseController;
 use \Cache\CacheManager as CacheManager;
 
-// require '/home/browntape/Projects/btpost/Model/AWBBatchModel.php';
-
-// TODO Create constant FS, DS, TMP in env file
 class AWBBatch extends BaseController
 {
 	private $redis = null;
@@ -325,8 +322,7 @@ class AWBBatch extends BaseController
 	private function getFromPersistentStore($type)
 	{
 		$remoteFilePath = $this->getS3Path($type);
-		$localFilePath = "/home/browntape/Desktop/btpost/tmp/" . $this->model->getId() . $type . '.txt';
-		// $localFilePath = TMP . DS . $this->model->getId() . $type . '.txt';
+		$localFilePath = TMP . DS . $this->model->getId() . $type . '.txt';
 		// shell_exec("s3 cp $remoteFilePath $localFilePath");
 		shell_exec("cp $remoteFilePath $localFilePath");
 		// #TODO Check if the copy was successful, else throw exception
@@ -365,7 +361,7 @@ class AWBBatch extends BaseController
 
 	private function getTempFile($type)
 	{
-		$dir = '/home/browntape/Desktop/btpost/tmp/';
+		$dir = TMP;
 		$filename = $this->model->getId() . $type . '.txt';
 		
 		if (!is_dir($dir)) {

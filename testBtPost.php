@@ -6,12 +6,10 @@
 
 	require __DIR__ . '/vendor/autoload.php';
 	require __DIR__ . '/vendor/malkusch/php-autoloader/autoloader.php';
-	// require '/home/browntape/Projects/btpost' . '/autoloader/autoloader.php';
-
-	// require_once('/home/browntape/Projects/btpost/Controllers/AWBBatch.php');
+	require __DIR__ . "/config.php";
 	try {
 		$batchExecute = new \Controllers\AWBBatch([]);
-		$batchExecute->createBatch('/home/browntape/Desktop/btpost.txt', 1, 1);
+		$batchExecute->createBatch(TMP . '/btpost.txt', 1, 1);
 		//file, courierCompanyId, AccountId
 		echo 'ending';		
 	}catch (Exception $e) {
