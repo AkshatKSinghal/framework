@@ -55,19 +55,6 @@ class Base
 
 	}
 
-	/**
-	 * Function to instantiate object from an associative array
-	 * 
-	 * @param mixed $data associative array containing the model data
-	 * 
-	 * @throws ModelException in case $data does not contain primary key
-	 * 
-	 * @return 
-	 */
-	public static function loadData($data)
-	{
-
-	}
 
 	/**
 	 * Function to convert the model property name into DB field name
@@ -76,6 +63,7 @@ class Base
 	 * 
 	 * @return string $dbFieldName Converted DB Field Name
 	 */
+
 	private function convertToDBField($input)
 	{
 		preg_match_all('!([A-Z][A-Z0-9]*(?=$|[A-Z][a-z0-9])|[A-Za-z][a-z0-9]+)!', $input, $matches);
@@ -86,6 +74,7 @@ class Base
 		return implode('_', $ret);
 	}
 
+
 	/**
 	 * Function to convert DB Fields (snake case) to camelCase 
 	 * for use in the model
@@ -94,6 +83,7 @@ class Base
 	 * 
 	 * @return string $propertyName converted string
 	 */
+
 	private function convertToPropertyName($input)
 	{
 		$propertyName = lcfirst(str_replace('_', '', ucwords($input, '_')));
