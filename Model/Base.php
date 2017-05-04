@@ -117,7 +117,8 @@ class Base
 			$this->data[$this->primaryKeyName()] = $result;
 			$this->new = false;
 		}
-		\Cache\CacheManager::setModelObject($this);
+		$this->modifiedFields = [];
+		\Cache\CacheManager::setModelObject($this, $fields);
 		return $this->getPrimaryKey();
 	}
 
