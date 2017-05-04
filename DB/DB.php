@@ -90,7 +90,7 @@ class DB
 	 * 
 	 * @return array $result Array of results
 	 */
-	public function search($table, $queryParams, $fieldList = [], $limit = 100, $page = 1)
+	public static function search($table, $queryParams, $fieldList = [], $limit = 100, $page = 1)
 	{
 		if (empty($queryParams)) {
 			throw new Exception("Filter parameters mandatory");
