@@ -35,7 +35,7 @@ class CacheManager extends \Redis
 	public static function getModelObject($model, $id)
 	{
 		$data = self::getHashData(self::getObjectKey($model, $id));
-		$data[$model::getPrimaryKeyName()] = $id;
+		$data[$model::primaryKeyName()] = $id;
 		return $data;
 	}
 
@@ -58,8 +58,9 @@ class CacheManager extends \Redis
 		$id = $object->getPrimaryKey();
 		$data = [];
 		foreach ($fields as $field) {
+			$fieldKey = $field;
 			$field = ucfirst($field);
-			$data[$field] = $object->{"get$field"}();
+			$data[$fieldKey] = $object->{"get$field"}();
 		}
 		$cache = self::getInstance();
 		$key = self::getObjectKey(get_class($object), $id);
@@ -212,7 +213,8 @@ class CacheManager extends \Redis
 	 */
 	public static function addToSet($key, $awbSet)
 	{
-		call_user_func_array([$this, 'sAdd'], $awbSet);
+		// print_r($awbSet);
+		call_user_func_array([self::getInstance(), 'sAdd'], [$key, $awbSet]);
 	}
 }
 

@@ -31,7 +31,6 @@ class Base
 	{
 		if ($id != null) {
 			$this->new = false;
-			// echo get_called_class();
 			try {
 				$this->data = CacheManager::getModelObject(get_called_class(), $id);
 			} catch (\Exception $ex) {
@@ -46,7 +45,7 @@ class Base
 	            		$this->data[$fieldName] = $value;
 	            	}
 	            }
-				CacheManager::setModelObject($this, $this->getPrimaryKey());
+				CacheManager::setModelObject($this);
 			}
 		} else if (!empty($data)) {
 			foreach ($data as $key => $value) {
@@ -209,7 +208,7 @@ class Base
 	 */
 	public function __call($functionName, $arguments)
 	{
-		$parameterName = ucfirst(substr($functionName, 3));
+		$parameterName = lcfirst(substr($functionName, 3));
 		$functionName = substr($functionName, 0, 3);
 
 		if ($functionName == 'get'){
@@ -233,10 +232,6 @@ class Base
 	 */
 	private function get($name)
     {
-    	// echo 'in get model';
-    	// echo $name;
-    	// print_r($this);
-    	// die;
     	if (!array_key_exists($name, $this->data)) {
     		throw new \Exception("Invalid field name : " . $name);
     	}

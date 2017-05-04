@@ -123,7 +123,6 @@ class AWBBatch extends BaseController
 			}
 			$fileName = $type . "AWBFile";
 			$counter = $type . "Count";
-			print_r($awb);
 			file_put_contents($$fileName, $awb . PHP_EOL, FILE_APPEND);
 			$$counter++;
 		}
@@ -200,19 +199,25 @@ class AWBBatch extends BaseController
 			$this->updatePersistentStore();
 		}
 		$key = ($customKey != null) ? $customKey : $this->getRedisSetKey($type);
-
 		$localFilePath = $this->getFromPersistentStore($type);
 		$fp = fopen($localFilePath, 'r');
 		$awbSet = [];
 		$i = 0;
+		// echo 'AWB loadfile:';
 		while ($awb = fgets($fp)) {
-			// $this->redis->addToSet($key, trim($awb));
 			$awbSet[] = trim($awb);
+			// echo $awb;
 			if ($i == 1000) {
 				CacheManager::addToSet($customKey, trim($awbSet));
 				$i = 0;
 				$awbSet = [];
 			}
+			$i++;
+		}
+		if ($i !=0) {
+			CacheManager::addToSet($customKey, $awbSet);
+			$i = 0;
+			$awbSet = [];
 		}
 	}
 
@@ -337,7 +342,7 @@ class AWBBatch extends BaseController
 			// Replace this function with correct function
 			$this->redis = getRedisInstance();
 			if ($this->redis == null) {
-				throw new Exception("Unable to connect to Redis", 400);
+				throw new \Exception("Unable to connect to Redis", 400);
 			}
 		}
 		return $this->redis;
@@ -355,7 +360,6 @@ class AWBBatch extends BaseController
 			$AWBBatch->loadFile($proccessingSetName);
 			// $AWBBatch->loadFile();
 		}
-		die;
 		return $proccessingSetName;
 	}
 
