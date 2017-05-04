@@ -55,14 +55,14 @@ class CacheManager extends \Redis
 		if (empty($fields)) {
 			$fields = $object->allFields();
 		}
-		$id = $Object->getPrimaryKey();
+		$id = $object->getPrimaryKey();
 		$data = [];
 		foreach ($fields as $field) {
 			$field = ucfirst($field);
 			$data[$field] = $object->{"get$field"}();
 		}
 		$cache = self::getInstance();
-		$key = self::getObjectKey($model, $id);
+		$key = self::getObjectKey(get_class($object), $id);
 		$cache->hMSet($key, $data);
 	}
 
