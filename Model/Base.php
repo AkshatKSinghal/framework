@@ -9,7 +9,7 @@ use \DB\DB as DBManager;
 */
 class Base
 {
-	protected $tableName = '';
+	protected static $tableName = '';
 	protected static $primaryKey = 'id';
 	protected static $uniqueKeys = [];
 	protected static $searchableFields = [];
@@ -41,30 +41,18 @@ class Base
 				$this->data['Status'] = 'PROCESSED';
 				// print_r($this->data);
 			} catch (\Exception $ex) {
-				#TODO Query the DB and put values into $this->data
-				DBManager::getInstance();
-				$response = DBManager::executeQuery('select * from '. $this->tableName. ' where id = ' . $id);
-				// echo 'in model contruct for db manager';
-				// die;
-		        $data = [];
-		        if ($response->num_rows > 0) {
-		            // output data of each row
-		            while($row = $response->fetch_assoc()) {
-		                $data['id'] = $row['id'];
-		                $data['courierCompanyID'] = $row['courier_company_id'];
-		                $data['accountID'] = $row['account_id'];
-		                $data['status'] = $row['status'];
-		                $data['valid_count'] = $row['valid_count'];
-		                $data['invalid_count'] = $row['invalid_count'];
-		            }
-		        } else {
-		            // echo "0 results";
+				$response = DBManager::get(self, $id);
+				$data = [];
+		        if ($response->num_rows == 0) {
+		        	throw new Exception("Invalid " . $this->primaryKeyName());
 		        }
-				if (empty($data)) {
-					throw new \Exception("Invalid Id");
-				} else {
-					$this->data = $data;				
-				}
+		            // output data of each row
+	            while($row = $response->fetch_assoc()) {
+	            	foreach ($row as $key => $value) {
+	            		$fieldName = $this->convertToPropertyName($key);
+	            		$this->data[$fieldName] = $value;
+	            	}
+	            }
 				CacheManager::setModelObject($this, $this->getPrimaryKey());
 			}
 		} else if (!empty($data)) {
@@ -116,7 +104,7 @@ class Base
 	 */
 	private function convertToPropertyName($input)
 	{
-		$propertyName = lcfirst(str_replace('-', '', ucwords($input, '-')));
+		$propertyName = lcfirst(str_replace('_', '', ucwords($input, '_')));
 		return $propertyName;
 	}
 
@@ -177,7 +165,7 @@ class Base
 	 * 
 	 * @return string $key
 	 */
-	public static function getPrimaryKeyName()
+	public static function primaryKeyName()
 	{
 		return self::$primaryKey;
 	}
@@ -212,7 +200,7 @@ class Base
 	 */
 	public function getPrimaryKey()
 	{
-		return $this->get($this->getPrimaryKeyName());
+		return $this->get($this->primaryKeyName());
 	}
 
 	/**
@@ -228,7 +216,7 @@ class Base
 	 */
 	public function __call($functionName, $arguments)
 	{
-		$parameterName = substr($functionName, 3);
+		$parameterName = ucfirst(substr($functionName, 3));
 		$functionName = substr($functionName, 0, 3);
 
 		if ($functionName == 'get'){
@@ -269,8 +257,6 @@ class Base
      */
     private function set($name, $value)
     {
-    	// print_r($value);
-    	// exit;
     	$this->data[$name] = $value[0];
     	$this->modifiedFields[] = $name;
     }
@@ -293,6 +279,16 @@ class Base
     public function find($parameters, $fields = array(), $limit = 10, $offset = 0, $orderBy = null, $orderByAsc = true)
     {
 
+    }
+
+    public static function tableName()
+    {
+    	return static::$tableName;
+    }
+
+    public function allFields()
+    {
+    	return array_keys($this->data);
     }
 }
 

@@ -5,26 +5,32 @@ namespace DB;
 * Class to interface with MySQL
 */
 
-class DB /*extends \mysqli*/
+class DB
 {
 	
-	static $singleton = null;
+	static $singleton = array();
 	static $transaction;
+	static $defaultConfig = array(
+		"hostname" => "localhost",
+		"username" => "root",
+		"password" => "archit@2905",
+		"database" => "btpost"
+		);
 
-	public static function getInstance()
+	public static function getInstance($config = null)
 	{
-		if (self::$singleton == null) {
-			//Initiate DB singleton here
+		if (empty($config)) {
+			$config = self::$defaultConfig;
+		}
+		$hash = $config['hostname'] . $config['username'] . $config ['database'];
+		if (!isset(self::$singleton[$hash])) {
 		    $mysqli = new \mysqli("localhost", "root", "archit@2905", "btpost");
-
-			// $link = mysql_connect('localhost', 'root', 'archit@2905');
-			// $db_selected = mysql_select_db('btpost', $link);
 			if (!$mysqli) {
 			    throw new Exception("Error Connecting to DB");
 			}
-			self::$singleton = $mysqli;
+			self::$singleton[$hash] = $mysqli;
 		}
-		return self::$singleton;
+		return self::$singleton[$hash];
 	}
 
 	/**
@@ -38,16 +44,34 @@ class DB /*extends \mysqli*/
 	 * in child row
 	 * @throws MySqlException in case of foreign key constraint failure
 	 * in parent row
+	 * 
 	 * @return string $id Primary ID of the record
 	 */
-	public function saveObject($object, $fields)
+	public static function saveObject($object, $fields)
 	{
-		if ($object->isNew()) {
-			// $query = INSERT QUERY
-		} else {
-			// $query = UPDATE QUERY
+		#TODO Add validation to check if the fields are part of DB fields
+		$tableName = $object->tableName();
+		foreach ($fields as $field) {
+			$key = $object->convertToDBField($field);
+			$field = ucfirst($field);
+			$data[$key] = $object->{"get$field"}();
 		}
-		return $this->executeQuery($query);
+
+		if ($object->isNew()) {
+			$keys = implode(", ", array_keys($data));
+			$values = implode(", ", array_values($data));
+			$query = "INSERT INTO $tableName ($keys) VALUES ($values)";
+		} else {
+			$id = $object->getPrimaryKey();
+			$primaryKey = $object->primaryKeyName();
+			$updateValues = [];
+			foreach ($data as $field => $value) {
+				$updateValues[] = " `$field` = '$value'";
+			}
+			$updateQuery = implode(", ", $updateValues);
+			$query = "UPDATE $tableName SET $updateQuery WHERE `$primaryKey` = '$id'";
+		}
+		return self::executeQuery($query);
 	}
 
 	/**
@@ -98,9 +122,14 @@ class DB /*extends \mysqli*/
 	 * 
 	 * @return mixed $result
 	 */
-	public function get($model, $id, $fields)
+	public static function get($model, $id, $fields = array())
 	{
-
+		$tableName = $model::tableName();
+		$primaryKey = $model::primaryKeyName();
+		$queryParams = array(
+			$primaryKey => $id
+			);
+		return self::search($tableName, $queryParams, $fields, 1);
 	}
 
 	/**
