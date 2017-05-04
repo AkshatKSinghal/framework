@@ -1,34 +1,31 @@
 <?php
 
+namespace Model;
 /**
 * CRUD for AWB Batch
 */
-class AWBBatch extends Base
+// require 'Base.php';
+use \DB\DB as DBManager;
+
+class AWBBatch extends \Model\Base
 {
-	protected var $id;
-	protected var $courierCompanyID;
-	protected var $accountID;
-	protected var $status;
+	// protected $id;
+	// protected $courierCompanyID;
+	// protected $accountID;
+	// protected $status;
+ //    protected $validCount;
+ //    protected $invalidCount;
+    protected $tableName = 'AWBBatch';
 
-	function __construct($courierCompanyID, $accountID)
-	{
-		$this->courierCompanyID = $courierCompanyID;
-		$this->accountID = $accountID;
-		$this->status = 'pending';
-		$this->id = 1;
-	}
-
-    public function __get($name)
+    public function findByCourier()
     {
-        if (array_key_exists($name, $this->data)) {
-            return $this[$name];
-        }
-        return null;
-    }
-
-    public function __set($name, $value)
-    {
-    	$this[$name] = $value;
-        return null;
+        DBManager::getInstance();
+        $response = DBManager::executeQuery('select * from ' . $this->tableName . ' where courier_company_id = 1');
+        print_r($response);
+        die();
+        return [1];
+    	// return [2,3,4];
+        //returns ids
+    	//write query to find by $courierCompanyID and $accountID
     }
 }

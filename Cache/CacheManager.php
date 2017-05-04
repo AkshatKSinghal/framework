@@ -1,24 +1,27 @@
 <?php
 
+namespace Cache;
 /**
 * Class to manage caching of objects
 */
-class CacheManager extends Redis
+class CacheManager extends \Redis
 {
 	private static $singleton = null;
-	public const DEFAULT_EXPIRY = 3 * 24 * 60 * 60;
+	const DEFAULT_EXPIRY = 3 * 24 * 60 * 60;
 	/**
 	 * Function to instantiate, if not already done, 
 	 * and return the singleton object
 	 * 
 	 * @return object $cache CacheManager Object
 	 */
-	private static function getInstance()
+	public static function getInstance()
 	{
-		if ($this->singleton == null) {
+		if (self::$singleton == null) {
 			// instantiate the object
+			self::$singleton = new \Redis(); 
+			self::$singleton->connect('127.0.0.1', 6379); 
 		}
-		return $this->singleton;
+		return self::$singleton;
 	}
 	/**
 	 * Function to get object data from cache for the given id
@@ -110,7 +113,7 @@ class CacheManager extends Redis
 	 */
 	private static function getObjectKey($model, $id)
 	{
-		return $this->getModelPrefix($model) . ":$id";
+		return Self::getModelPrefix($model) . ":$id";
 	}
 
 	/**
@@ -125,7 +128,7 @@ class CacheManager extends Redis
 	 */
 	public static function getHashData($key, $fields = [])
 	{
-		$cache = $this->getInstance();
+		$cache = Self::getInstance();
 		if ($cache->exists($key)) {
 			throw new CacheMissException("Not found");
 		}
@@ -181,5 +184,10 @@ class CacheManager extends Redis
 				throw new CacheManagerTypeException("Cannot save data of type ". gettype($value) ." without serialization");
 		}
 		parent::set($key, $value, $expiry);
+	}
+
+	public static function existsInSet($existingSet, $awb)
+	{
+
 	}
 }

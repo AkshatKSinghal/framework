@@ -1,18 +1,27 @@
 <?php
 
+namespace DB;
 /**
 * Class to interface with MySQL
 */
-class DB extends MySql
+
+class DB /*extends \mysqli*/
 {
 	
-	private static var $singleton = null;
-	private static var $transaction
+	static $singleton = null;
+	static $transaction;
 
-	private function getInstance()
+	public static function getInstance()
 	{
-		if ($singleton == null) {
+		if (self::$singleton == null) {
 			//Initiate DB singleton here
+			$link = mysql_connect('localhost', 'root', 'archit@2905');
+			$db_selected = mysql_select_db('btpost', $link);
+			if (!$link) {
+			    die('Could not connect: ' . mysql_error());
+			}
+			self::$singleton = $link;
+			echo 'Connected successfully';
 		}
 		return $singleton;
 	}
@@ -87,8 +96,8 @@ class DB extends MySql
 	 * 
 	 * @return mixed $result result of the query executed
 	 */
-	public function executeQuery($query)
+	public static function executeQuery($query)
 	{
-		return $singleton::run($query);
+		return self::$singleton->mysqli_query($query);
 	}
 }

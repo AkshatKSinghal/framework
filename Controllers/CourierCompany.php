@@ -1,16 +1,16 @@
 <?php
 
+namespace Controllers;
 /**
 * 
 */
 class CourierCompany
 {
-	protected var $name;
-	protected var $shortCode;
-	protected var $status;
-	protected var $info;
-
-	protected var $courier;
+	protected $name;
+	protected $shortCode;
+	protected $status;
+	protected $info;
+	protected $courier;
 
 	/**
 	 * Function for handling the calls to the courier classes
@@ -38,6 +38,12 @@ class CourierCompany
 	public function	validAWBBatch($filePath)
 	{
 		return $filePath;
+	}
+
+
+	public function validateAWBFile($validFile, $invalidFile)
+	{
+		return ['valid' => 12, 'invalid' => 23];
 	}
 
 	/**

@@ -3,9 +3,12 @@
 /**
 * Base Controller for BTPost
 */
+
+namespace Controllers;
+
 class Base
 {
-	private var $model;
+	protected $model;
 
 	/**
 	 * Function to instantiate controller
@@ -49,6 +52,6 @@ class Base
 	 */
 	protected static function getModelClass()
 	{
-		return str_replace("/Controllers/", "/Model/", __CLASS__);
+		return str_replace("Controllers\\", "Model\\", get_called_class());
 	}
 }
