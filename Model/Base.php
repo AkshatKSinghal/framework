@@ -33,7 +33,7 @@ class Base
 			$this->new = false;
 			// echo get_called_class();
 			try {
-				$this->data = CacheManager::getModelObject(__CLASS__, $id);
+				$this->data = CacheManager::getModelObject(get_called_class(), $id);
 				// echo 'base model';
 				$this->data['CourierCompanyID'] = 1;
 				$this->data['AccountID'] = 1;
@@ -180,10 +180,10 @@ class Base
 	{
 		if (!isset(self::$dbFields)) {
 			try {
-				$fields = CacheManager::getModelSchema(__CLASS__);
+				$fields = CacheManager::getModelSchema(get_called_class());
 			} catch (Exception $e) {
 				$fields = '#TODO Get from DB';
-				CacheManager::setModelSchema(__CLASS__, $fields);
+				CacheManager::setModelSchema(get_called_class(), $fields);
 			} finally {
 				self::$dbFields = $fields;
 			}	

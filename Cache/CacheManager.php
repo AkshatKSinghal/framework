@@ -130,7 +130,7 @@ class CacheManager extends \Redis
 	 */
 	public static function getHashData($key, $fields = [])
 	{
-		$cache = Self::getInstance();
+		$cache = self::getInstance();
 		if ($cache->exists($key)) {
 			throw new CacheMissException("Not found");
 		}
