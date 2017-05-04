@@ -27,6 +27,8 @@ class Base
 		}
 		$modelClass = $this->getModelClass();
 		$this->model = new $modelClass($request[0]);
+		// print_r($this);
+		// die;
 	}
 
 	/**

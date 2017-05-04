@@ -103,7 +103,7 @@ class CacheManager extends \Redis
 	 */
 	private static function getModelPrefix($model)
 	{
-		return "O:$model";
+		return "O:". $model;
 	}
 
 	/**
@@ -186,8 +186,30 @@ class CacheManager extends \Redis
 		parent::set($key, $value, $expiry);
 	}
 
+	/**
+	 * Function to check if an awb is present in the set for the given key
+	 * 
+	 * @param string $existingSet key of the exisiting set
+	 * @param array $awb awb to be checked
+	 * 
+	 * @return void
+	 */
 	public static function existsInSet($existingSet, $awb)
 	{
+		return self::$singleton->sIsMember($existingSet, $awb);
+	}
 
+	/**
+	 * Function to add the awb in redis
+	 * 
+	 * @param string $key
+	 * @param array $awbSet Array of awb to be inserted in redis
+
+	 * 
+	 * @return void
+	 */
+	public static function addToSet($key, $awbSet)
+	{
+		call_user_func_array([$this, 'sAdd'], $awbSet);
 	}
 }
