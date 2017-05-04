@@ -35,7 +35,7 @@ class Base
 			try {
 				$this->data = CacheManager::getModelObject(get_called_class(), $id);
 			} catch (\Exception $ex) {
-				$response = DBManager::get(self, $id);
+				$response = DBManager::get(get_called_class(), $id);
 				$data = [];
 		        if ($response->num_rows == 0) {
 		        	throw new Exception("Invalid " . $this->primaryKeyName());
