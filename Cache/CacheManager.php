@@ -214,7 +214,11 @@ class CacheManager extends \Redis
 	public static function addToSet($key, $awbSet)
 	{
 		// print_r($awbSet);
-		call_user_func_array([self::getInstance(), 'sAdd'], [$key, $awbSet]);
+		foreach ($awbSet as $awb) {
+			self::getInstance()->sAdd($key, $awb);
+		}
+		// #TODO use call_user_func_array to insert in batches of 10000 
+		// echo call_user_func_array([self::getInstance(), 'sAdd'], [$key, $awbSet]);
 	}
 }
 

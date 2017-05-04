@@ -111,10 +111,10 @@ class Base
 		if ($validate) {
 			$this->validate($fields);	
 		}
+		return DBManager::saveObject($this, $fields);
 		// #TODO redis cache manager
 		// \Cache\CacheManager::setModelObject(__CLASS__, $this->getPrimaryKey());
 		// return MySql::saveObject($this, $fields);
-		return [];
 	}
 
 	/**
