@@ -14,4 +14,20 @@ class FileManager
 			mkdir($path, 0777, true);
 		}
 	}
+
+	public static function lineCount($filePath)
+	{
+
+		$fp = fopen($filePath, 'r');
+		$lineCount = 0;
+		while (!feof($fp)) {
+			$line = trim(fgets($fp));
+			if (empty($line)) {
+				continue;
+			}
+			$lineCount++;
+		}
+		fclose($fp);
+		return $lineCount;
+	}
 }

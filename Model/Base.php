@@ -30,7 +30,6 @@ class Base
 	function __construct($id = null, $data = null)
 	{
 		if ($id != null) {
-			echo 'new false';
 			$this->new = false;
 			try {
 				$this->data = CacheManager::getModelObject(get_called_class(), $id);
@@ -123,6 +122,7 @@ class Base
 		$result = DBManager::saveObject($this, $fields);
 		if ($this->new && $result) {
 			$this->data = $this->getDataFromDB($result);
+			$this->new = false;
 		}
 		$this->modifiedFields = [];
 		\Cache\CacheManager::setModelObject($this, $fields);

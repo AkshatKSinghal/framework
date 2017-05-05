@@ -9,10 +9,10 @@ namespace Controllers;
 use \Model\AWBBatch as AWBBatchModel;
 use \Controllers\Base as BaseController;
 use \Cache\CacheManager as CacheManager;
+use \Utility\FileManager as FileManager;
 
 class AWBBatch extends BaseController
 {
-	private $redis = null;
 	const UPLOAD = 'upload';
 	const INVALID = 'invalid';
 	const VALID = 'valid';
@@ -53,11 +53,10 @@ class AWBBatch extends BaseController
 		if (filesize($filePath) == 0) {
 			throw new \Exception("File empty at path $filePath");
 		}
-		// #TODO Create entry in the DB
-		// $this->model = '#TODO Create entry in DB';
 		$this->model = new AWBBatchModel();
 		$this->model->setCourierCompanyId($courierCompanyID);
 		$this->model->setAccountId($accountID);
+		$this->model->setTotalCount(FileManager::lineCount($filePath));
 		$this->model->save();
 		$this->saveToPersistentStore($filePath, self::UPLOAD);
 		$this->processFile();
@@ -110,9 +109,7 @@ class AWBBatch extends BaseController
 			$type = self::VALID;
 			if (CacheManager::existsInSet($existingBatchesSet, $awb)) {
 				$type = self::INVALID;
-				// $awb = $awb . FS . "DUPLICATE";
-				$awb = $awb . "\t" . "DUPLICATE";
-				echo 'duplicates';
+				$awb = $awb . FS . "DUPLICATE";
 			}
 			$fileName = $type . "AWBFile";
 			$counter = $type . "Count";
@@ -123,7 +120,8 @@ class AWBBatch extends BaseController
 		// #TODO
 		// $awbFile = $courier->validateAWBFile($validCount, $invalidAWBFile);
 		// #TODO update the values of $validCount and $invalidCount after validation by Courier class
-
+		$validCount = FileManager::lineCount($validAWBFile);
+		$invalidCount = FileManager::lineCount($invalidAWBFile);
 		$this->model->setValidCount($validCount);
 		$this->model->setInvalidCount($invalidCount);
 		$this->model->save();
@@ -347,7 +345,7 @@ class AWBBatch extends BaseController
 	private function getTempFile($type)
 	{
 		$dir = TMP . "/temp";
-		\Utility\FileManager::verifyDirectory($dir);
+		FileManager::verifyDirectory($dir);
 		$filename = $this->model->getId() . $type . '.txt';
 		
 		return $dir . $filename;
@@ -356,7 +354,7 @@ class AWBBatch extends BaseController
 	private function getS3Path($type)
 	{
 		// return "s3://btpost/awb/$type/{$this->model->getId()}.txt";
-		\Utility\FileManager::verifyDirectory(TMP . "/$type");
+		FileManager::verifyDirectory(TMP . "/$type");
 		return TMP . "/$type/{$this->model->getId()}.txt";
 	}
 
