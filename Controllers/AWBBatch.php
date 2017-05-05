@@ -346,12 +346,11 @@ class AWBBatch extends BaseController
 
 	private function getTempFile($type)
 	{
-		$dir = TMP;
+		$dir = TMP . "/temp";
+		\Utility\FileManager::verifyDirectory($dir);
 		$filename = $this->model->getId() . $type . '.txt';
 		
 		return $dir . $filename;
-		// #TODO start using TMP DS from env file
-		// return TMP . DS . $this->model->getId() . $type . '.txt';
 	}
 
 	private function getS3Path($type)
