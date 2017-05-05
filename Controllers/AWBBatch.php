@@ -53,6 +53,7 @@ class AWBBatch extends BaseController
 		if (filesize($filePath) == 0) {
 			throw new \Exception("File empty at path $filePath");
 		}
+
 		$this->model = new AWBBatchModel();
 		$this->model->setCourierCompanyId($courierCompanyID);
 		$this->model->setAccountId($accountID);
@@ -73,11 +74,10 @@ class AWBBatch extends BaseController
 	 */
 	private function basicValidateFile($filePath)
 	{
-		#TODO Check for duplicates, throw exception in case duplicates within file are found
-		#done
+		#TODO Add handling for huge files
 		$lines = file($filePath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
 		$lines = array_unique($lines);
-		file_put_contents($filePath, $lines);
+		file_put_contents($filePath, implode(PHP_EOL, $lines));
 	}
 
 
@@ -104,8 +104,9 @@ class AWBBatch extends BaseController
 		$validCount = 0;
 		$invalidCount = 0;
 		$fp = fopen($file, 'r');
-		while($awb = fgets($fp)) {
-			$awb = trim($awb);
+		$awb = '';
+		while(!feof($fp)) {
+			$awb = trim(fgets($fp));
 			$type = self::VALID;
 			if (CacheManager::existsInSet($existingBatchesSet, $awb)) {
 				$type = self::INVALID;
@@ -113,15 +114,16 @@ class AWBBatch extends BaseController
 			}
 			$fileName = $type . "AWBFile";
 			$counter = $type . "Count";
-			file_put_contents($$fileName, $awb . "\n", FILE_APPEND);
+			file_put_contents($$fileName, $awb . PHP_EOL, FILE_APPEND);
 			$$counter++;
 		}
+		fclose($fp);
 		$courier = new \Controllers\CourierCompany($this->model->getCourierCompanyId());
 		// #TODO
 		// $awbFile = $courier->validateAWBFile($validCount, $invalidAWBFile);
 		// #TODO update the values of $validCount and $invalidCount after validation by Courier class
-		$validCount = FileManager::lineCount($validAWBFile);
-		$invalidCount = FileManager::lineCount($invalidAWBFile);
+		$validCount = FileManager::lineCount($validAWBFile));
+		$invalidCount = FileManager::lineCount($invalidAWBFile));
 		$this->model->setValidCount($validCount);
 		$this->model->setInvalidCount($invalidCount);
 		$this->model->save();

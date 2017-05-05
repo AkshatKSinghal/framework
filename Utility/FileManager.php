@@ -7,6 +7,12 @@ namespace Utility;
 */
 class FileManager
 {
+	private $filePath;
+
+	public function __construct($filePath)
+	{
+		$this->filePath = $filePath;
+	}
 	
 	public static function verifyDirectory($path)
 	{
@@ -17,7 +23,6 @@ class FileManager
 
 	public static function lineCount($filePath)
 	{
-
 		$fp = fopen($filePath, 'r');
 		$lineCount = 0;
 		while (!feof($fp)) {
