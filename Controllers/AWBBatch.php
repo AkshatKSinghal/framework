@@ -255,6 +255,8 @@ class AWBBatch extends BaseController
 		// Lock mechanism to avoid issue due to multiple processes working on the same batch
 	    // var_dump(debug_backtrace());
 		$this->getLock('UPDATING', 'PROCESSED');
+		// $this->getAWB();
+
 		$fileTypes = array(self::AVAILABLE, self::ASSIGNED, self::FAILED);
 		$used = array();
 		foreach ($fileTypes as $fileType) {
@@ -263,7 +265,47 @@ class AWBBatch extends BaseController
 		}
 		// #TODO Handle too large log file
 		// #TODO process the log file abd update to S3
-		
+		$file = fopen('/home/browntape/Desktop/btpost/log.txt', 'r');
+		$availableFile = fopen($available, 'r');
+		$assignedFile = fopen($assigned, 'w');
+		$failedFile = fopen($failed, 'w');
+		if ($availableFile) {
+			$availableArray = explode("\n", fread($availableFile, filesize($available)));
+		}
+		$logAwb = [];
+		while (!feof($file)) {
+			$row = fgets($file);
+			$row = trim($row);
+			if ($row != '') {
+				$rowData = explode('|', $row);
+				// string:  time|awb|event;
+				$logAwb[trim($rowData[1])] = trim($rowData[2]);
+			}				
+		}
+		echo 'available';
+		var_dump($availableArray);
+		echo 'log';
+		var_dump($logAwb);
+		foreach ($logAwb as $awb => $event) {
+			echo 'log awb:';
+			var_dump(trim($awb));
+			echo 'search '. array_search(trim($awb), $availableArray);
+			echo 'search in array '. in_array(trim($awb), $availableArray);
+			if (array_search($awb, $availableArray)) {
+				switch ($event) {
+					case 'used':
+						$insertFileName = $assigned;
+						break;
+					case 'failed':
+						$insertFileName = $failed;
+						break;
+				}
+				echo 'file name';
+				echo $insertFileName;
+
+				file_put_contents($insertFileName, $awb . PHP_EOL, FILE_APPEND);
+			}			
+		}
 		foreach ($fileTypes as $fileType) {
 			$this->saveToPersistentStore($$fileType, $fileType);
 		}
