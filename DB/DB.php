@@ -7,15 +7,15 @@ namespace DB;
 */
 
 class DB
-{	
-	static $singleton = array();
-	static $transaction;
-	static $defaultConfig = array(
-		"hostname" => "localhost",
-		"username" => "root",
-		"password" => "root",
-		"database" => "btpost"
-		);
+{
+    public static $singleton = array();
+    public static $transaction;
+    public static $defaultConfig = array(
+        "hostname" => "localhost",
+        "username" => "root",
+        "password" => "root",
+        "database" => "btpost"
+        );
 
     public static function getInstance($config = null)
     {
@@ -34,32 +34,32 @@ class DB
     }
 
 
-	/**
-	 * Function to save model object into DB
-	 * 
-	 * @param object $object Model Object to be saved
-	 * @param array $fields List of fields to be saved
-	 * 
-	 * @throws MySqlException in case of duplicate record
-	 * @throws MySqlException in case of foreign key constraint failure 
-	 * in child row
-	 * @throws MySqlException in case of foreign key constraint failure
-	 * in parent row
-	 * 
-	 * @return string $id Primary ID of the record
-	 */
-	public static function saveObject($object, $fields, $incrementValues = [])
-	{
-		#TODO Add validation to check if the fields are part of DB fields
-		$tableName = $object->tableName();
-		foreach ($fields as $field) {
-			$key = $object->convertToDBField($field);
-			$field = ucfirst($field);
-			$data[$key] = $object->{"get$field"}();
-		}
-		$primaryKey = $object->primaryKeyName();
-		$primaryKeyField = $object->convertToDBField($primaryKey);
-		unset($data[$primaryKeyField]);
+    /**
+     * Function to save model object into DB
+     *
+     * @param object $object Model Object to be saved
+     * @param array $fields List of fields to be saved
+     *
+     * @throws MySqlException in case of duplicate record
+     * @throws MySqlException in case of foreign key constraint failure
+     * in child row
+     * @throws MySqlException in case of foreign key constraint failure
+     * in parent row
+     *
+     * @return string $id Primary ID of the record
+     */
+    public static function saveObject($object, $fields, $incrementValues = [])
+    {
+        #TODO Add validation to check if the fields are part of DB fields
+        $tableName = $object->tableName();
+        foreach ($fields as $field) {
+            $key = $object->convertToDBField($field);
+            $field = ucfirst($field);
+            $data[$key] = $object->{"get$field"}();
+        }
+        $primaryKey = $object->primaryKeyName();
+        $primaryKeyField = $object->convertToDBField($primaryKey);
+        unset($data[$primaryKeyField]);
 
         if ($object->isNew()) {
             $keys = implode(", ", array_keys($data));
@@ -67,74 +67,74 @@ class DB
             $query = "INSERT INTO $tableName ($keys) VALUES ($values)";
         } else {
             $id = $object->getPrimaryKey();
-			$updateValues = [];
-			foreach ($data as $field => $value) {
-				if (isset($incrementValues[$field])) {
-					$updateValues[] = " `$field` = $field + " . $incrementValues[$field];
-				} else {
-					$updateValues[] = " `$field` = '$value'";
-				}
-			}
-			$updateQuery = implode(", ", $updateValues);
-			$query = "UPDATE $tableName SET $updateQuery WHERE `$primaryKey` = '$id'";
-		}
-		self::executeQuery($query);
-		if ($object->isNew()) {
-			return self::getInstance()->insert_id;
-		}
-	}
+            $updateValues = [];
+            foreach ($data as $field => $value) {
+                if (isset($incrementValues[$field])) {
+                    $updateValues[] = " `$field` = $field + " . $incrementValues[$field];
+                } else {
+                    $updateValues[] = " `$field` = '$value'";
+                }
+            }
+            $updateQuery = implode(", ", $updateValues);
+            $query = "UPDATE $tableName SET $updateQuery WHERE `$primaryKey` = '$id'";
+        }
+        self::executeQuery($query);
+        if ($object->isNew()) {
+            return self::getInstance()->insert_id;
+        }
+    }
 
-	public static function updateValues($object, $fields)
-	{
-		$tableName = $object->tableName();
-		$primaryKey = $object->primaryKeyName();
-		$primaryKeyField = $object->convertToDBField($primaryKey);
-		$id = $object->getPrimaryKey();
+    public static function updateValues($object, $fields)
+    {
+        $tableName = $object->tableName();
+        $primaryKey = $object->primaryKeyName();
+        $primaryKeyField = $object->convertToDBField($primaryKey);
+        $id = $object->getPrimaryKey();
 
-		foreach ($fields as $field => $value) {
-			$field = $object->convertToDBField($field);
-			$updateValues[] = " $field = $field + $value";
-		}
-		$updateQuery = implode(", ", $updateValues);
-		$query = "UPDATE $tableName SET $updateQuery WHERE `$primaryKey` = '$id'";
-		self::executeQuery($query);
-	}
+        foreach ($fields as $field => $value) {
+            $field = $object->convertToDBField($field);
+            $updateValues[] = " $field = $field + $value";
+        }
+        $updateQuery = implode(", ", $updateValues);
+        $query = "UPDATE $tableName SET $updateQuery WHERE `$primaryKey` = '$id'";
+        self::executeQuery($query);
+    }
 
-	/**
-	 * Function to get values from DB based on the search criteria
-	 * 
-	 * @param string $tableName Name of the primary table to be queried on
-	 * @param mixed $queryParams Filter parameters
-	 * @param array $fieldList List of fields to be retrieved from the DB
-	 * @param int $limit Limit on the number of records to be fetched 
-	 * [optional, default 100]
-	 * @param int $page Page number, for offset purpose [optional; default 1]
-	 * 
-	 * @throws MySqlException in case of $queryParams or $fieldList contains 
-	 * tables not directly or indirectly connected to the primary table
-	 * @throws MySqlException in case $page is less than 1
-	 * 
-	 * @return array $result Array of results
-	 */
-	public static function search($table, $queryParams, $fieldList = [], $limit = 100, $page = 1)
-	{
-		if (empty($queryParams)) {
-			throw new Exception("Filter parameters mandatory");
-		}
-		if (empty($fieldList)) {
-			$fieldList = "*";
-		} else {
-			$fieldList = implode(", ", $fieldList);
-		}
-		$filterQuery = array();
-		foreach ($queryParams as $field => $value) {
-			$filterQuery[] = " $field = '$value' ";
-		}
-		$filterQuery = implode(" AND ", $filterQuery);
-		$offset = ($page - 1) * $limit;
-		$query = "SELECT $fieldList FROM $table WHERE $filterQuery LIMIT $offset, $limit";
-		return self::executeQuery($query);
-	}
+    /**
+     * Function to get values from DB based on the search criteria
+     *
+     * @param string $tableName Name of the primary table to be queried on
+     * @param mixed $queryParams Filter parameters
+     * @param array $fieldList List of fields to be retrieved from the DB
+     * @param int $limit Limit on the number of records to be fetched
+     * [optional, default 100]
+     * @param int $page Page number, for offset purpose [optional; default 1]
+     *
+     * @throws MySqlException in case of $queryParams or $fieldList contains
+     * tables not directly or indirectly connected to the primary table
+     * @throws MySqlException in case $page is less than 1
+     *
+     * @return array $result Array of results
+     */
+    public static function search($table, $queryParams, $fieldList = [], $limit = 100, $page = 1)
+    {
+        if (empty($queryParams)) {
+            throw new Exception("Filter parameters mandatory");
+        }
+        if (empty($fieldList)) {
+            $fieldList = "*";
+        } else {
+            $fieldList = implode(", ", $fieldList);
+        }
+        $filterQuery = array();
+        foreach ($queryParams as $field => $value) {
+            $filterQuery[] = " $field = '$value' ";
+        }
+        $filterQuery = implode(" AND ", $filterQuery);
+        $offset = ($page - 1) * $limit;
+        $query = "SELECT $fieldList FROM $table WHERE $filterQuery LIMIT $offset, $limit";
+        return self::executeQuery($query);
+    }
 
 
     /**

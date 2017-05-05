@@ -198,32 +198,32 @@ class Base
     }
 
 
-	/**
-	 * 
-	 * Magic method to catch all get and set function calls
-	 * 
-	 * @param string $functionName Name of the function being called
-	 * @param array $arguments list of arguments passed
-	 * 
-	 * @throws Exception in case the argument count is incorrects
-	 * 
-	 * @return mixed $response Response on the setter/ getter
-	 */
-	public function __call($functionName, $arguments)
-	{
-		$parameterName = lcfirst(substr($functionName, 3));
-		$functionName = substr($functionName, 0, 3);
-		if ($functionName == "get"){
-			return $this->get($parameterName);
-		} else if ($functionName == "set") {
-			if (!isset($arguments[0])) {
-				throw new Exception("Missing value");
-			}
-			return $this->set($parameterName, $arguments);
-		} else {
-			throw new \Exception("Invalid function ". $functionName);
-		}
-	}
+    /**
+     *
+     * Magic method to catch all get and set function calls
+     *
+     * @param string $functionName Name of the function being called
+     * @param array $arguments list of arguments passed
+     *
+     * @throws Exception in case the argument count is incorrects
+     *
+     * @return mixed $response Response on the setter/ getter
+     */
+    public function __call($functionName, $arguments)
+    {
+        $parameterName = lcfirst(substr($functionName, 3));
+        $functionName = substr($functionName, 0, 3);
+        if ($functionName == "get") {
+            return $this->get($parameterName);
+        } elseif ($functionName == "set") {
+            if (!isset($arguments[0])) {
+                throw new Exception("Missing value");
+            }
+            return $this->set($parameterName, $arguments);
+        } else {
+            throw new \Exception("Invalid function ". $functionName);
+        }
+    }
 
 
     /**
@@ -248,12 +248,12 @@ class Base
      */
     private function set($name, $value)
     {
-    	$this->data[$name] = $value[0];
-    	$this->modifiedFields[] = $name;
-    	if (isset($value[1]) && $value[1] == 'UPDATE') {
-    		$field = $this->convertToDBField($name);
-    		$this->relativeValues[$field] = $value;
-    	}
+        $this->data[$name] = $value[0];
+        $this->modifiedFields[] = $name;
+        if (isset($value[1]) && $value[1] == 'UPDATE') {
+            $field = $this->convertToDBField($name);
+            $this->relativeValues[$field] = $value;
+        }
     }
 
     /**
