@@ -146,7 +146,52 @@ class Base
      */
     protected function validate()
     {
-        //Validation code for the DB fields
+        foreach ($this->dbFields() as $fieldName => $fieldInfo) {
+            $propertyName = $this->convertToPropertyName($fieldName);
+            $value = $this->get($propertyName);
+
+            $limit = $fieldInfo['limit'];
+            $values = $fieldInfo['values'];
+            $nullable = $fieldInfo['null'];
+            switch ($fieldInfo['type']) {
+                case 'tinyint':
+                    if ($limit == 1 && !is_bool($value)) {
+                        throw new Exception("Only boolean values allowed for $propertyName");
+                    }
+                    break;
+                case 'float':
+                case 'int':
+                    $limit = pow(10, $limit);
+                    if ($value > $limit) {
+                        throw new Exception("$propertyName cannot be greater than $limit");
+                    }
+                    break;
+                case 'text':
+                case 'varchar':
+                    if (strlen($value) > $limit) {
+                        throw new Exception("Length of $propertyName cannot be greater than $limit");
+                    }
+                    break;
+                case 'enum':
+                    if (!in_array($value, $values)) {
+                        throw new Exception("Invalid value for $propertyName. Allowed values " . implode(", ", $values));
+                    }
+                    break;
+                case 'timestamp':
+                    #TODO Convert formatted time string to epoch
+                    if ((string) (int)$value != $value || $timestamp > PHP_INT_MAX || $timestamp < 0) {
+                        throw new Exception("Valid timestamp value required");
+                    }
+                    break;
+                case 'date':
+                case 'datetime':
+                    #TODO Put the check here
+                    break;
+                default:
+                    # code...
+                    break;
+            }
+        }
     }
 
     /**
