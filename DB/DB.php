@@ -13,7 +13,7 @@ class DB
 	static $defaultConfig = array(
 		"hostname" => "localhost",
 		"username" => "root",
-		"password" => "archit@2905",
+		"password" => "root",
 		"database" => "btpost"
 		);
 
@@ -24,7 +24,7 @@ class DB
 		}
 		$hash = $config['hostname'] . $config['username'] . $config ['database'];
 		if (!isset(self::$singleton[$hash])) {
-		    $mysqli = new \mysqli("localhost", "root", "archit@2905", "btpost");
+		    $mysqli = new \mysqli($config["hostname"], $config["username"], $config["password"], $config["database"]);
 			if (!$mysqli) {
 			    throw new Exception("Error Connecting to DB");
 			}

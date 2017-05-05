@@ -58,9 +58,6 @@ class AWBBatch extends BaseController
 		$this->model = new AWBBatchModel();
 		$this->model->setCourierCompanyID($courierCompanyID);
 		$this->model->setAccountID($accountID);
-		// #TODO remove setId and setstatus
-		// $this->model->setId('3');
-		$this->model->setStatus('PENDING');
 		$this->model->save();
 		$this->saveToPersistentStore($filePath, self::UPLOAD);
 		$this->processFile();
@@ -108,10 +105,8 @@ class AWBBatch extends BaseController
 		$validCount = 0;
 		$invalidCount = 0;
 		$fp = fopen($file, 'r');
-		// while($awb = fgets($fp)) {
-		$awbs = [12,333,443,5454, 000, 99];
-		foreach ($awbs as $awb) {
- 			// $awb = trim($awb);
+		while($awb = fgets($fp)) {
+			$awb = trim($awb);
 			$type = self::VALID;
 			if (CacheManager::existsInSet($existingBatchesSet, $awb)) {
 				$type = self::INVALID;
@@ -368,13 +363,6 @@ class AWBBatch extends BaseController
 		$dir = TMP;
 		$filename = $this->model->getId() . $type . '.txt';
 		
-		if (!is_dir($dir)) {
-			mkdir($dir);
-		}
-
-		if (!file_exists($dir . $filename)) {
-			fclose(fopen($dir . $filename, 'w'));
-		}
 		return $dir . $filename;
 		// #TODO start using TMP DS from env file
 		// return TMP . DS . $this->model->getId() . $type . '.txt';
@@ -383,13 +371,8 @@ class AWBBatch extends BaseController
 	private function getS3Path($type)
 	{
 		// return "s3://btpost/awb/$type/{$this->model->getId()}.txt";
-
-		//the following code will be removed when s3 is started using
-		// $path = "~/Desktop/btpost/awb/$type/{$this->model->getId()}.txt";
-		// if (!is_dir($path) || !file_exists($path)) {
-
-		// }
-		return "~/Desktop/btpost/awb/$type/{$this->model->getId()}.txt";
+		\Utility\FileManager::verifyDirectory(TMP . "/$type");
+		return TMP . "/$type/{$this->model->getId()}.txt";
 	}
 
 	private function getRedisSetKey($type)

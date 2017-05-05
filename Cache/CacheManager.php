@@ -92,6 +92,7 @@ class CacheManager extends \Redis
 	 * 
 	 * @return void
 	 */
+
 	public static function setModelSchema($modelClass, $schema)
 	{
 		$cache = self::getInstance();
@@ -104,20 +105,24 @@ class CacheManager extends \Redis
 	 * @return string $modelPrefix Key containing the schema of the model/
 	 * Standard prefix for model keys
 	 */
+
 	private static function getModelPrefix($model)
 	{
-		return "O:". $model;
+		return "O:". $model::shortName();
 	}
+
 
 	/**
 	 * Function to get key for given model and id
 	 * 
 	 * @return string $key
 	 */
+
 	private static function getObjectKey($model, $id)
 	{
 		return Self::getModelPrefix($model) . ":$id";
 	}
+
 
 	/**
 	 * Function to get all or selected fields from the given Hash
@@ -129,6 +134,7 @@ class CacheManager extends \Redis
 	 * 
 	 * @return mixed $data data from Cache
 	 */
+
 	public static function getHashData($key, $fields = [])
 	{
 		$cache = self::getInstance();
@@ -143,6 +149,7 @@ class CacheManager extends \Redis
 		return $data;
 	}
 
+
 	/**
 	 * Function to get value for given key in cache
 	 * 
@@ -152,6 +159,7 @@ class CacheManager extends \Redis
 	 * 
 	 * @return mixed $value deserialised value
 	 */
+
 	public function get($key)
 	{
 		$value = parent::get($key);
@@ -179,6 +187,7 @@ class CacheManager extends \Redis
 	 * 
 	 * @return void
 	 */
+
 	public function set($key, $value, $expiry = self::DEFAULT_EXPIRY, $serialize = true)
 	{
 		if ($serialize == true) {
@@ -189,32 +198,38 @@ class CacheManager extends \Redis
 		parent::set($key, $value, $expiry);
 	}
 
+
 	/**
-	 * Function to check if an awb is present in the set for the given key
+	 * Function to check if a value is present in the  given set
 	 * 
 	 * @param string $existingSet key of the exisiting set
-	 * @param array $awb awb to be checked
+	 * @param array $value Value to be checked
 	 * 
-	 * @return void
+	 * @return bool $isMember Boolean if the value already exists in set or not
 	 */
-	public static function existsInSet($existingSet, $awb)
+
+	public static function existsInSet($existingSet, $value)
 	{
-		return self::$singleton->sIsMember($existingSet, $awb);
+		return self::$singleton->sIsMember($existingSet, $value);
 	}
 
+
 	/**
-	 * Function to add the awb in redis
+	 * Function to add values into a set in redis
 	 * 
 	 * @param string $key
-	 * @param array $awbSet Array of awb to be inserted in redis
-
+	 * @param mixed $values Value/ Array of values to be inserted in redis
 	 * 
 	 * @return void
 	 */
-	public static function addToSet($key, $awbSet)
+
+	public static function addToSet($key, $values)
 	{
-		foreach ($awbSet as $awb) {
-			self::getInstance()->sAdd($key, $awb);
+		if (!is_array($values)) {
+			$values = array($values);
+		}
+		foreach ($values as $value) {
+			self::getInstance()->sAdd($key, $value);
 		}
 		// #TODO use call_user_func_array to insert in batches of 10000 
 		// echo call_user_func_array([self::getInstance(), 'sAdd'], [$key, $awbSet]);

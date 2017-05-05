@@ -8,7 +8,7 @@ use \DB\DB as DBManager;
 
 class AWBBatch extends \Model\Base
 {
-    protected static $tableName = 'AWBBatch';
+    protected static $tableName = 'awb_batches';
 
     public function findByCourier()
     {

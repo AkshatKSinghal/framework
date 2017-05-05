@@ -35,16 +35,7 @@ class Base
 			try {
 				$this->data = CacheManager::getModelObject(get_called_class(), $id);
 			} catch (\Exception $ex) {
-				$response = DBManager::get(get_called_class(), $id);
-		        if ($response->num_rows == 0) {
-		        	throw new \Exception("Invalid " . $this->primaryKeyName());
-		        }
-	            while($row = $response->fetch_assoc()) {
-	            	foreach ($row as $key => $value) {
-	            		$fieldName = $this->convertToPropertyName($key);
-	            		$this->data[$fieldName] = $value;
-	            	}
-	            }
+				$this->data = $this->getDataFromDB($id);
 				CacheManager::setModelObject($this);
 			}
 		} else if (!empty($data)) {
@@ -53,6 +44,22 @@ class Base
 			}
 		}
 
+	}
+
+	protected function getDataFromDB($id)
+	{
+		$response = DBManager::get(get_called_class(), $id);
+        if ($response->num_rows == 0) {
+        	throw new \Exception("Invalid " . $this->primaryKeyName());
+        }
+        $data = [];
+        while($row = $response->fetch_assoc()) {
+        	foreach ($row as $key => $value) {
+        		$fieldName = $this->convertToPropertyName($key);
+        		$data[$fieldName] = $value;
+        	}
+        }
+        return $data;
 	}
 
 
@@ -115,8 +122,7 @@ class Base
 
 		$result = DBManager::saveObject($this, $fields);
 		if ($this->new && $result) {
-			$this->data[$this->primaryKeyName()] = $result;
-			$this->new = false;
+			$this->data = $this->getDataFromDB($result);
 		}
 		$this->modifiedFields = [];
 		\Cache\CacheManager::setModelObject($this, $fields);
@@ -273,6 +279,12 @@ class Base
     public function allFields()
     {
     	return array_keys($this->data);
+    }
+
+    public static function shortName()
+    {
+    	$parts = explode("\\", get_called_class());
+    	return end($parts);
     }
 }
 
