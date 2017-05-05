@@ -53,6 +53,7 @@ class Base
         }
         $data = [];
         while($row = $response->fetch_assoc()) {
+
         	foreach ($row as $key => $value) {
         		$fieldName = $this->convertToPropertyName($key);
         		$data[$fieldName] = $value;
@@ -234,6 +235,7 @@ class Base
 	 */
 	private function get($name)
     {
+
     	if (!array_key_exists($name, $this->data)) {
     		throw new \Exception("Invalid field name : " . $name);
     	}
