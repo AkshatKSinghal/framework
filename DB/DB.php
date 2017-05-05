@@ -80,6 +80,22 @@ class DB
 		}
 	}
 
+	public static function updateValues($object, $fields)
+	{
+		$tableName = $object->tableName();
+		$primaryKey = $object->primaryKeyName();
+		$primaryKeyField = $object->convertToDBField($primaryKey);
+		$id = $object->getPrimaryKey();
+
+		foreach ($fields as $field => $value) {
+			$field = $object->convertToDBField($field);
+			$updateValues[] = " $field = $field + $value";
+		}
+		$updateQuery = implode(", ", $updateValues);
+		$query = "UPDATE $tableName SET $updateQuery WHERE `$primaryKey` = '$id'";
+		self::executeQuery($query);
+	}
+
 	/**
 	 * Function to get values from DB based on the search criteria
 	 * 

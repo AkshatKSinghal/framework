@@ -120,7 +120,6 @@ class AWBBatch extends BaseController
 		$courier = new \Controllers\CourierCompany($this->model->getCourierCompanyId());
 		// #TODO
 		// $awbFile = $courier->validateAWBFile($validCount, $invalidAWBFile);
-		// #TODO update the values of $validCount and $invalidCount after validation by Courier class
 		$validCount = FileManager::lineCount($validAWBFile);
 		$invalidCount = FileManager::lineCount($invalidAWBFile);
 		$this->saveToPersistentStore($validAWBFile, self::VALID);
@@ -242,6 +241,8 @@ class AWBBatch extends BaseController
 			throw new \Exception("No AWBs available in Redis");
 		}
 		$this->logAWBEvent(self::EVENT_USED, $awb);
+		$this->model->updateAvailableCount(-1);
+		$this->model->updateAssignedCount(1);
 		return $awb;
 	}
 
@@ -370,7 +371,9 @@ class AWBBatch extends BaseController
 
 	private function getLogFile()
 	{
-		return TMP . "/logs/" . "{$this->model->getId()}.log";
+		$dir = TMP . "/logs/";
+		FileManager::verifyDirectory($dir);
+		return $dir . "{$this->model->getId()}.log";
 	}
 }
 
