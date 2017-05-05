@@ -1,4 +1,4 @@
 <?php
-define("TMP","/home/browntape/Desktop");
-define("DS","/");
-define("FS","\t");
+define("TMP", "/home/browntape/Desktop/btpost/tmp");
+define("DS", "/");
+define("FS", "\t");

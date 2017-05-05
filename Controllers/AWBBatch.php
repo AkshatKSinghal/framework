@@ -1,7 +1,7 @@
 <?php
 /**
  * Controller responsible for management and use of AWBs
- * 
+ *
  */
 namespace Controllers;
 
@@ -416,9 +416,8 @@ class AWBBatch extends BaseController
 }
 
 /**
-* 
+*
 */
 class S3Exception extends \Exception
 {
-
 }

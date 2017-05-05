@@ -1,6 +1,7 @@
 <?php
 
 namespace Model;
+
 /**
 * CRUD for AWB Batch
 */
@@ -12,7 +13,6 @@ class AWBBatch extends \Model\Base
 
     public function findByCourier()
     {
-
         $searchCondition = array(
             'courier_company_id' => $this->getCourierCompanyId(),
             'account_id' => $this->getAccountId(),
@@ -20,7 +20,7 @@ class AWBBatch extends \Model\Base
             );
         $response = DBManager::search($this->tableName(), $searchCondition, array($this->primaryKeyName()));
         $data = [];
-        while($row = $response->fetch_assoc()) {
+        while ($row = $response->fetch_assoc()) {
             $data[] = $row[$this->primaryKeyName()];
         }
         return $data;

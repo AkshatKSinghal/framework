@@ -1,13 +1,13 @@
 <?php
 
 namespace DB;
+
 /**
 * Class to interface with MySQL
 */
 
 class DB
-{
-	
+{	
 	static $singleton = array();
 	static $transaction;
 	static $defaultConfig = array(
@@ -17,21 +17,22 @@ class DB
 		"database" => "btpost"
 		);
 
-	public static function getInstance($config = null)
-	{
-		if (empty($config)) {
-			$config = self::$defaultConfig;
-		}
-		$hash = $config['hostname'] . $config['username'] . $config ['database'];
-		if (!isset(self::$singleton[$hash])) {
-		    $mysqli = new \mysqli($config["hostname"], $config["username"], $config["password"], $config["database"]);
-			if (!$mysqli) {
-			    throw new Exception("Error Connecting to DB");
-			}
-			self::$singleton[$hash] = $mysqli;
-		}
-		return self::$singleton[$hash];
-	}
+    public static function getInstance($config = null)
+    {
+        if (empty($config)) {
+            $config = self::$defaultConfig;
+        }
+        $hash = $config['hostname'] . $config['username'] . $config ['database'];
+        if (!isset(self::$singleton[$hash])) {
+            $mysqli = new \mysqli($config["hostname"], $config["username"], $config["password"], $config["database"]);
+            if (!$mysqli) {
+                throw new Exception("Error Connecting to DB");
+            }
+            self::$singleton[$hash] = $mysqli;
+        }
+        return self::$singleton[$hash];
+    }
+
 
 	/**
 	 * Function to save model object into DB
@@ -60,13 +61,12 @@ class DB
 		$primaryKeyField = $object->convertToDBField($primaryKey);
 		unset($data[$primaryKeyField]);
 
-		if ($object->isNew()) {
-			$keys = implode(", ", array_keys($data));
-			$values = "'".implode("', '", array_values($data)) . "'";
-			$query = "INSERT INTO $tableName ($keys) VALUES ($values)";
-		} else {
-			$id = $object->getPrimaryKey();			
-
+        if ($object->isNew()) {
+            $keys = implode(", ", array_keys($data));
+            $values = "'".implode("', '", array_values($data)) . "'";
+            $query = "INSERT INTO $tableName ($keys) VALUES ($values)";
+        } else {
+            $id = $object->getPrimaryKey();
 			$updateValues = [];
 			foreach ($data as $field => $value) {
 				if (isset($incrementValues[$field])) {
@@ -136,39 +136,40 @@ class DB
 		return self::executeQuery($query);
 	}
 
-	/**
-	 * Function to get object from DB based on primary key
-	 * 
-	 * @param string $model Name of the model
-	 * @param string $id Primary Key identifier
-	 * @param array $fields List of fields to be retrieved from the DB
-	 * 
-	 * @throws MySqlException in case of $queryParams or $fieldList contains 
-	 * tables not directly or indirectly connected to the primary table
-	 * 
-	 * @return mixed $result
-	 */
-	public static function get($model, $id, $fields = array())
-	{
-		$tableName = $model::tableName();
-		$primaryKey = $model::primaryKeyName();
-		$queryParams = array(
-			$primaryKey => $id
-			);
-		return self::search($tableName, $queryParams, $fields, 1);
-	}
 
-	/**
-	 * Function to execute query and return the result
-	 * 
-	 * @param string $query Query to be executed
-	 * 
-	 * @throws MySqlException thrown by MySql
-	 * 
-	 * @return mixed $result result of the query executed
-	 */
-	public static function executeQuery($query)
-	{
-		return self::getInstance()->query($query);
-	}
+    /**
+     * Function to get object from DB based on primary key
+     *
+     * @param string $model Name of the model
+     * @param string $id Primary Key identifier
+     * @param array $fields List of fields to be retrieved from the DB
+     *
+     * @throws MySqlException in case of $queryParams or $fieldList contains
+     * tables not directly or indirectly connected to the primary table
+     *
+     * @return mixed $result
+     */
+    public static function get($model, $id, $fields = array())
+    {
+        $tableName = $model::tableName();
+        $primaryKey = $model::primaryKeyName();
+        $queryParams = array(
+            $primaryKey => $id
+            );
+        return self::search($tableName, $queryParams, $fields, 1);
+    }
+
+    /**
+     * Function to execute query and return the result
+     *
+     * @param string $query Query to be executed
+     *
+     * @throws MySqlException thrown by MySql
+     *
+     * @return mixed $result result of the query executed
+     */
+    public static function executeQuery($query)
+    {
+        return self::getInstance()->query($query);
+    }
 }
