@@ -113,7 +113,7 @@ class AWBBatch extends BaseController
 			}
 			$fileName = $type . "AWBFile";
 			$counter = $type . "Count";
-			file_put_contents($$fileName, $awb . PHP_EOL, FILE_APPEND);
+			file_put_contents($$fileName, $awb . "\n", FILE_APPEND);
 			$$counter++;
 		}
 		$courier = new \Controllers\CourierCompany($this->model->getCourierCompanyId());
@@ -344,7 +344,7 @@ class AWBBatch extends BaseController
 
 	private function getTempFile($type)
 	{
-		$dir = TMP . "/temp";
+		$dir = TMP . "/temp/";
 		FileManager::verifyDirectory($dir);
 		$filename = $this->model->getId() . $type . '.txt';
 		
