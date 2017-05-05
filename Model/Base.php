@@ -16,6 +16,7 @@ class Base
     protected static $searchableFields = [];
     protected static $dbFields = [];
     protected $modifiedFields = [];
+    protected $relativeValues = [];
     protected $data = [];
     protected $new = true;
 
@@ -45,8 +46,12 @@ class Base
         }
     }
 
-    protected function getDataFromDB($id)
+    protected function getDataFromDB($id = null)
     {
+        if ($id == null) {
+            $id = $this->getId();
+        }
+
         $response = DBManager::get(get_called_class(), $id);
         if ($response->num_rows == 0) {
             throw new \Exception("Invalid " . $this->primaryKeyName());
@@ -119,12 +124,13 @@ class Base
             $this->validate($fields);
         }
 
-        $result = DBManager::saveObject($this, $fields);
-        if ($this->new && $result) {
+        $result = DBManager::saveObject($this, $fields, $this->relativeValues);
+        if (($this->new && $result) || !empty($this->relativeValues)) {
             $this->data = $this->getDataFromDB($result);
             $this->new = false;
         }
         $this->modifiedFields = [];
+        $this->relativeValues = [];
         \Cache\CacheManager::setModelObject($this, $fields);
         return $this->getPrimaryKey();
     }
@@ -252,7 +258,7 @@ class Base
         $this->modifiedFields[] = $name;
         if (isset($value[1]) && $value[1] == 'UPDATE') {
             $field = $this->convertToDBField($name);
-            $this->relativeValues[$field] = $value;
+            $this->relativeValues[$field] = $value[0];
         }
     }
 

@@ -6,6 +6,7 @@
 namespace Controllers;
 
 // #TODO handle case of  0000 getting converted to 0 in db
+// #TODO Cleanup created temp files once used
 use \Model\AWBBatch as AWBBatchModel;
 use \Controllers\Base as BaseController;
 use \Cache\CacheManager as CacheManager;
@@ -118,7 +119,7 @@ class AWBBatch extends BaseController
         }
         fclose($fp);
         $courier = new \Controllers\CourierCompany($this->model->getCourierCompanyId());
-        // #TODO
+        // #TODO: Call validation in Courier Company
         // $awbFile = $courier->validateAWBFile($validCount, $invalidAWBFile);
         $validCount = FileManager::lineCount($validAWBFile);
         $invalidCount = FileManager::lineCount($invalidAWBFile);
@@ -145,14 +146,12 @@ class AWBBatch extends BaseController
 
     private function getLock($operation, $allowedState)
     {
-        // #TODO get status from DB #done
         $status = $this->model->getStatus();
         if ($status == $operation) {
             throw new \Exception("Operation already running");
         } elseif ($status != $allowedState) {
             throw new \Exception("Cannot obtain lock for $operation operation from $status state");
         }
-        // #TODO update status to $operation #done
         $this->model->setStatus($operation);
         $this->model->save();
     }
@@ -229,7 +228,10 @@ class AWBBatch extends BaseController
      */
     public function getAWB()
     {
-        $key = $this->getRedisSetKey('available');
+        if ($this->model->getStatus() != 'PROCESSED') {
+            throw new \Exception("AWB Batch currently in " . $this->model->getStatus() . " state. Cannot allocate AWB.");
+        }
+        $key = $this->getRedisSetKey(self::AVAILABLE);
         if ($this->model->getAvailableCount() == 0) {
             throw new \Exception("No AWBs available in Batch");
         }
@@ -243,6 +245,7 @@ class AWBBatch extends BaseController
         $this->logAWBEvent(self::EVENT_USED, $awb);
         $this->model->setAvailableCount(-1, 'UPDATE');
         $this->model->setAssignedCount(1, 'UPDATE');
+        $this->model->save();
         return $awb;
     }
 
@@ -258,57 +261,44 @@ class AWBBatch extends BaseController
     private function updatePersistentStore()
     {
         // Lock mechanism to avoid issue due to multiple processes working on the same batch
-        // var_dump(debug_backtrace());
         $this->getLock('UPDATING', 'PROCESSED');
-        // $this->getAWB();
 
-        $fileTypes = array(self::AVAILABLE, self::ASSIGNED, self::FAILED);
-        $used = array();
-        foreach ($fileTypes as $fileType) {
-            $$fileType = $this->getFromPersistentStore($fileType);
-            $used[$fileType] = array();
-        }
         // #TODO Handle too large log file
-        // #TODO process the log file abd update to S3
-        $availableFile = fopen($available, 'r');
-        $assignedFile = fopen($assigned, 'w');
-        $failedFile = fopen($failed, 'w');
-        $file = fopen($this->getLogFile(), 'r');
-        if ($availableFile) {
-            $availableArray = explode("\n", fread($availableFile, filesize($available)));
-        }
         $logAwb = [];
-        while (!feof($file)) {
-            $row = fgets($file);
-            $row = trim($row);
-            if ($row != '') {
-                $rowData = explode('|', $row);
-                // string:  time|awb|event;
-                $logAwb[trim($rowData[1])] = trim($rowData[2]);
+        $fp = fopen($this->getLogFile(), 'r');
+        while (!feof($fp)) {
+            $row = trim(fgets($fp));
+            if (empty($row)) {
+                continue;
             }
-        }
-        foreach ($logAwb as $awb => $event) {
-            echo 'log awb:';
-            var_dump(trim($awb));
-            echo 'search '. array_search(trim($awb), $availableArray);
-            echo 'search in array '. in_array(trim($awb), $availableArray);
-            if (array_search($awb, $availableArray)) {
-                switch ($event) {
-                    case 'used':
-                        $insertFileName = $assigned;
-                        break;
-                    case 'failed':
-                        $insertFileName = $failed;
-                        break;
-                }
-                echo 'file name';
-                echo $insertFileName;
-
-                file_put_contents($insertFileName, $awb . PHP_EOL, FILE_APPEND);
+            $rowData = explode(FS, $row);
+            if (!isset($rowData[1]) || !isset($rowData[2])) {
+                #TODO Log this
+                continue;
             }
+            $logAwb[trim($rowData[1])] = trim($rowData[2]);
         }
+        fclose($fp);
+        print_r($logAwb);
+        die;
+        $files = array();
+        $fileTypes = array(self::AVAILABLE, self::ASSIGNED, self::FAILED);
         foreach ($fileTypes as $fileType) {
-            $this->saveToPersistentStore($$fileType, $fileType);
+            $files[$fileType] = $this->getFromPersistentStore($fileType);
+        }
+        $available = fopen($files[self::AVAILABLE], 'r');
+        $files[self::AVAILABLE] = $this->getTempFile(self::AVAILABLE);
+        while (!feof($available)) {
+            $awb = trim(fgets($available));
+            if (empty($awb)) {
+                continue;
+            }
+            $type = isset($logAwb[$awb]) ? $logAwb[$awb] : self::AVAILABLE;
+            file_put_contents($files[$type], $awb . PHP_EOL, FILE_APPEND);
+        }
+        fclose($available);
+        foreach ($fileTypes as $fileType) {
+            $this->saveToPersistentStore($files[$fileType], $fileType);
         }
         $this->markProcessed();
     }
@@ -345,7 +335,6 @@ class AWBBatch extends BaseController
     private function saveToPersistentStore($filePath, $type)
     {
         $remoteFilePath = $this->getS3Path($type);
-        // #TODO Move the S3 code to separate class
         // shell_exec("aws s3 cp $filePath $remoteFilePath");
         shell_exec("cp $filePath $remoteFilePath");
         // Check if the copy was successful, else throw exception
@@ -362,11 +351,12 @@ class AWBBatch extends BaseController
     private function getFromPersistentStore($type)
     {
         $remoteFilePath = $this->getS3Path($type);
-        $localFilePath = TMP . DS . $this->model->getId() . $type . '.txt';
+        $localFilePath = $this->getLocalPath($type);
         // shell_exec("s3 cp $remoteFilePath $localFilePath");
         shell_exec("cp $remoteFilePath $localFilePath");
         // #TODO Check if the copy was successful, else throw exception
         if (!file_exists($localFilePath)) {
+            touch($localFilePath);
             // throw new S3Exception("S3 Copy file not successful " . $localFilePath);
         }
         return $localFilePath;
@@ -375,9 +365,6 @@ class AWBBatch extends BaseController
     private function loadExistingBatches()
     {
         $batches = $this->model->findByCourier();
-        //findByCourier has to return all batches according to the courierID and accountID
-        // $batches = $this->AWBBatch->find('all', //condition for processed AWB batches created within x time for the same courier company and account id);
-        //not pending
         $proccessingSetName = $this->getRedisSetKey("processing");
         foreach ($batches as $AWBBatchId) {
             $AWBBatch = new AWBBatch([$AWBBatchId]);
@@ -395,11 +382,19 @@ class AWBBatch extends BaseController
         return $dir . $filename;
     }
 
+    private function getLocalPath($type)
+    {
+        $dir = TMP . "/local/";
+        FileManager::verifyDirectory($dir);
+        $filename = $this->model->getId() . $type . '.txt';
+        return $dir . $filename;
+    }
+
     private function getS3Path($type)
     {
         // return "s3://btpost/awb/$type/{$this->model->getId()}.txt";
-        FileManager::verifyDirectory(TMP . "/$type");
-        return TMP . "/$type/{$this->model->getId()}.txt";
+        FileManager::verifyDirectory(TMP . "/s3/$type");
+        return TMP . "/s3/$type/{$this->model->getId()}.txt";
     }
 
     private function getRedisSetKey($type)
@@ -411,7 +406,11 @@ class AWBBatch extends BaseController
     {
         $dir = TMP . "/logs/";
         FileManager::verifyDirectory($dir);
-        return $dir . "{$this->model->getId()}.log";
+        $filePath = $dir . "{$this->model->getId()}.log";
+        if (!file_exists($filePath)) {
+            touch($filePath);
+        }
+        return $filePath;
     }
 }
 

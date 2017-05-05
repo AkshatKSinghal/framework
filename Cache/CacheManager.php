@@ -233,7 +233,6 @@ class CacheManager extends \Redis
             self::getInstance()->sAdd($key, $value);
         }
         // #TODO use call_user_func_array to insert in batches of 10000
-        // echo call_user_func_array([self::getInstance(), 'sAdd'], [$key, $awbSet]);
     }
 }
 
