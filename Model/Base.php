@@ -30,6 +30,7 @@ class Base
 	function __construct($id = null, $data = null)
 	{
 		if ($id != null) {
+			echo 'new false';
 			$this->new = false;
 			try {
 				$this->data = CacheManager::getModelObject(get_called_class(), $id);
@@ -111,7 +112,7 @@ class Base
 		if ($validate) {
 			$this->validate($fields);	
 		}
-		$this->new = false;
+
 		$result = DBManager::saveObject($this, $fields);
 		if ($this->new && $result) {
 			$this->data[$this->primaryKeyName()] = $result;

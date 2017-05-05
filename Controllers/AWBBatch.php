@@ -5,6 +5,7 @@
  */
 namespace Controllers;
 
+// #TODO handle case of  0000 getting converted to 0 in db
 use \Model\AWBBatch as AWBBatchModel;
 use \Controllers\Base as BaseController;
 use \Cache\CacheManager as CacheManager;
@@ -58,7 +59,7 @@ class AWBBatch extends BaseController
 		$this->model->setCourierCompanyID($courierCompanyID);
 		$this->model->setAccountID($accountID);
 		// #TODO remove setId and setstatus
-		$this->model->setId('3');
+		// $this->model->setId('3');
 		$this->model->setStatus('PENDING');
 		$this->model->save();
 		$this->saveToPersistentStore($filePath, self::UPLOAD);
@@ -108,14 +109,14 @@ class AWBBatch extends BaseController
 		$invalidCount = 0;
 		$fp = fopen($file, 'r');
 		// while($awb = fgets($fp)) {
-		$awbs = [12,333,443,5454];
+		$awbs = [12,333,443,5454, 000, 99];
 		foreach ($awbs as $awb) {
  			// $awb = trim($awb);
 			$type = self::VALID;
 			if (CacheManager::existsInSet($existingBatchesSet, $awb)) {
 				$type = self::INVALID;
 				// $awb = $awb . FS . "DUPLICATE";
-				$awb = $awb . '\t' . "DUPLICATE";
+				$awb = $awb . "\t" . "DUPLICATE";
 				echo 'duplicates';
 			}
 			$fileName = $type . "AWBFile";
@@ -124,11 +125,12 @@ class AWBBatch extends BaseController
 			$$counter++;
 		}
 		$courier = new \Controllers\CourierCompany($this->model->getCourierCompanyId());
-		$awbFile = $courier->validateAWBFile($validAWBFile, $invalidAWBFile);
+		// #TODO
+		// $awbFile = $courier->validateAWBFile($validCount, $invalidAWBFile);
 		// #TODO update the values of $validCount and $invalidCount after validation by Courier class
 
-		$this->model->setValidCount($awbFile['valid']);
-		$this->model->setInvalidCount($awbFile['invalid']);
+		$this->model->setValidCount($validCount);
+		$this->model->setInvalidCount($invalidCount);
 		$this->model->save();
 		$this->saveToPersistentStore($validAWBFile, self::VALID);
 		$this->saveToPersistentStore($validAWBFile, self::AVAILABLE);
@@ -175,6 +177,8 @@ class AWBBatch extends BaseController
 	private function markProcessed($validCount = null, $invalidCount = null)
 	{
 		// #TODO update status to PROCESSED, count of valid, invalid if not null
+		$this->model->setStatus('PROCESSED');
+		$this->model->save();
 	}
 
 

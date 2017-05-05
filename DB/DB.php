@@ -65,8 +65,8 @@ class DB
 			$values = "'".implode("', '", array_values($data)) . "'";
 			$query = "INSERT INTO $tableName ($keys) VALUES ($values)";
 		} else {
-			$id = $object->getPrimaryKey();
-			
+			$id = $object->getPrimaryKey();			
+
 			$updateValues = [];
 			foreach ($data as $field => $value) {
 				$updateValues[] = " `$field` = '$value'";
