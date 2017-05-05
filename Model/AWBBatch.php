@@ -14,8 +14,8 @@ class AWBBatch extends \Model\Base
     {
 
         $searchCondition = array(
-            'courier_company_id' => $this->getCourierCompanyID(),
-            'account_id' => $this->getAccountID(),
+            'courier_company_id' => $this->getCourierCompanyId(),
+            'account_id' => $this->getAccountId(),
             'status' => 'PROCESSED'
             );
         $response = DBManager::search($this->tableName(), $searchCondition, array($this->primaryKeyName()));

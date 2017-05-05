@@ -56,8 +56,8 @@ class AWBBatch extends BaseController
 		// #TODO Create entry in the DB
 		// $this->model = '#TODO Create entry in DB';
 		$this->model = new AWBBatchModel();
-		$this->model->setCourierCompanyID($courierCompanyID);
-		$this->model->setAccountID($accountID);
+		$this->model->setCourierCompanyId($courierCompanyID);
+		$this->model->setAccountId($accountID);
 		$this->model->save();
 		$this->saveToPersistentStore($filePath, self::UPLOAD);
 		$this->processFile();
@@ -199,12 +199,10 @@ class AWBBatch extends BaseController
 		$fp = fopen($localFilePath, 'r');
 		$awbSet = [];
 		$i = 0;
-		// echo 'AWB loadfile:';
 		while ($awb = fgets($fp)) {
 			$awbSet[] = trim($awb);
-			// echo $awb;
 			if ($i == 1000) {
-				CacheManager::addToSet($customKey, trim($awbSet));
+				CacheManager::addToSet($customKey, $awbSet);
 				$i = 0;
 				$awbSet = [];
 			}
