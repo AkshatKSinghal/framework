@@ -19,7 +19,6 @@ class AWBBatch extends BaseController
 	const AVAILABLE = 'available';
 	const ASSIGNED = 'assigned';
 	const FAILED = 'failed';
-	const FILE_PATH = '~/Desktop/awb.csv';
 
 	const EVENT_USED = 'used';
 	const EVENT_FAILED = 'failed';
@@ -124,9 +123,6 @@ class AWBBatch extends BaseController
 		// #TODO update the values of $validCount and $invalidCount after validation by Courier class
 		$validCount = FileManager::lineCount($validAWBFile);
 		$invalidCount = FileManager::lineCount($invalidAWBFile);
-		$this->model->setValidCount($validCount);
-		$this->model->setInvalidCount($invalidCount);
-		$this->model->save();
 		$this->saveToPersistentStore($validAWBFile, self::VALID);
 		$this->saveToPersistentStore($validAWBFile, self::AVAILABLE);
 		$this->saveToPersistentStore($invalidAWBFile, self::INVALID);
@@ -164,14 +160,22 @@ class AWBBatch extends BaseController
 
 
 	/**
-	 * Function to mark the status of the batch as processed (this is not required, should be in model)
+	 * Function to mark the status of the batch as processed
+	 * and update the count of valid, invalid and available AWBs 
+	 * in case of initial processing
 	 * 
 	 * @return void
 	 */
 
-	private function markProcessed($validCount = null, $invalidCount = null)
+	private function markProcessed()
 	{
-		// #TODO update status to PROCESSED, count of valid, invalid if not null
+		if ($this->model->getStatus() == 'PROCESSING') {
+			$validCount = FileManager::lineCount($this->getTempFile(self::VALID));
+			$invalidCount = FileManager::lineCount($this->getTempFile(self::INVALID));
+			$this->model->setValidCount($validCount);
+			$this->model->setAvailableCount($validCount);
+			$this->model->setInvalidCount($invalidCount);
+		}
 		$this->model->setStatus('PROCESSED');
 		$this->model->save();
 	}
@@ -194,13 +198,13 @@ class AWBBatch extends BaseController
 		if ($type == self::AVAILABLE) {
 			$this->updatePersistentStore();
 		}
-		$key = ($customKey != null) ? $customKey : $this->getRedisSetKey($type);
+		$customKey = ($customKey != null) ? $customKey : $this->getRedisSetKey($type);
 		$localFilePath = $this->getFromPersistentStore($type);
 		$fp = fopen($localFilePath, 'r');
 		$awbSet = [];
 		$i = 0;
-		while ($awb = fgets($fp)) {
-			$awbSet[] = trim($awb);
+		while ($awb = trim(fgets($fp))) {
+			$awbSet[] = $awb;	
 			if ($i == 1000) {
 				CacheManager::addToSet($customKey, $awbSet);
 				$i = 0;
@@ -230,10 +234,10 @@ class AWBBatch extends BaseController
 		if ($this->model->getAvailableCount() == 0) {
 			throw new \Exception("No AWBs available in Batch");
 		}
-		if ($this->redis->sCard($key) == 0) {
+		if ($this->redis()->sCard($key) == 0) {
 			$this->loadFile();
 		}
-		$awb = $this->redis->sPop($key);
+		$awb = $this->redis()->sPop($key);
 		if ($awb === false) {
 			throw new \Exception("No AWBs available in Redis");
 		}
@@ -338,8 +342,7 @@ class AWBBatch extends BaseController
 		$proccessingSetName = $this->getRedisSetKey("processing");
 		foreach($batches as $AWBBatchId) {
 			$AWBBatch = new AWBBatch([$AWBBatchId]);
-			$AWBBatch->loadFile($proccessingSetName);
-			// $AWBBatch->loadFile();
+			$AWBBatch->loadFile($proccessingSetName);	
 		}
 		return $proccessingSetName;
 	}
@@ -367,7 +370,7 @@ class AWBBatch extends BaseController
 
 	private function getLogFile()
 	{
-		return self::FILE_PATH . "{$this->model->getId()}.log";
+		return TMP . "/logs/" . "{$this->model->getId()}.log";
 	}
 }
 
