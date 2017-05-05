@@ -122,8 +122,8 @@ class AWBBatch extends BaseController
 		// #TODO
 		// $awbFile = $courier->validateAWBFile($validCount, $invalidAWBFile);
 		// #TODO update the values of $validCount and $invalidCount after validation by Courier class
-		$validCount = FileManager::lineCount($validAWBFile));
-		$invalidCount = FileManager::lineCount($invalidAWBFile));
+		$validCount = FileManager::lineCount($validAWBFile);
+		$invalidCount = FileManager::lineCount($invalidAWBFile);
 		$this->model->setValidCount($validCount);
 		$this->model->setInvalidCount($invalidCount);
 		$this->model->save();
