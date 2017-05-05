@@ -5,5 +5,4 @@
 */
 class CourierService extends Courier
 {
-	
 }

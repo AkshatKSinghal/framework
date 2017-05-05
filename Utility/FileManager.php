@@ -7,32 +7,32 @@ namespace Utility;
 */
 class FileManager
 {
-	private $filePath;
+    private $filePath;
 
-	public function __construct($filePath)
-	{
-		$this->filePath = $filePath;
-	}
-	
-	public static function verifyDirectory($path)
-	{
-		if (!is_dir($path)) {
-			mkdir($path, 0777, true);
-		}
-	}
+    public function __construct($filePath)
+    {
+        $this->filePath = $filePath;
+    }
+    
+    public static function verifyDirectory($path)
+    {
+        if (!is_dir($path)) {
+            mkdir($path, 0777, true);
+        }
+    }
 
-	public static function lineCount($filePath)
-	{
-		$fp = fopen($filePath, 'r');
-		$lineCount = 0;
-		while (!feof($fp)) {
-			$line = trim(fgets($fp));
-			if (empty($line)) {
-				continue;
-			}
-			$lineCount++;
-		}
-		fclose($fp);
-		return $lineCount;
-	}
+    public static function lineCount($filePath)
+    {
+        $fp = fopen($filePath, 'r');
+        $lineCount = 0;
+        while (!feof($fp)) {
+            $line = trim(fgets($fp));
+            if (empty($line)) {
+                continue;
+            }
+            $lineCount++;
+        }
+        fclose($fp);
+        return $lineCount;
+    }
 }
