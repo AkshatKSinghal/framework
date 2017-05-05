@@ -13,7 +13,7 @@ class DB
 	static $defaultConfig = array(
 		"hostname" => "localhost",
 		"username" => "root",
-		"password" => "root",
+		"password" => "archit@2905",
 		"database" => "btpost"
 		);
 

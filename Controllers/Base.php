@@ -21,13 +21,13 @@ class Base
 	 */
 	function __construct($request)
 	{
-		#TODO change the request data type
+	#TODO change the request data type
 		$id = isset($request[0]) ? $request[0] : null;
 		$modelClass = $this->getModelClass();
 		$this->model = new $modelClass($id);
 	}
 
-	/**
+/**
 	 * Function to save the data in the model object into the DB
 	 * 
 	 * @param bool $validate Flag to disable validation while saving the data
