@@ -13,7 +13,7 @@ class DB
     public static $defaultConfig = array(
         "hostname" => "localhost",
         "username" => "root",
-        "password" => "root",
+        "password" => "archit@2905",
         "database" => "btpost"
         );
 
@@ -171,5 +171,44 @@ class DB
     public static function executeQuery($query)
     {
         return self::getInstance()->query($query);
+    }
+
+    public static function getDBSchema($tableName)
+    {
+        $query = "SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE table_name = '". $tableName . "'";
+        $response = self::executeQuery($query);
+        $fieldsArray = [];
+        while ($row = $response->fetch_assoc()) {
+            $limit = '';
+            switch ($row['DATA_TYPE']) {
+                case 'varchar':
+                case 'char':
+                case 'date':
+                case 'timestamp':
+                case 'enum':
+                    $limit = $row['CHARACTER_MAXIMUM_LENGTH'];
+                    break;
+                case 'int':
+                    $limit = $row['NUMERIC_PRECISION'];
+                    break;
+                default:
+                    $limit = '';
+                    break;
+            }
+            $values = '';
+            if ($row['DATA_TYPE'] == 'enum') {
+                $columnType = $row['COLUMN_TYPE'];
+                $matches = [];
+                preg_match_all('/(?<=[(,])([^,)]+)(?=[,)])/', $columnType, $matches);
+                $values = $matches[1];
+            }
+            $fieldsArray[$row['COLUMN_NAME']] = [
+                'type' => $row['DATA_TYPE'],
+                'limit' => $limit,
+                'values' => $values,
+                'null' => $row['IS_NULLABLE'],
+            ];
+        }
+        return $fieldsArray;
     }
 }

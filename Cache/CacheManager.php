@@ -19,7 +19,7 @@ class CacheManager extends \Redis
     {
         if (self::$singleton == null) {
             // instantiate the object
-            self::$singleton = new \Redis();
+            self::$singleton = new CacheManager();
             self::$singleton->connect('127.0.0.1', 6379);
         }
         return self::$singleton;
@@ -121,7 +121,7 @@ class CacheManager extends \Redis
 
     private static function getObjectKey($model, $id)
     {
-        return Self::getModelPrefix($model) . ":$id";
+        return self::getModelPrefix($model) . ":$id";
     }
 
 
