@@ -331,18 +331,6 @@ class AWBBatch extends BaseController
 		return $localFilePath;
 	}
 
-	private function redisInstance()
-	{
-		if ($this->redis == null) {
-			// Replace this function with correct function
-			$this->redis = getRedisInstance();
-			if ($this->redis == null) {
-				throw new \Exception("Unable to connect to Redis", 400);
-			}
-		}
-		return $this->redis;
-	}
-
 	private function loadExistingBatches()
 	{
 		$batches = $this->model->findByCourier();
