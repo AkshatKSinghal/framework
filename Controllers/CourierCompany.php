@@ -2,17 +2,13 @@
 
 namespace Controllers;
 
+use \Model\CourierCompany as CourierCompanyModel;
+
 /**
 *
 */
 class CourierCompany
 {
-    protected $name;
-    protected $shortCode;
-    protected $status;
-    protected $info;
-    protected $courier;
-
     /**
      * Function for handling the calls to the courier classes
      *
@@ -74,5 +70,17 @@ class CourierCompany
         $response = $courierCompanyClass::trackShipment($awb);
         #TODO Standardise response
         return $response;
+    }
+
+    public function create($data)
+    {
+        $courier = new CourierCompanyModel();
+        $courier->setName($data['name']);
+        $courier->setShortCode($data['shortCode']);
+        $courier->setComments($data['comments']);
+        $courier->setLogoUrl($data['logoUrl']);
+        $courier->setStatus($data['status']);
+        $courier->validate();
+        return $courier->save();
     }
 }

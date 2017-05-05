@@ -221,14 +221,15 @@ class Base
      * @return array $fields List of DB Fields in the table
      * corresponding to the model
      */
-    protected static function dbFields()
+    public static function dbFields()
     {
         if (!isset(self::$dbFields)) {
             try {
                 $fields = CacheManager::getModelSchema(get_called_class());
             } catch (Exception $e) {
-                $fields = '#TODO Get from DB';
-                CacheManager::setModelSchema(get_called_class(), $fields);
+                $table = self::$tableName;
+                $fieldsArray = DBManager::getDBSchema($table);
+                CacheManager::setModelSchema(get_called_class(), $fieldsArray);
             } finally {
                 self::$dbFields = $fields;
             }

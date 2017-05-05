@@ -1,5 +1,9 @@
 <?php
 
+namespace Controllers;
+
+use \Model\CourierService as CourierServiceModel;
+
 /**
 * Controller for Courier Services
 */
@@ -75,5 +79,19 @@ class CourierService extends CourierCompany
             || !method_exists($courierCompanyClass, $service)) {
             throw new Exception("$service service not available for the courier");
         }
+    }
+
+    public function create($data)
+    {
+        $service = new CourierServiceModel();
+        $service->setCourierCompanyId($data['courierCompanyId']);
+        $service->setOrderType($data['orderType']);
+        $service->setServiceType($data['serviceType']);
+        $service->setCredentialsRequiredJson($data['credentialsRequiredJson']);
+        $service->setPincodes($data['pincodes']);
+        $service->setStatus($data['status']);
+        $service->setSettings($data['settings']);
+        $service->validate();
+        return $service->save();
     }
 }
