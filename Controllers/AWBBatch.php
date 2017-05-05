@@ -241,8 +241,8 @@ class AWBBatch extends BaseController
 			throw new \Exception("No AWBs available in Redis");
 		}
 		$this->logAWBEvent(self::EVENT_USED, $awb);
-		$this->model->updateAvailableCount(-1);
-		$this->model->updateAssignedCount(1);
+		$this->model->setAvailableCount(-1, 'UPDATE');
+		$this->model->setAssignedCount(1, 'UPDATE');
 		return $awb;
 	}
 
@@ -270,10 +270,10 @@ class AWBBatch extends BaseController
 		}
 		// #TODO Handle too large log file
 		// #TODO process the log file abd update to S3
-		$file = fopen('/home/browntape/Desktop/btpost/log.txt', 'r');
 		$availableFile = fopen($available, 'r');
 		$assignedFile = fopen($assigned, 'w');
 		$failedFile = fopen($failed, 'w');
+		$file = fopen($this->getLogFile(), 'r');
 		if ($availableFile) {
 			$availableArray = explode("\n", fread($availableFile, filesize($available)));
 		}
@@ -287,10 +287,6 @@ class AWBBatch extends BaseController
 				$logAwb[trim($rowData[1])] = trim($rowData[2]);
 			}				
 		}
-		echo 'available';
-		var_dump($availableArray);
-		echo 'log';
-		var_dump($logAwb);
 		foreach ($logAwb as $awb => $event) {
 			echo 'log awb:';
 			var_dump(trim($awb));

@@ -13,7 +13,7 @@ class DB
 	static $defaultConfig = array(
 		"hostname" => "localhost",
 		"username" => "root",
-		"password" => "archit@2905",
+		"password" => "root",
 		"database" => "btpost"
 		);
 
@@ -47,7 +47,7 @@ class DB
 	 * 
 	 * @return string $id Primary ID of the record
 	 */
-	public static function saveObject($object, $fields)
+	public static function saveObject($object, $fields, $incrementValues = [])
 	{
 		#TODO Add validation to check if the fields are part of DB fields
 		$tableName = $object->tableName();
@@ -69,7 +69,11 @@ class DB
 
 			$updateValues = [];
 			foreach ($data as $field => $value) {
-				$updateValues[] = " `$field` = '$value'";
+				if (isset($incrementValues[$field])) {
+					$updateValues[] = " `$field` = $field + " . $incrementValues[$field];
+				} else {
+					$updateValues[] = " `$field` = '$value'";
+				}
 			}
 			$updateQuery = implode(", ", $updateValues);
 			$query = "UPDATE $tableName SET $updateQuery WHERE `$primaryKey` = '$id'";

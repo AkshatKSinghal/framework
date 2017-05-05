@@ -211,23 +211,16 @@ class Base
 	 */
 	public function __call($functionName, $arguments)
 	{
-		if (strpos($functionName, "get") === 0){
-			$parameterName = lcfirst(substr($functionName, 3));
+		$parameterName = lcfirst(substr($functionName, 3));
+		$functionName = substr($functionName, 0, 3);
+		if ($functionName == "get"){
 			return $this->get($parameterName);
-		} else if (strpos($functionName, "set") === 0) {
-			$parameterName = lcfirst(substr($functionName, 3));
+		} else if ($functionName == "set") {
 			if (!isset($arguments[0])) {
 				throw new Exception("Missing value");
 			}
 			return $this->set($parameterName, $arguments);
-		} else if (strpos($functionName, "update") === 0) {
-			$parameterName = lcfirst(substr($functionName, 6));
-			if (!isset($arguments[0])) {
-				throw new Exception("Missing value");
-			}
-			return $this->update($parameterName, $arguments);
-		}
-		else {
+		} else {
 			throw new \Exception("Invalid function ". $functionName);
 		}
 	}
@@ -257,11 +250,10 @@ class Base
     {
     	$this->data[$name] = $value[0];
     	$this->modifiedFields[] = $name;
-    }
-
-    private function update($name, $value)
-    {
-    	DBManager::updateValues($this, array($name => $value[0]));
+    	if (isset($value[1]) && $value[1] == 'UPDATE') {
+    		$field = $this->convertToDBField($name);
+    		$this->relativeValues[$field] = $value;
+    	}
     }
 
     /**
