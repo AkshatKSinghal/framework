@@ -3,12 +3,15 @@
 namespace Controllers;
 
 use \Model\CourierCompany as CourierCompanyModel;
+use \Controllers\Base as BaseController;
 
 /**
 *
 */
-class CourierCompany
+class CourierCompany extends BaseController
 {
+    protected $mandatoryFields = ['name', 'shortCode'];
+    protected $optionalFields = ['comments', 'logoUrl', 'status'];
     /**
      * Function for handling the calls to the courier classes
      *
@@ -72,15 +75,29 @@ class CourierCompany
         return $response;
     }
 
-    public function create($data)
+    public function create($request)
     {
-        $courier = new CourierCompanyModel();
-        $courier->setName($data['name']);
-        $courier->setShortCode($data['shortCode']);
-        $courier->setComments($data['comments']);
-        $courier->setLogoUrl($data['logoUrl']);
-        $courier->setStatus($data['status']);
-        $courier->validate();
-        return $courier->save();
+        $mandatoryData = $this->checkFields($request, 'mandatory');
+        $optionalData = $this->checkFields($request, 'optional');
+        $checkedData = array_merge($mandatoryData, $optionalData);
+        $modelId = $this->setIndividualFields($checkedData);
+        return $modelId;
+    }
+
+    protected function setIndividualFields($data)
+    {
+        $model = new CourierCompanyModel();
+        foreach ($data as $key => $value) {
+            $functionName = 'set'.$key;
+            $model->$functionName($value);
+        }
+        $model->validate();
+        return $model->save();
+    }
+
+    public function getById($id)
+    {
+        $courier = new CourierCompanyModel($id);
+        return $courier;
     }
 }

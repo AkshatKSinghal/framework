@@ -9,7 +9,8 @@ namespace Controllers;
 class Base
 {
     protected $model;
-
+    protected $mandatoryFields = [];
+    protected $optionalFields = [];
     /**
      * Function to instantiate controller
      *
@@ -51,5 +52,28 @@ class Base
     protected static function getModelClass()
     {
         return str_replace("Controllers\\", "Model\\", get_called_class());
+    }
+
+    protected function checkFields($data, $type)
+    {
+        $fields = [];
+        switch ($type) {
+            case 'optional':
+                $fields = $this->optionalFields;
+                break;
+            
+            case 'mandatory':
+                $fields = $this->mandatoryFields;
+                break;
+        }
+        $checkedData = [];
+        foreach ($fields as $field) {
+            $dbField = $this->model->convertToDBField($field);
+            if ($type == 'mandatory' && !array_key_exists($dbField, $data)) {
+                throw new \Exception("Mandatory Field not found" . $dbField);
+            }
+            $checkedData[$field] = $data[$dbField];
+        }
+        return $checkedData;
     }
 }

@@ -20,7 +20,6 @@ class AWBBatch extends BaseController
     const AVAILABLE = 'available';
     const ASSIGNED = 'assigned';
     const FAILED = 'failed';
-
     const EVENT_USED = 'used';
     const EVENT_FAILED = 'failed';
 

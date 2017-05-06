@@ -11,18 +11,18 @@
         // $batchExecute = new \Controllers\AWBBatch([]);
         // $batchExecute->createBatch(TMP . '/btpost.txt', 1, 1);
         //file, courierCompanyId, AccountId
-        // $courier = new \Controllers\CourierService();
-        // echo $courier->create([
-        //     'courierCompanyId' => '15',
-        //     'serviceType' => 'air',
-        //     'orderType' => 'prepaid',
-        //     'credentialsRequiredJson' => '{asd:{asd:as}}',
-        //     'pincodes' => '111111,11111121,121212',
-        //     'status' => 'ACTIVE',
-        //     'settings' => 'asdsadadsdasdasdlaskdhkas'
-        // ]);
-        $model = \Model\AWBBatch::dbFields();
-        echo 'ending';
+        $courier = new \Controllers\CourierService([]);
+        echo $courier->create([
+            'courier_company_id' => '15',
+            'service_type' => 'air',
+            'order_type' => 'prepaid',
+            'credentials_required_json' => '{asd:{asd:as}}',
+            'pincodes' => '111111,11111121,121212',
+            'status' => 'ACTIVE',
+            'settings' => 'asdsadadsdasdasdlaskdhkas'
+        ]);
+        // $model = \Model\AWBBatch::dbFields();
+        // echo 'ending';
     } catch (Exception $e) {
         echo '<br>';
         echo '<pre>';

@@ -9,7 +9,8 @@ use \Model\CourierService as CourierServiceModel;
 */
 class CourierService extends CourierCompany
 {
-
+    protected $mandatoryFields = ['courierCompanyId', 'serviceType', 'orderType'];
+    protected $optionalFields = ['credentialsRequiredJson', 'pincodes', 'status', 'settings'];
     /**
      * Function to return if the Courier Service and Courier Company
      * allows AWB pre-allocation or not
@@ -36,7 +37,7 @@ class CourierService extends CourierCompany
     public function __call($function, $arguments)
     {
         if (!method_exists($this, $function)) {
-            throw new Exception("Invalid Operation");
+            throw new \Exception("Invalid Operation");
         }
 
         #TODO Determine the courier company class
@@ -81,17 +82,30 @@ class CourierService extends CourierCompany
         }
     }
 
-    public function create($data)
+    public function create($request)
     {
-        $service = new CourierServiceModel();
-        $service->setCourierCompanyId($data['courierCompanyId']);
-        $service->setOrderType($data['orderType']);
-        $service->setServiceType($data['serviceType']);
-        $service->setCredentialsRequiredJson($data['credentialsRequiredJson']);
-        $service->setPincodes($data['pincodes']);
-        $service->setStatus($data['status']);
-        $service->setSettings($data['settings']);
-        $service->validate();
-        return $service->save();
+        $mandatoryData = $this->checkFields($request, 'mandatory');
+        $optionalData = $this->checkFields($request, 'optional');
+        $checkedData = array_merge($mandatoryData, $optionalData);
+        $modelId = $this->setIndividualFields($checkedData);
+        return $modelId;
+    }
+    
+    protected function setIndividualFields($data)
+    {
+        $model = new CourierServiceModel();
+        foreach ($data as $key => $value) {
+            $functionName = 'set'.$key;
+            $model->$functionName($value);
+        }
+        $model->validate();
+        return $model->save();
+    }
+
+
+    public function getById($id)
+    {
+        $service = new CourierService($id);
+        return $service;
     }
 }
