@@ -81,4 +81,9 @@ class CourierServiceAccount extends CourierService
         $model->validate();
         return $model->save();
     }
+
+    public function getByAccountAndCourierService($accountId, $courierServiceId)
+    {
+        // $model = new CourierServiceModel()
+    }
 }
