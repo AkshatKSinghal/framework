@@ -7,6 +7,8 @@ class CourierServiceAccount extends CourierService
 {
     const ADMIN = 'admin';
     const ACCOUNT = 'account';
+    protected $mandatoryFields = ['accountId', 'courierServiceId'];
+    protected $optionalFields = ['credentials', 'pincodes', 'status'];
 
     /**
      * Function to get AWB for shipment booking
@@ -64,5 +66,25 @@ class CourierServiceAccount extends CourierService
      */
     private function getCourierService()
     {
+    }
+
+    public function create($request)
+    {
+        $mandatoryData = $this->checkFields($request, 'mandatory');
+        $optionalData = $this->checkFields($request, 'optional');
+        $checkedData = array_merge($mandatoryData, $optionalData);
+        $modelId = $this->setIndividualFields($checkedData);
+        return $modelId;
+    }
+    
+    protected function setIndividualFields($data)
+    {
+        $model = new CourierServiceModel();
+        foreach ($data as $key => $value) {
+            $functionName = 'set'.$key;
+            $model->$functionName($value);
+        }
+        $model->validate();
+        return $model->save();
     }
 }
