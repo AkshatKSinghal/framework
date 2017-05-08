@@ -6,11 +6,11 @@
 
 namespace Controllers;
 
+use \Utility\FieldValidator;
 class Base
 {
     protected $model;
-    protected $mandatoryFields = [];
-    protected $optionalFields = [];
+    protected $fields = [];
     /**
      * Function to instantiate controller
      *
@@ -54,26 +54,14 @@ class Base
         return str_replace("Controllers\\", "Model\\", get_called_class());
     }
 
-    protected function checkFields($data, $type)
+    protected function checkFields($data)
     {
-        $fields = [];
-        switch ($type) {
-            case 'optional':
-                $fields = $this->optionalFields;
-                break;
-            
-            case 'mandatory':
-                $fields = $this->mandatoryFields;
-                break;
-        }
-        $checkedData = [];
-        foreach ($fields as $field) {
-            $dbField = $this->model->convertToDBField($field);
-            if ($type == 'mandatory' && !array_key_exists($dbField, $data)) {
-                throw new \Exception("Mandatory Field not found" . $dbField);
-            }
-            $checkedData[$field] = $data[$dbField];
-        }
+        // print_r($this->fields);
+        $checkedData = FieldValidator::checkFields($data, $this->fields);
+        // die;
+        echo 'checkedData';
+        print_r($checkedData);
+        // die;
         return $checkedData;
     }
 }
