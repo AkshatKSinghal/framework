@@ -50,4 +50,28 @@ class CourierServiceAccount extends CourierService
 			return $awbBatchId;
 		}
 	}
+
+
+	public function mapAWBBatches($data)
+    {
+        $awbBatchIds = '#TODO ';
+
+        switch ($operation) {
+            case 'set':
+                $query[] = "DELETE FROM awb_batches_courier_service_accounts"
+                ." WHERE courier_service_account_id = " . $this->getId();
+            case 'add':
+                $query[] = "INSERT INTO awb_batches_courier_service_accounts"
+                ." (courier_service_account_id, awb_batch_id) VALUES $values";
+                break;
+            case 'remove':
+                $query[] = "DELETE FROM awb_batches_courier_service_accounts"
+                ." WHERE courier_service_account_id = " . $this->getId()
+                ." AND batch_id IN (" . implode(", ", $ids) . ")";
+                break;
+            default:
+                throw new Exception("Invalid operation");
+                break;
+        }
+    }
 }
