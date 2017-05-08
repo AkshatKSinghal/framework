@@ -5,8 +5,9 @@
 */
 class CourierServiceAccount extends CourierService
 {
-    const ADMIN = 'admin';
-    const ACCOUNT = 'account';
+    const ADMIN = 'ADMIN';
+    const USER = 'USER';
+
     protected $mandatoryFields = ['accountId', 'courierServiceId'];
     protected $optionalFields = ['credentials', 'pincodes', 'status'];
 
@@ -25,6 +26,7 @@ class CourierServiceAccount extends CourierService
         return $awbBatch->getAWB();
     }
 
+
     /**
      * Function get return the AWB Batch to be used for getting the AWB
      *
@@ -34,15 +36,26 @@ class CourierServiceAccount extends CourierService
      *
      * @throws Exception if there is no AWB Batch available
      * with available count > 0
+     * @throws Exception in case the AWB Batch Mode set is invalid
      *
      * @return AWBBatch $awbBatch AWBBatch Controller object
      */
+
     private function getAWBBatch()
     {
-        $accountId = $this->getAWBUseAccountID();
-        if ($accountId == 0) {
+        $mode = $this->model->getAwbBatchMode();
+        switch ($model) {
+            case self::ADMIN:
+                $courierServiceAccount = $this->model->getAdminAccount();
+                break;
+            case self::USER:
+                $courierServiceAccount = $this->model;
+                break;
+            default:
+                throw new Exception("Unknown AWB Batch Mode set");
+                break;
         }
-        // Get Mapped AWB Batches
+        return new AWBBatch($courierServiceAccount->getAWBBatch());
     }
 
     /**

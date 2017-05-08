@@ -124,6 +124,7 @@ class Base
             $this->validate($fields);
         }
 
+        #TODO DO not call the DBManager::saveObject function in case the fields are all non-DB fields
         $result = DBManager::saveObject($this, $fields, $this->relativeValues);
         if (($this->new && $result) || !empty($this->relativeValues)) {
             $this->data = $this->getDataFromDB($result);
@@ -325,6 +326,10 @@ class Base
      */
     public function find($parameters, $fields = array(), $limit = 10, $offset = 0, $orderBy = null, $orderByAsc = true)
     {
+        if (!is_array($fields)) {
+            $fields = array($fields);
+        }
+
     }
 
     public static function tableName()

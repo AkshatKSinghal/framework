@@ -138,6 +138,20 @@ class DB
 
 
     /**
+     * Function to search and return single value for given query
+     * 
+     * @uses search function to get the data
+     * 
+     * @return array $data First record for the given query
+     */
+    public static function searchOne($table, $queryParams, $fieldList = [])
+    {
+        $data = self::search($table, $queryParams, $fieldList, 1);
+        return end($data);
+    }
+
+
+    /**
      * Function to get object from DB based on primary key
      *
      * @param string $model Name of the model
