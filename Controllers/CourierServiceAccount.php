@@ -19,6 +19,8 @@ class CourierServiceAccount extends CourierService
      * @throws Exception if courier service does not support pre-allocation of AWB
      * @throws Exception if no AWB batches are available
      * @throws Exception if no AWBs are available in the batch
+     * 
+     * @return string $awb AWB Number
      */
     public function getAWB()
     {
@@ -58,28 +60,6 @@ class CourierServiceAccount extends CourierService
         return new AWBBatch($courierServiceAccount->getAWBBatch());
     }
 
-    /**
-     * Function get determine if the Courier Service Account is set to
-     * global or account specific
-     *
-     * @return string  $accountId Account ID from which the AWB have to be used.
-     * In case of global use, account ID would be 0, else the actual account ID
-     */
-    private function getAWBUseAccountID()
-    {
-        // If the account ID for the Courier Service Account is 0 [Admin Courier Service Account], return 0
-        // Else, Check if AWB use is set to account specific or global
-    }
-
-    /**
-     * Function to get the Courier Service Controller for the
-     * Courier Service Account
-     *
-     * @return CourierService $courierService Courier Service Controller
-     */
-    private function getCourierService()
-    {
-    }
 
     public function create($request)
     {
@@ -92,7 +72,8 @@ class CourierServiceAccount extends CourierService
     
     protected function setIndividualFields($data)
     {
-        $model = new CourierServiceModel();
+        $modelClass = $this->getModelClass();
+        $model = new $modelClass();
         foreach ($data as $key => $value) {
             $functionName = 'set'.$key;
             $model->$functionName($value);
