@@ -1,4 +1,5 @@
 <?php
+namespace DB;
 
 /**
 * 
@@ -13,7 +14,7 @@ class FilterList
 		$this->operator = $operator;
 		$this->parts = $parts;
 		if (!is_array($this->parts) || empty($this->parts)) {
-			throw new Exception("Parts needs to be non empty array");
+			throw new \Exception("Parts needs to be non empty array");
 		}
 		#TODO Validate if all elements of parts are of type FilterQuery or FilterList
 	}

@@ -6,15 +6,15 @@
 
     require __DIR__ . '/vendor/autoload.php';
     require __DIR__ . '/vendor/malkusch/php-autoloader/autoloader.php';
-    // require __DIR__ . "/config.php";
+    require __DIR__ . "/config.php";
     try {
         // $batchExecute = new \Controllers\AWBBatch([]);
         // $batchExecute->createBatch(TMP . '/btpost.txt', 1, 1);
         //file, courierCompanyId, AccountId
         $ship = new \Controllers\ShipmentDetail([]);
-        echo $ship->bookShipment([
+        var_dump($ship->bookShipment([
             'order_ref' => 'AB6792BH2',
-            'account_id' => '12342',
+            'account_id' => '12',
             'pickup_address' => [
                 'name' => 'Pickup contact person name',
                 'text' => '#301, Some Road Name, City Name',
@@ -65,8 +65,9 @@
                 'reason' => 'reverse pickup reason'
             ],
             'cod_value' => '120',
-            'courier_service_id' => '12'
-        ]);
+            'courier_service_id' => '15',
+            'awb' => '7',
+        ]));
         // $model = \Model\AWBBatch::dbFields();
         // echo 'ending';
     } catch (Exception $e) {

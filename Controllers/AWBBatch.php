@@ -151,6 +151,7 @@ class AWBBatch extends BaseController
         } elseif ($status != $allowedState) {
             throw new \Exception("Cannot obtain lock for $operation operation from $status state");
         }
+        // print_r($this->model);
         $this->model->setStatus($operation);
         $this->model->save();
     }
@@ -278,8 +279,6 @@ class AWBBatch extends BaseController
             $logAwb[trim($rowData[1])] = trim($rowData[2]);
         }
         fclose($fp);
-        print_r($logAwb);
-        die;
         $files = array();
         $fileTypes = array(self::AVAILABLE, self::ASSIGNED, self::FAILED);
         foreach ($fileTypes as $fileType) {
@@ -293,7 +292,11 @@ class AWBBatch extends BaseController
                 continue;
             }
             $type = isset($logAwb[$awb]) ? $logAwb[$awb] : self::AVAILABLE;
-            file_put_contents($files[$type], $awb . PHP_EOL, FILE_APPEND);
+            $fileType = $type == 'used'? 'assigned' : $type;
+            // if ($type == 'used') {
+            //     $type = 'assigned';
+            // }
+            file_put_contents($files[$fileType], $awb . PHP_EOL, FILE_APPEND);
         }
         fclose($available);
         foreach ($fileTypes as $fileType) {
@@ -312,7 +315,7 @@ class AWBBatch extends BaseController
      * @return void
      */
 
-    private function logAWBEvent($event, $awb)
+    public function logAWBEvent($event, $awb)
     {
         file_put_contents($this->getLogFile(), time() . FS . $awb . FS . $event . PHP_EOL, FILE_APPEND);
     }
@@ -410,6 +413,13 @@ class AWBBatch extends BaseController
             touch($filePath);
         }
         return $filePath;
+    }
+
+    public function updateTableForFailedAwb()
+    {
+        $this->model->setFailedCount($this->model->getFailedCount() + 1);
+        $this->model->setAssignedCount($this->model->getAssignedCount() - 1);
+        $this->model->save();
     }
 }
 

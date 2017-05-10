@@ -25,4 +25,8 @@ class AWBBatch extends \Model\Base
         }
         return $data;
     }
+
+    public function save($validate = true, $fields = []) {
+        parent::save($validate, $fields);
+    }
 }

@@ -60,7 +60,6 @@ class DB
         $primaryKey = $object->primaryKeyName();
         $primaryKeyField = $object->convertToDBField($primaryKey);
         unset($data[$primaryKeyField]);
-
         if ($object->isNew()) {
             $keys = implode(", ", array_keys($data));
             $values = "'".implode("', '", array_values($data)) . "'";
@@ -146,7 +145,8 @@ class DB
      */
     public static function searchOne($table, $queryParams, $fieldList = [])
     {
-        $data = self::search($table, $queryParams, $fieldList, 1);
+        $response = self::search($table, $queryParams, $fieldList, 1);
+        $data = $response->fetch_assoc();
         return end($data);
     }
 
@@ -214,7 +214,9 @@ class DB
                 $columnType = $row['COLUMN_TYPE'];
                 $matches = [];
                 preg_match_all('/(?<=[(,])([^,)]+)(?=[,)])/', $columnType, $matches);
-                $values = $matches[1];
+                $values = array_map(function($m) {
+                    return trim($m, "'");
+                }, $matches[1]);
             }
             $fieldsArray[$row['COLUMN_NAME']] = [
                 'type' => $row['DATA_TYPE'],

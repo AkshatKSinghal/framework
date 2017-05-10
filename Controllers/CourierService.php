@@ -21,7 +21,7 @@ class CourierService extends CourierCompany
 
     public function preallocateAWBAllowed()
     {
-        return $this->model->getSettings('AWBUpload');
+        return $this->model->getSettingsKey('AWBUpload');
     }
 
 
@@ -37,7 +37,7 @@ class CourierService extends CourierCompany
     public function __call($function, $arguments)
     {
         if (!method_exists($this, $function)) {
-            throw new \Exception("Invalid Operation");
+            throw new \Exception("Invalid Operation: ". $function);
         }
 
         #TODO Determine the courier company class

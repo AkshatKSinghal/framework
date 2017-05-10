@@ -1,5 +1,7 @@
 <?php
 
+namespace Controllers;
+use \Controllers\AWBBatch;
 /**
 * Controller for Courier Service Accounts
 */
@@ -7,10 +9,38 @@ class CourierServiceAccount extends CourierService
 {
     const ADMIN = 'ADMIN';
     const USER = 'USER';
-
-    protected $mandatoryFields = ['accountId', 'courierServiceId'];
-    protected $optionalFields = ['credentials', 'pincodes', 'status'];
-
+    protected $fields = [
+        'account_id' => [
+            'mandatory' => true,
+            'data' => [],
+            'multiple' => false
+        ], 
+        'courier_service_id' => [
+            'mandatory' => true,
+            'data' => [],
+            'multiple' => false
+        ],
+        'awb_batch_mode' => [
+            'mandatory' => true,
+            'data' => [],
+            'multiple' => false
+        ],
+        'credentials' => [
+            'mandatory' => false,
+            'data' => [],
+            'multiple' => false
+        ],
+        'pincodes' => [
+            'mandatory' => false,
+            'data' => [],
+            'multiple' => false
+        ],
+        'status' => [
+            'mandatory' => false,
+            'data' => [],
+            'multiple' => false
+        ],        
+    ];
     /**
      * Function to get AWB for shipment booking
      *
@@ -25,7 +55,8 @@ class CourierServiceAccount extends CourierService
     public function getAWB()
     {
         $awbBatch = $this->getAWBBatch();
-        return $awbBatch->getAWB();
+        return ['awb' => $awbBatch->getAWB(), 'awbBatchId' => $awbBatch->model->getId()];
+        // return $awbBatch->getAWB();
     }
 
 
@@ -46,7 +77,7 @@ class CourierServiceAccount extends CourierService
     private function getAWBBatch()
     {
         $mode = $this->model->getAwbBatchMode();
-        switch ($model) {
+        switch ($mode) {
             case self::ADMIN:
                 $courierServiceAccount = $this->model->getAdminAccount();
                 break;
@@ -57,7 +88,7 @@ class CourierServiceAccount extends CourierService
                 throw new Exception("Unknown AWB Batch Mode set");
                 break;
         }
-        return new AWBBatch($courierServiceAccount->getAWBBatch());
+        return new AWBBatch([$courierServiceAccount->getAWBBatch()]);
     }
 
 
@@ -82,8 +113,16 @@ class CourierServiceAccount extends CourierService
         return $model->save();
     }
 
-    public function getByAccountAndCourierService($accountId, $courierServiceId)
+    public static function getByAccountAndCourierService($accountId, $courierServiceId)
     {
         // $model = new CourierServiceModel()
+        $model = self::getModelClass();
+        $modelObj = new $model;
+
+        $courierServiceAccount = $modelObj->getByParam([
+            'account_id' => $accountId,
+            'courier_service_id' => $courierServiceId
+        ]);
+        return new CourierServiceAccount($courierServiceAccount[0]['id']);
     }
 }

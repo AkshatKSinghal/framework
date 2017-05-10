@@ -56,12 +56,7 @@ class Base
 
     protected function checkFields($data)
     {
-        // print_r($this->fields);
         $checkedData = FieldValidator::checkFields($data, $this->fields);
-        // die;
-        echo 'checkedData';
-        print_r($checkedData);
-        // die;
         return $checkedData;
     }
 }

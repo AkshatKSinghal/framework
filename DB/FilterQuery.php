@@ -1,5 +1,6 @@
 <?php
 
+namespace DB;
 /**
 * Class for creating filters
 */
@@ -25,6 +26,7 @@ class FilterQuery
 			case '=':
 			case 'IN':
 				$operator = is_array($this->value) ? 'IN' : '=';
+				break;
 			case '!=':
 			case 'NOT IN':
 				$operator = is_array($this->value) ? 'NOT IN' : '!=';
@@ -37,7 +39,7 @@ class FilterQuery
 				$operator = $this->operator;
 				break;
 			case 'LIKE':
-			case 'NOT LIKE'
+			case 'NOT LIKE':
 				$this->checkArray();
 				$position = strpos($value, '%');
 				if ($position !== 0 && $position != strlen($value)-1 ) {
@@ -53,7 +55,7 @@ class FilterQuery
 				throw new Exception("Unknown operator {$this->operator}");
 				break;
 		}
-		return " `$field` $operator $value";
+		return " `$this->field` $operator $value";
 	}
 
 	private function escape($value, $mysqli)
@@ -64,7 +66,7 @@ class FilterQuery
 			}
 			$value = "('". implode("', '", $value) . "')";
 		} else {
-			$value = "'" . $mysqli->real_escape_string($item) . "'";
+			$value = "'" . $mysqli->real_escape_string($value) . "'";
 		}
 		return $value;
 	}

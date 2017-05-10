@@ -46,16 +46,6 @@ class CourierCompany extends BaseController
         return ['valid' => 12, 'invalid' => 23];
     }
 
-    /**
-     * Function to return if the Courier Company allows AWB pre-allocation or not
-     *
-     * @return bool $allowed based on the settings saved for the courier company
-     */
-    public function preallocateAWBAllowed()
-    {
-        // return value based on the DB config
-    }
-
 
     /**
      * Function to track shipment on the Courier Service

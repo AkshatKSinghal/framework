@@ -4,6 +4,8 @@ namespace Model;
 
 use \Cache\CacheManager as CacheManager;
 use \DB\DB as DBManager;
+use \DB\FilterQuery as FilterQuery;
+use \DB\FilterList as FilterList;
 
 /**
 * CRUD Operations
@@ -114,7 +116,7 @@ class Base
     public function save($validate = true, $fields = [])
     {
         if ($this->new) {
-            $fields = $this->dbFields();
+            $fields = array_keys($this->dbFields(false, true));
         }
         if (empty($fields)) {
             $fields = $this->modifiedFields;
@@ -123,12 +125,15 @@ class Base
         if ($validate) {
             $this->validate($fields);
         }
-
+        $compareArray = array_keys($this->dbFields(false, true));
         #TODO DO not call the DBManager::saveObject function in case the fields are all non-DB fields
-        $result = DBManager::saveObject($this, $fields, $this->relativeValues);
-        if (($this->new && $result) || !empty($this->relativeValues)) {
-            $this->data = $this->getDataFromDB($result);
-            $this->new = false;
+        #done
+        if (!empty(array_intersect($fields, $compareArray))) {
+            $result = DBManager::saveObject($this, $fields, $this->relativeValues);
+            if (($this->new && $result) || !empty($this->relativeValues)) {
+                $this->data = $this->getDataFromDB($result);
+                $this->new = false;
+            }
         }
         $this->modifiedFields = [];
         $this->relativeValues = [];
@@ -157,31 +162,31 @@ class Base
             switch ($fieldInfo['type']) {
                 case 'tinyint':
                     if ($limit == 1 && !is_bool($value)) {
-                        throw new Exception("Only boolean values allowed for $propertyName");
+                        throw new \Exception("Only boolean values allowed for $propertyName");
                     }
                     break;
                 case 'float':
                 case 'int':
                     $limit = pow(10, $limit);
                     if ($value > $limit) {
-                        throw new Exception("$propertyName cannot be greater than $limit");
+                        throw new \Exception("$propertyName cannot be greater than $limit");
                     }
                     break;
                 case 'text':
                 case 'varchar':
                     if (strlen($value) > $limit) {
-                        throw new Exception("Length of $propertyName cannot be greater than $limit");
+                        throw new \Exception("Length of $propertyName cannot be greater than $limit");
                     }
                     break;
                 case 'enum':
                     if (!in_array($value, $values)) {
-                        throw new Exception("Invalid value for $propertyName. Allowed values " . implode(", ", $values));
+                        throw new \Exception("Invalid value ". $value. " for $propertyName. Allowed values " . implode(", ", $values));
                     }
                     break;
                 case 'timestamp':
                     #TODO Convert formatted time string to epoch
                     if ((string) (int)$value != $value || $timestamp > PHP_INT_MAX || $timestamp < 0) {
-                        throw new Exception("Valid timestamp value required");
+                        throw new \Exception("Valid timestamp value required");
                     }
                     break;
                 case 'date':
@@ -213,7 +218,7 @@ class Base
      */
     public static function primaryKeyName()
     {
-        return self::$primaryKey;
+        return static::$primaryKey;
     }
 
     /**
@@ -222,20 +227,32 @@ class Base
      * @return array $fields List of DB Fields in the table
      * corresponding to the model
      */
-    public static function dbFields()
+    public static function dbFields($includePrimaryKey = true, $camel = false)
     {
-        if (!isset(self::$dbFields)) {
+        $fields = '';
+        if (!isset(static::$dbFields[get_called_class()])) {
             try {
                 $fields = CacheManager::getModelSchema(get_called_class());
-            } catch (Exception $e) {
-                $table = self::$tableName;
-                $fieldsArray = DBManager::getDBSchema($table);
-                CacheManager::setModelSchema(get_called_class(), $fieldsArray);
+            } catch (\Exception $e) {
+                $table = static::tableName();
+                $fields = DBManager::getDBSchema($table);
+                CacheManager::setModelSchema(get_called_class(), $fields);
             } finally {
-                self::$dbFields = $fields;
+                static::$dbFields[get_called_class()] = $fields;
             }
         }
-        return self::$dbFields;
+        if (!$includePrimaryKey) {
+            unset(static::$dbFields[get_called_class()]['id']);
+        }
+        if ($camel) {
+            $result = array();
+            foreach (static::$dbFields[get_called_class()] as $key => $value) {
+                $key = (new Base)->convertToPropertyName($key);
+                $result[$key] = $value;
+            }
+            static::$dbFields[get_called_class()] = $result;
+        }
+        return static::$dbFields[get_called_class()];
     }
 
     /**
@@ -329,12 +346,16 @@ class Base
         if (!is_array($fields)) {
             $fields = array($fields);
         }
-
     }
 
     public static function tableName()
     {
         return static::$tableName;
+    }
+
+    public static function searchableFields()
+    {
+        return static::$searchableFields;
     }
 
     public function allFields()
@@ -346,6 +367,23 @@ class Base
     {
         $parts = explode("\\", get_called_class());
         return end($parts);
+    }
+
+    public function getByParam($dataArray)
+    {
+        $sqlParts = [];
+        $dbFields = self::searchableFields();
+        foreach ($dbFields as $dbField) {
+            $filterQuery[] = new FilterQuery($dbField, $dataArray[$dbField], '=');
+        }
+        $sqlWhere = new FilterList('AND', $filterQuery);
+        $query = 'SELECT * from ' . self::tableName() . ' where ' . $sqlWhere->getSQL(DBManager::getInstance());
+        $response = DBManager::executeQuery($query);
+
+        while ($row = $response->fetch_assoc()) {
+            $data[] = $row;
+        }
+        return $data;
     }
 }
 

@@ -1,5 +1,6 @@
 <?php
 
+namespace Controllers\Couriers;
 /**
 *
 */
@@ -18,10 +19,15 @@ class Gati extends Base
      *
      * @return string $awb AWB number for the booked shipment
      */
-    protected static function bookShipment($orderInfo, $serviceCode)
+    protected static function bookShipment($orderInfo, $serviceCode, $awb)
     {
-        #TODO get AWB number
-        #TODO Call the Gati API
+        // #TODO get AWB number
+        // #TODO Call the Gati API
+        // throw new \Exception("Error Processing Request", 1);
+        
+        $return = ['awb' => 12, 'details'=> 'asda'];
+        return $return;
+        // return(['awb' => '12', 'details' => 'adsasdada']);
     }
 
     /**
@@ -34,7 +40,17 @@ class Gati extends Base
      *
      * @return mixed $trackingInfo Tracking information
      */
-    protected static function trackShipment()
+    protected static function trackShipment($awb)
     {
+        return [
+            'courier' => 'GATI',
+            'awb' => $awb,
+            'status' => 'IN-TRANSIT',
+            'details' => [
+                'timestamp' => 'EPOCH_TIMESTAMP',
+                'location' => 'LOCATION_OF_UPDATE',
+                'message' => 'UPDATE_MESSAGE'
+            ]
+        ];
     }
 }
