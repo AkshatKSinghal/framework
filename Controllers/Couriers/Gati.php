@@ -4,6 +4,7 @@ namespace Controllers\Couriers;
 
 use \Utility\SimpleXMLElementWrapper;
 use \DateTime;
+
 /**
 *
 */
@@ -75,23 +76,23 @@ class Gati extends Base
      */
     protected static function bookShipment($orderInfo, $serviceCode, $credentials, $awb)
     {
-        // chintan area starts
         $headers = array('Content-Type: text/xml');
-        $payloadResp = (new Gati)->prepareSchedulePickupPayload($orderInfo, $credentials);
+        $payloadResp = (new Gati)->prepareSchedulePickupPayload($orderInfo, $credentials, $awb);
 
         if ($payloadResp['success']) {
             $payload=$payloadResp['payload'];
         } else {
-            throw new \Exception("Payload not generated successfully", 1);            
+            throw new \Exception("Payload not generated successfully", 1);
         }
 
-        $apiCallRawResponse =  \WCurl::post($this->baseUrl.'/BT2GATI/BT2Gatipickup.jsp', '', $payload, $headers);
+        $apiCallRawResponse =  \Utility\WCurl::post(static::$baseUrl.'/BT2GATI/BT2Gatipickup.jsp', '', $payload, $headers);
         //XML Parse the response, try to find "success" in it
         $xml = self::object2array(simplexml_load_string($apiCallRawResponse['body']));
+        print_r($xml);
 
         if ($xml["result"]=="successful") {
             if ($xml['reqcnt'] > 0) {
-                return array('success'=> true);
+                return array('success'=> true, 'data' => ['awb' => $awb, 'details' => 'success']);
             } else {
                 $error = "";
                 if (isset($xml["details"]["errmsg"])) {
@@ -99,17 +100,15 @@ class Gati extends Base
                         $error .= $err['err'].", ";
                     }
                 }
-                return array('success'=> false, 'message'=> $error);
+                throw new \Exception($error);
             }
         } else {
             $error ="";
             if (isset($xml['errmsg'])) {
                 $error = $xml['errmsg'];
             }
-            return array('success'=> false, 'message'=> $error);
+            throw new \Exception($error);
         }
-        die;
-        // chintan area ends
     }
 
     /**
@@ -138,21 +137,22 @@ class Gati extends Base
 
     /**
      * Function to generate a string containing the payload in xml
-     * @param array $order containing pick and drop details for the package 
-     * @param array $credentials credentials for courier service 
+     * @param array $order containing pick and drop details for the package
+     * @param array $credentials credentials for courier service
      * @return array $response with success and payload in xml string
      */
-    private function prepareSchedulePickupPayload($order, $credentials){
+    private function prepareSchedulePickupPayload($order, $credentials, $awb)
+    {
         $today = new DateTime('now');
-        $courierAccount = json_decode($credentials);
+        $courierAccount = json_decode($credentials, true);
         if (!isset($courierAccount['code'])) {
-            throw new \Exception("Customer code not present", 1);            
+            throw new \Exception("Customer code not present", 1);
         }
         if (!isset($courierAccount['cust_vend_code'])) {
-            throw new \Exception("cust_vend_code code not present", 1);            
+            throw new \Exception("cust_vend_code code not present", 1);
         }
 
-        // array( 
+        // array(
         //     'CourierAccount' => array(
         //         'code' => '54655501',
         //         'cust_vend_code' => 100001
@@ -160,26 +160,30 @@ class Gati extends Base
         //     );
         $goodsCode = '202';
         $orderQty = 0;
-        foreach ($order['shipment_details']['orders']['items'] as $item) {
-            $orderQty += $item['quantity'];
+        $orderVal = 0;
+        foreach ($order['shipment_details']['orders'] as $orderInd) {
+            foreach ($orderInd['items'] as $item) {
+                $orderQty += $item['quantity'];
+            }
+            $orderVal += (int) $orderInd['invoice']['value'];
         }
-
-        if($orderQty == 0){
+        // $orderQty = $order['shipment_details']['orders']['items']['quantity'];
+        if ($orderQty == 0) {
             throw new \Exception("Order quantity cannot be zero", 1);
         }
-        if($order['shipment_details']['weight'] == 0){
+        if ($order['shipment_details']['weight'] == 0) {
             throw new \Exception("Weight Cannot be zero", 1);
         }
 
         $payloadArray = [
-            'gati' => [
+            // 'gati' => [
                 'pickuprequest' => $today->format("d-m-Y H:i:s"),
                 'custcode' => $courierAccount['code'],
                 'details' => [
                     'req' => [
-                        'DOCKET_NO' => $order['order_ref'],
+                        'DOCKET_NO' => $awb,
                         'GOODS_CODE' => $goodsCode,
-                        'DECL_CARGO_VAL' => $order['shipment_details']['invoice']['value'],
+                        'DECL_CARGO_VAL' => $orderVal,
                         'ACTUAL_WT' => $order['shipment_details']['weight']/1000,
                         'CHARGED_WT' => $order['shipment_details']['weight']/1000,
                         'SHIPPER_CODE' => $courierAccount['code'],
@@ -188,32 +192,32 @@ class Gati extends Base
                         'RECEIVER_NAME' => $order['drop_address']['name'],
                         'RECEIVER_ADD1' => $order['drop_address']['text'],
                         'RECEIVER_ADD2' => isset($order['drop_address']['landmark'])?$order['drop_address']['landmark']: '',
-                        'RECEIVER_ADD3' => '',
-                        'RECEIVER_CITY' => $order['drop_address']['city'],
+                        'RECEIVER_ADD3' => isset($order['drop_address']['landmark'])?$order['drop_address']['landmark']: '',
+                        'RECEIVER_CITY' => $this->getCItyFromPincode($order['drop_address']['pincode']),
                         'RECEIVER_STATE' => $order['drop_address']['state'],
                         'RECEIVER_PHONE_NO' => $order['drop_address']['phone'],
-                        'RECEIVER_EMAIL' => $order['drop_address']['email_id'],
+                        'RECEIVER_EMAIL' => $order['pickup_address']['email_id'],
                         'RECEIVER_PINCODE' => $order['drop_address']['pincode'],
                         'NO_OF_PKGS' => 1,
                         'PKGDETAILS' => [
                             'PKG_INFO' => [
-                                'PKG_NO' => $order['order_ref'],
+                                'PKG_NO' => $awb,
                                 'PKG_LN' => $order['shipment_details']['length']/1000,
                                 'PKG_BR' => $order['shipment_details']['breadth']/1000,
                                 'PKG_HT' => $order['shipment_details']['height']/1000,
                                 'PKG_WT' => $order['shipment_details']['weight']/1000,
                             ],
                         ],
-                        'FROM_PKG_NO' => $order['order_ref'],
-                        'TO_PKG_NO' => $order['order_ref'],
+                        'FROM_PKG_NO' => $awb,
+                        'TO_PKG_NO' => $awb,
                         'RECEIVER_MOBILE_NO' => $order['drop_address']['phone'],
                         'CUSTVEND_CODE' => $courierAccount['cust_vend_code'],
                         'ORDER_QUANTITY' => $orderQty,
                         'SELLER_NAME' => $order['pickup_address']['name'],
                         'SELLER_ADD1' => $order['pickup_address']['text'],
-                        'SELLER_ADD2' => isset($order['pickup_address']['landmark'])?$order['drop_address']['landmark']: '',
-                        'SELLER_ADD3' => '',
-                        'SELLER_CITY' => $order['pickup_address']['city'],
+                        'SELLER_ADD2' => isset($order['pickup_address']['landmark'])?$order['pickup_address']['landmark']: '',
+                        'SELLER_ADD3' => isset($order['pickup_address']['landmark'])?$order['pickup_address']['landmark']: '',
+                        'SELLER_CITY' => $this->getCItyFromPincode($order['pickup_address']['pincode']),
                         'SELLER_PINCODE' => $order['pickup_address']['pincode'],
                         'SELLER_STATE_CODE' => $this->getStateCode($order['pickup_address']['state']),
                         'SELLER_TINNO' => $order['shipment_details']['tin'],
@@ -222,23 +226,32 @@ class Gati extends Base
                         'PROD_SERV_CODE' => 1,
                     ]
                 ]
-            ]
+            // ]
         ];
 
-        $payloadXml = SimpleXMLElementWrapper::arrayToXML($payloadArray); 
+        $payloadXml = SimpleXMLElementWrapper::arrayToXML($payloadArray);
         return array('success'=>true, 'payload'=>$payloadXml);
     }
 
-    private function object2array($object) { return json_decode(json_encode($object),1); } 
+    public function getCItyFromPincode($pincode)
+    {
+        return 'goa';
+    }
+
+    private static function object2array($object)
+    {
+        return json_decode(json_encode($object), 1);
+    }
 
     /**
      * Function to get the state code based on state name
-     * @param string $state 
+     * @param string $state
      * @return string $stateCOde code for state
      */
-    private function getStateCode($state) {
-        foreach($this->stateCodes as $stateName => $stateCode){
-            if( trim(strtolower($state))  ==  trim(strtolower($stateName))  ){
+    private function getStateCode($state)
+    {
+        foreach (static::$stateCodes as $stateName => $stateCode) {
+            if (trim(strtolower($state))  ==  trim(strtolower($stateName))) {
                 return $stateCode;
             }
         }

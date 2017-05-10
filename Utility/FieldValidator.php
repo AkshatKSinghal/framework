@@ -16,21 +16,26 @@ class FieldValidator
                 throw new \Exception("Mandatory Field not found " . $arrayTrace . '->' . $field);
             } else {
                 $nextRequestData = $requestData[$field];
-                if ($fieldDetail['multiple']) {
-                    if ($cntr == 0) {
-                        $checkedData[$field] = [[]];
-                    }
-
-                    $checkedData[$field][$cntr] = array_merge($checkedData[$field][$cntr], self::checkFields($requestData[$field][$cntr], $fields[$field]['data'], $subArrayName, ++$cntr));
-                    $nextRequestData = $requestData[$field][$cntr];
-                }
                 if (empty($fieldDetail['data'])) {
                     $checkedData[$field] = $requestData[$field];
                 } else {
-                    $checkedData[$field] = self::checkFields($nextRequestData, $fieldDetail['data'], $subArrayName . '->' . $field);
+                    if ($fieldDetail['multiple']) {
+                        // if (!isset($checkedData[$field])) {
+                        //     $checkedData[$field] = [];
+                        // }
+                        foreach ($requestData[$field] as $requestField) {
+                            $checkedData[$field][] = self::checkFields($requestField, $fields[$field]['data'], $subArrayName);
+                        }
+                        $nextRequestData = $requestData[$field][$cntr];
+                    } else {
+                        $checkedData[$field] = self::checkFields($nextRequestData, $fieldDetail['data'], $subArrayName . '->' . $field);
+                    }
                 }
             }
         }
+        #TODO archit
+        // print_r($checkedData);
+        // die;
         return $checkedData;
     }
 }

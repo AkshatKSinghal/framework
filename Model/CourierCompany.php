@@ -13,8 +13,5 @@ class CourierCompany extends Base
 
     public function validate()
     {
-        if (strlen($this->data['shortCode']) != 6) {
-            throw new \Exception("Short Code must be of 6 Characters");
-        }
     }
 }

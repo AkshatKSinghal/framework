@@ -56,6 +56,9 @@ class Base
 
         $response = DBManager::get(get_called_class(), $id);
         if ($response->num_rows == 0) {
+            echo '********';
+            echo get_called_class();
+            echo $id;
             throw new \Exception("Invalid " . $this->primaryKeyName());
         }
         $data = [];

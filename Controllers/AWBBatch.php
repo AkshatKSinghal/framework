@@ -57,9 +57,28 @@ class AWBBatch extends BaseController
         $this->model->setCourierCompanyId($courierCompanyID);
         $this->model->setAccountId($accountID);
         $this->model->setTotalCount(FileManager::lineCount($filePath));
+        $this->model->setValidCount(FileManager::lineCount($filePath));
+        $this->model->setInvalidCount(0);
+        $this->model->setFailedCount(0);
+        $this->model->setAssignedCount(0);
+        $this->model->setStatus('PENDING');
+        $this->model->setAvailableCount(FileManager::lineCount($filePath));
         $this->model->save();
         $this->saveToPersistentStore($filePath, self::UPLOAD);
         $this->processFile();
+        return $this->model->getId();
+    }
+
+    public function mapWithCourier($request)
+    {
+        if (!isset($request['awbBatchId'])) {
+            throw new \Exception("AWb batch id not found", 1);
+        }
+        if (!isset($request['courierServiceAccuntId'])) {
+            throw new \Exception("Courier Service Account id not found", 1);
+        }
+        $courierServiceAccount = new CourierServiceAccount([$request['courierServiceAccuntId']]);
+        $courierServiceAccount->mapAWBBatch($request['awbBatchId']);
     }
     /**
      * Function to perform basic validations on the file
@@ -117,7 +136,7 @@ class AWBBatch extends BaseController
             $$counter++;
         }
         fclose($fp);
-        $courier = new \Controllers\CourierCompany($this->model->getCourierCompanyId());
+        // $courier = new \Controllers\CourierCompany($this->model->getCourierCompanyId());
         // #TODO: Call validation in Courier Company
         // $awbFile = $courier->validateAWBFile($validCount, $invalidAWBFile);
         $validCount = FileManager::lineCount($validAWBFile);

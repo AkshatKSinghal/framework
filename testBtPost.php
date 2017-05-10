@@ -8,12 +8,44 @@
     require __DIR__ . '/vendor/malkusch/php-autoloader/autoloader.php';
     require __DIR__ . "/config.php";
     try {
+        $batchExecute = new \Controllers\AWBBatch([]);
+        $awbId = $batchExecute->createBatch(TMP . '/btpost.txt', 1, 1);
+
         // $batchExecute = new \Controllers\AWBBatch([]);
-        // $batchExecute->createBatch(TMP . '/btpost.txt', 1, 1);
+        $batchExecute->mapWithCourier([
+            'courierServiceAccuntId' => 2,
+            'awbBatchId' => $awbId
+        ]);
         //file, courierCompanyId, AccountId
+        // $ship = new \Controllers\CourierServiceAccount([]);
+        // var_dump($ship->create([
+        //     'account_id' => '12',
+        //     'courier_service_id' => '15',
+        //     'awb_batch_mode' => 'ADMIN',
+        //     'credentials' => [
+        //         'code' => '54655501',
+        //         'cust_vend_code'=>'100001',
+        //     ],
+        //     'pincodes' => '7',
+        //     'status' => 'ACTIVE',
+        // ]));die;
+
+        // //file, courierCompanyId, AccountId
+        // // $ship = new \Controllers\CourierServiceAccount([]);
+        // // var_dump($ship->create([
+        // //     'account_id' => '12',
+        // //     'courier_service_id' => '15',
+        // //     'awb_batch_mode' => 'ADMIN',
+        // //     'credentials' => [
+        // //         'code' => '54655501',
+        // //         'cust_vend_code'=>'100001',
+        // //     ],
+        // //     'pincodes' => '7',
+        // //     'status' => 'ACTIVE',
+        // // ]));die;
         $ship = new \Controllers\ShipmentDetail([]);
         var_dump($ship->bookShipment([
-            'order_ref' => 'AB6792BH2',
+            'order_ref' => '500000013',
             'account_id' => '12',
             'pickup_address' => [
                 'name' => 'Pickup contact person name',
@@ -21,14 +53,14 @@
                 'landmark' => 'landmark text (optional)',
                 'time' => 'epoch timestamp',
                 'phone' => '9876543210',
-                'pincode' => '145236',
+                'pincode' => '500021',
                 'email_id' => 'email id to be notified with updates',
                 'state'=> 'Goa',
                 'country'=> 'India'
             ],
             'drop_address' => [
                 'name' => 'Drop contact person name',
-                'pincode' => '145236',
+                'pincode' => '500021',
                 'text' => '#301, Some Road Name, City Name',
                 'phone' => '9876543210',
                 'landmark' => 'landmark text (optional)',
@@ -37,23 +69,25 @@
             ],
             'shipment_details' => [
                 'orders' => [
-                    'items' => [
-                        [
-                            'price'=> '1200.23',
-                            'sku_id' => 'A152AFD',
-                            'quantity' => '2',
-                            'description' => 'item description (optional)'
-                        ], [
-                            'price'=> 'asdasd',
-                            'sku_id' => 'A152AFD',
-                            'quantity' => '2',
-                            'description' => 'item description (optional)'
+                    [
+                        'items' => [
+                            [
+                                'price'=> '1200.23',
+                                'sku_id' => 'A152AFD',
+                                'quantity' => '2',
+                                'description' => 'item description (optional)'
+                            ], [
+                                'price'=> 'asdasd',
+                                'sku_id' => 'A152AFD',
+                                'quantity' => '2',
+                                'description' => 'item description (optional)'
+                            ]
+                        ],
+                        'invoice' => [
+                            'ref_id' => '2017-18/ABC123',
+                            'value' => '400.26',
+                            'date' => '2017-04-03'
                         ]
-                    ],
-                    'invoice' => [
-                        'ref_id' => '2017-18/ABC123',
-                        'value' => '400.26',
-                        'date' => '2017-04-03'
                     ]
                 ],
                 'length' => '20',

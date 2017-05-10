@@ -103,9 +103,7 @@ class CourierServiceAccount extends CourierService
 
     public function create($request)
     {
-        $mandatoryData = $this->checkFields($request, 'mandatory');
-        $optionalData = $this->checkFields($request, 'optional');
-        $checkedData = array_merge($mandatoryData, $optionalData);
+        $checkedData = $this->checkFields($request);
         $modelId = $this->setIndividualFields($checkedData);
         return $modelId;
     }
@@ -114,10 +112,26 @@ class CourierServiceAccount extends CourierService
     {
         $modelClass = $this->getModelClass();
         $model = new $modelClass();
-        foreach ($data as $key => $value) {
+        $mapArray = [
+            'account_id' => 'account_id',
+            'courier_service_id' => 'courier_service_id',
+            'awb_batch_mode' => 'awb_batch_mode',
+            'credentials' => 'credentials',
+            'pincodes' => 'pincodes',
+            'status' => 'status',
+        ];
+
+        foreach ($mapArray as $dbField => $mergeFields) {
+            $resultFields = [];
+            $insertData = $data[$dbField];
+            if ($dbField == 'credentials') {
+                $insertData = json_encode($insertData);
+            }            
+            $key = str_replace('_', '', ucwords($dbField, '_'));
             $functionName = 'set'.$key;
-            $model->$functionName($value);
+            $model->$functionName($insertData);
         }
+        #TODO move last updated time to save funciton in base model
         $model->validate();
         return $model->save();
     }
@@ -133,5 +147,10 @@ class CourierServiceAccount extends CourierService
             'courier_service_id' => $courierServiceId
         ]);
         return new CourierServiceAccount($courierServiceAccount[0]['id']);
+    }
+
+    public function mapAWBBatch($awbBatchId)
+    {
+        $this->model->mapAWBBatches($awbBatchId, 'add');
     }
 }

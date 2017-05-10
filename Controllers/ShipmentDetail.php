@@ -179,7 +179,7 @@ class ShipmentDetail extends BaseController
                             'multiple' => false
                         ],
                     ],
-                    'multiple' => false
+                    'multiple' => true
                 ],
                 'length' => [
                     'mandatory' => true,
@@ -257,7 +257,7 @@ class ShipmentDetail extends BaseController
                     $awbBatch = new AWBBatch([$awbDetail['awbBatchId']]);
                     $awbBatch->logAWBEvent('failed', $awb);
                     $awbBatch->updateTableForFailedAwb();
-                    throw new \Exception("Courier rejected awb in pre allocation", 1);
+                    throw new \Exception($e->getMessage() . "Courier rejected awb in pre allocation", 1);
                 }
                 break;
 
@@ -273,8 +273,8 @@ class ShipmentDetail extends BaseController
                 }
                 break;
         }
-        $checkedData['courier_service_details'] = $courierResponse['details'];
-        $checkedData['courier_service_reference_number'] = $courierResponse['awb'];
+        $checkedData['courier_service_details'] = $courierResponse['data']['details'];
+        $checkedData['courier_service_reference_number'] = $courierResponse['data']['awb'];
         return $this->addShipmentTODB($checkedData, $awb);
     }
 
@@ -311,7 +311,7 @@ class ShipmentDetail extends BaseController
             'message' => 'Couier booked',
             'data' => [
                 'awb' => $awb,
-                'courier' => 'gati',
+                'courier' => 'Gati',
                 'ref_id' => $btPostId,
                 'label' => 'label'
             ]

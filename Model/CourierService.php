@@ -13,12 +13,6 @@ class CourierService extends CourierCompany
 
     public function validate()
     {
-        if (!in_array($this->data['serviceType'], ['surface', 'air', 'express'])) {
-            throw new \Exception("Service Type can only be Surface air or express");
-        }
-        if (!in_array($this->data['orderType'], ['prepaid', 'cod'])) {
-            throw new \Exception("Order type can only be prepaid or cod");
-        }
     }
 
     public function getSettingsKey($key)

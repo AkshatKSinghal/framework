@@ -55,33 +55,33 @@ class CourierServiceAccount extends CourierService
             } else {
                 $awbBatchId = $data['id'];
             }
-            $this->setAwbBatch($awbBatchId);
+            $this->setAwbBatchId($awbBatchId);
             $this->save(false, ['awbBatchId']);
         }
         return $awbBatchId;
     }
 
-
-    public function mapAWBBatches($data)
+    public function mapAWBBatches($awbBatchId, $operation)
     {
-        $awbBatchIds = '#TODO ';
-
         switch ($operation) {
             case 'set':
-                $query[] = "DELETE FROM awb_batches_courier_service_accounts"
+                $query[] = "DELETE FROM awb_batches_courier_services"
                 ." WHERE courier_service_account_id = " . $this->getId();
             case 'add':
-                $query[] = "INSERT INTO awb_batches_courier_service_accounts"
-                ." (courier_service_account_id, awb_batch_id) VALUES $values";
+                $query[] = "INSERT INTO awb_batches_courier_services"
+                ." (courier_service_account_id, awb_batch_id) VALUES ( '" .$this->getId()."', '". $awbBatchId . "')";
                 break;
             case 'remove':
-                $query[] = "DELETE FROM awb_batches_courier_service_accounts"
+                $query[] = "DELETE FROM awb_batches_courier_services"
                 ." WHERE courier_service_account_id = " . $this->getId()
                 ." AND batch_id IN (" . implode(", ", $ids) . ")";
                 break;
             default:
                 throw new Exception("Invalid operation");
                 break;
+        }
+        foreach ($query as $q) {
+            DB::executeQuery($q);
         }
     }
 }
