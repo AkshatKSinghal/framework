@@ -220,49 +220,56 @@ class ShipmentDetail extends BaseController
             'multiple' => false
         ]
     ];
-
+    /**
+     * Function to handle bookshipment request in turn calls addSHipmentTODB function
+     * @param array $request
+     * @return array $response
+     */
     public function bookShipment($request)
     {
         $checkedData = $this->checkFields($request);
         $orderInfo = [
             'pickup_address' => $checkedData['pickup_address'],
             'drop_address' => $checkedData['drop_address'],
-            'shipment_details' => $checkedData['shipment_details']
+            'shipment_details' => $checkedData['shipment_details'],
+            'order_ref' => $checkedData['order_ref']
         ];
         $courierService = new CourierService([$checkedData['courier_service_id']]);
         $serviceType = $courierService->model->getServiceType();
         $checkedData['shipment_type'] = $serviceType;
         $preAllocateAWB = $courierService->preallocateAWBAllowed();
+        // print_r($courierService->model);
+        // die;
         $courierResponse = '';
         #TODO courier cariers to be dynamically assigned instead of gati hardcode
 
+        $courierServiceAccount = CourierServiceAccount::getByAccountAndCourierService($checkedData['account_id'], $checkedData['courier_service_id']);
+        $credentials = $courierServiceAccount->model->getCredentials();
         switch ($preAllocateAWB) {
             case 'pre':
-                $courierServiceAccount = CourierServiceAccount::getByAccountAndCourierService($checkedData['account_id'], $checkedData['courier_service_id']);
                 $awbDetail = $courierServiceAccount->getAWB();
                 $awb = $awbDetail['awb'];
                 $checkedData['courier_service_account_id'] = $courierServiceAccount->model->getId();
                 try {
-                    $courierResponse = \Controllers\Couriers\Gati::bookShipment($orderInfo, $serviceType, $awb);
-                } catch (\Exception $e) {                    
+                    $courierResponse = \Controllers\Couriers\Gati::bookShipment($orderInfo, $serviceType, $credentials, $awb);
+                } catch (\Exception $e) {
                     //mark awb as not assigned
                     $awbBatch = new AWBBatch([$awbDetail['awbBatchId']]);
                     $awbBatch->logAWBEvent('failed', $awb);
                     $awbBatch->updateTableForFailedAwb();
-                    throw new \Exception("Courier rejected awb", 1);
-                    
+                    throw new \Exception("Courier rejected awb in pre allocation", 1);
                 }
                 break;
 
             case 'post':
                 try {
-                    $courierResponse = \Controllers\Couriers\Gati::bookShipment($orderInfo, $serviceType);
+                    $courierResponse = \Controllers\Couriers\Gati::bookShipment($orderInfo, $serviceType, $credentials);
                 } catch (\Exception $e) {
                     //mark awb as not assigned
                     $awbBatch = new AWBBatch([]);
                     $awbBatch->logAWBEvent('failed', $awb);
                     $awbBatch->updateTableForFailedAwb();
-                    throw new \Exception("Courier rejected awb", 1);
+                    throw new \Exception("Courier rejected awb post allocation", 1);
                 }
                 break;
         }
@@ -271,10 +278,15 @@ class ShipmentDetail extends BaseController
         return $this->addShipmentTODB($checkedData, $awb);
     }
 
+    /**
+     *  Function to handle addShipment api request in turn calls addSHipmentTODB function
+     * @param array $request
+     * @return array $response
+     */
     public function addShipmentRequest($request)
     {
         if (!isset($request['awb'])) {
-            throw new \Exception("AWB not found", 1);            
+            throw new \Exception("AWB not found", 1);
         }
         $awb = $request['awb'];
         $checkedData = $this->checkFields($request);
@@ -284,6 +296,12 @@ class ShipmentDetail extends BaseController
         return $this->addShipmentTODB($checkedData, $awb);
     }
 
+    /**
+     *  Function to handle addSHipment details in db
+     * @param array $data
+     * @param string $awb
+     * @return array $response
+     */
     private function addShipmentTODB($data, $awb)
     {
         $data['status'] = 'ACTIVE';
@@ -301,6 +319,11 @@ class ShipmentDetail extends BaseController
         return $response;
     }
 
+    /**
+     * Function to set all db fields and save the object in db
+     * @param array $data
+     * @return int $id objectId
+     */
     protected function setIndividualFields($data)
     {
         $model = new ShipmentDetailModel();
@@ -317,7 +340,7 @@ class ShipmentDetail extends BaseController
 
         foreach ($mapArray as $dbField => $mergeFields) {
             $resultFields = [];
-            if (is_array($mergeFields)) {            
+            if (is_array($mergeFields)) {
                 foreach ($mergeFields as $mergeField) {
                     $resultFields[$mergeField] = $data[$mergeField];
                 }
@@ -337,10 +360,28 @@ class ShipmentDetail extends BaseController
         return $model->save();
     }
 
+    /**
+     * Function to handel track shipment api request
+     * @param array $request 
+     * @return array $response
+     */
     public function trackShipment($request)
     {
-        $shipId = $request['id'];
+        if (!isset($request['ref_id'])) {
+            throw new \Exception("Reference id not found", 1);
+        }
+        $shipId = $request['ref_id'];
         $ship = new ShipmentDetail([$shipId]);
+        $awb = $ship->model->getCourierServiceReferenceNumber();
+        try {
+            $courierResponse = \Controllers\Couriers\Gati::trackShipment($awb);
+        } catch (\Exception $e) {
+            //mark awb as not assigned
+            $awbBatch = new AWBBatch([]);
+            $awbBatch->logAWBEvent('failed', $awb);
+            $awbBatch->updateTableForFailedAwb();
+            throw new \Exception("Courier rejected awb", 1);
+        }
     }
 
     public function getById($id)

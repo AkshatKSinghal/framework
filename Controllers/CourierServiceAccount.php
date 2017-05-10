@@ -54,8 +54,12 @@ class CourierServiceAccount extends CourierService
      */
     public function getAWB()
     {
-        $awbBatch = $this->getAWBBatch();
-        return ['awb' => $awbBatch->getAWB(), 'awbBatchId' => $awbBatch->model->getId()];
+        try {
+            $awbBatch = $this->getAWBBatch();
+            return ['awb' => $awbBatch->getAWB(), 'awbBatchId' => $awbBatch->model->getId()];
+        } catch (\Exception $e) {
+            throw new \Exception($e->getMessage());            
+        }
         // return $awbBatch->getAWB();
     }
 
@@ -85,10 +89,15 @@ class CourierServiceAccount extends CourierService
                 $courierServiceAccount = $this->model;
                 break;
             default:
-                throw new Exception("Unknown AWB Batch Mode set");
+                throw new \Exception("Unknown AWB Batch Mode set");
                 break;
         }
-        return new AWBBatch([$courierServiceAccount->getAWBBatch()]);
+        try {
+            $batchId = $courierServiceAccount->getAWBBatch();
+            return new AWBBatch([$batchId]);
+        } catch (\Exception $e) {
+            throw new \Exception($e->getMessage());            
+        }
     }
 
 

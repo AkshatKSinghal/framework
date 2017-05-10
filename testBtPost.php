@@ -68,8 +68,6 @@
             'courier_service_id' => '15',
             'awb' => '7',
         ]));
-        // $model = \Model\AWBBatch::dbFields();
-        // echo 'ending';
     } catch (Exception $e) {
         echo '<br>';
         echo '<pre>';

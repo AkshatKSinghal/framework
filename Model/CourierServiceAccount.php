@@ -38,7 +38,7 @@ class CourierServiceAccount extends CourierService
     {
         $awbBatchId = '';
         try {
-            $batches = $this->get('AWBBatchId');
+            $awbBatchId = $this->get('awbBatchId');
         } catch (\Exception $e) {
             #TODO Do it via Model::find()
             $query = "SELECT awb_batches.id FROM awb_batches_courier_services INNER JOIN awb_batches".
@@ -50,15 +50,15 @@ class CourierServiceAccount extends CourierService
             #TODO Extract the ID #Done
             $data = $result->fetch_assoc();
             if (empty($data)) {
-                throw new \Exception("No AWB batch found for the account id", 1);
+                echo ')))))))))))';
+                throw new \Exception("No AWB batch found for the account id");
             } else {
                 $awbBatchId = $data['id'];
             }
-            $this->setAWBBatch($awbBatchId);
-            $this->save(false, ['AWBBatchId']);
-        } finally {
-            return $awbBatchId;
+            $this->setAwbBatch($awbBatchId);
+            $this->save(false, ['awbBatchId']);
         }
+        return $awbBatchId;
     }
 
 

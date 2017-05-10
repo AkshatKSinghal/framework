@@ -11,6 +11,7 @@ class CourierService extends CourierCompany
 {
     protected $mandatoryFields = ['courierCompanyId', 'serviceType', 'orderType'];
     protected $optionalFields = ['credentialsRequiredJson', 'pincodes', 'status', 'settings'];
+    // protected $model;
     /**
      * Function to return if the Courier Service and Courier Company
      * allows AWB pre-allocation or not
