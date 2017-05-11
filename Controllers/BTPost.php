@@ -1,6 +1,9 @@
 <?php
-namespace Controllers;
+// namespace Controllers;
 
+require _DIR_ . '/../vendor/autoload.php';
+   require _DIR_ . '/../vendor/malkusch/php-autoloader/autoloader.php';
+   require _DIR_ . "/../config.php";
 /**
  * Controller for all external communications of the BTPost System
  *
