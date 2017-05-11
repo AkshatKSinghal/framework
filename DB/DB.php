@@ -77,7 +77,9 @@ class DB
             $updateQuery = implode(", ", $updateValues);
             $query = "UPDATE $tableName SET $updateQuery WHERE `$primaryKey` = '$id'";
         }
-        self::executeQuery($query);
+        if (!self::executeQuery($query)) {
+            throw new \Exception("Query not success" . $query);
+        }
         if ($object->isNew()) {
             return self::getInstance()->insert_id;
         }
@@ -189,7 +191,7 @@ class DB
 
     public static function getDBSchema($tableName)
     {
-        $query = "SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE table_name = '". $tableName . "'";
+        $query = "SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE table_name = '". $tableName . "' and TABLE_SCHEMA = '" . static::$defaultConfig['database'] . "'";
         $response = self::executeQuery($query);
         $fieldsArray = [];
         while ($row = $response->fetch_assoc()) {

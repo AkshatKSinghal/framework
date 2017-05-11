@@ -31,16 +31,16 @@ class CourierCompany extends BaseController
             'data' => [],
             'multiple' => false
         ],
-        'tracking_charge' => [
-            'mandatory' => false,
-            'data' => [],
-            'multiple' => false
-        ],
-        'booking_charge' => [
-            'mandatory' => false,
-            'data' => [],
-            'multiple' => false
-        ],
+        // 'tracking_charge' => [
+        //     'mandatory' => false,
+        //     'data' => [],
+        //     'multiple' => false
+        // ],
+        // 'booking_charge' => [
+        //     'mandatory' => false,
+        //     'data' => [],
+        //     'multiple' => false
+        // ],
         'status' => [
             'mandatory' => true,
             'data' => [],
@@ -116,8 +116,8 @@ class CourierCompany extends BaseController
             'short_code' => 'short_code',
             'comments' => 'comments',
             'logo_url' => 'logo_url',
-            'tracking_charge' => 'tracking_charge',
-            'booking_charge' => 'booking_charge',
+            // 'tracking_charge' => 'tracking_charge',
+            // 'booking_charge' => 'booking_charge',
             'status' => 'status'
         ];
 

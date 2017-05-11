@@ -108,12 +108,19 @@
         //     'awb' => '10',
         // ]));
 
-
+        $company = new \Controllers\CourierCompany([]);
+        $companyId = $company->create([
+            'name' => '$name',
+            'short_code' => '$asda',
+            'comments' => '$comments',
+            'logo_url' => '$logoURL',
+            'status' => 'ACTIVE',
+        ]);
         // track shipment
-        $ship = new \Controllers\ShipmentDetail([]);
-        var_dump($ship->trackShipment([
-            'ref_id' => 10
-        ]));
+        // $ship = new \Controllers\ShipmentDetail([]);
+        // var_dump($ship->trackShipment([
+        //     'ref_id' => 10
+        // ]));
 
         echo '******end******';
     } catch (Exception $e) {

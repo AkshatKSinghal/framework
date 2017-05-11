@@ -290,7 +290,7 @@ class Base
             return $this->get($parameterName);
         } elseif ($functionName == "set") {
             if (!isset($arguments[0])) {
-                throw new Exception("Missing value");
+                throw new \Exception("Missing value ". $parameterName);
             }
             return $this->set($parameterName, $arguments);
         } else {

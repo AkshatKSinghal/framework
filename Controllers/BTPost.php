@@ -65,10 +65,11 @@ class BTPost
     {
         $company = new \Controllers\CourierCompany([]);
         $companyId = $company->create([
-            'name' => $name,
-            'shortCode' => $shortCode,
-            'comments' => $comments,
-            'logoURL' => $logoURL,
+            'name' => 'gati',
+            'short_code' => '123456',
+            'comments' => '$comments',
+            'logo_url' => '$logoURL',
+            'status' => 'ACTIVE',
         ]);
         return $companyId;
     }
