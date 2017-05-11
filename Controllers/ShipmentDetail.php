@@ -410,7 +410,23 @@ class ShipmentDetail extends BaseController
         $courierServiceAccount = CourierServiceAccount::getByAccountAndCourierService($request['account_id'], $request['courier_service_id']);
         $shipments = $courierServiceAccount->getShipmentFromOrderRef($request['order_ref']);
         foreach ($shipments as $shipment) {
+            $courierShortCode = $shipment->getCourierShortCode();
+            $trackingIds[$courierShortCode][] = $shipment->model->getCourierServiceReferenceNumber();
+        }
 
+        foreach ($trackingIds as $shortCode => $trackingId) {
+            $courierName = '\Controllers\Couriers\\' . ucfirst(array_search($courierShortCode, $this->shortCodeMap));
+            try {
+                $courierResponse = $courierName::trackShipment($trackingId);
+                $ship->updateStatus($courierResponse['status']);
+                return [
+                    'Status' => 'SUCCESS',
+                    'message' => 'Shipment status is ' . $courierResponse['status'] . '.',
+                    'data' => $courierResponse
+                ];
+            } catch (\Exception $e) {
+                throw new \Exception($e->getMessage());
+            }
         }
     }
 

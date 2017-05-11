@@ -238,78 +238,25 @@ class Gati extends Base
      * @param string $trackingNumber the $awb number for the shipment to be tracked.
      * @return string $status The current status of the shipment
      */
-    public static function trackShipment1($trackingNumberArray)
-    {
-        //Assume that the status recieved from Bluedart is "Delivered at Home". Replace with code to fetch from web service
-        $o = static::options();
-        // $trackingNumbers = implode(',', $trackingNumberArray);
-        $get_response = static::get('http://www.gati.com/single_dkt_track_int.jsp?dktChoice=docketno&dktNo='.$trackingNumberArray, $o);
-       
-        $xpath = static::xpath($get_response['body']);
-        
-        $nodes = $xpath->query("//table/tr[2]/td[5]/a");
-        $statusFromCourier='';
-        if ($nodes->length) {
-            $view_link=explode('=', $nodes->item(0)->getAttribute('onclick'));
-            $get_response = static::get('http://www.gati.com/gatitrck.jsp?4='.$view_link['1'].'='.$trackingNumber, $o);
-             
-            $path=static::xpath($get_response['body']);
-        
-            $nodes = $path->query("//table[@class='form_table']/tr/td/a/b/text()");
-            $status=explode('[', $nodes->item(0)->nodeValue);
-            $statusFromCourier=str_replace(']', '', $status['1']);
-        } else {
-            throw new \Exception("Invalid\Data not found");
-            
-        }
-        if (!empty($statusFromCourier)) {
-            return [
-                'Courier Name' => static::$name,
-                'AWB' => $trackingNumber,
-                'status' => $statusFromCourier
-            ];
-        } else {
-            throw new \Exception("Status not recieved");
-        }
-    }
-
     public static function trackShipment($trackingNumberArray)
     {
 
         $headers = array('Content-Type: text/xml');
-        // $payloadResp = (new Gati)->prepareSchedulePickupPayload($orderInfo, $credentials, $awb);
-
-        // if ($payloadResp['success']) {
-        //     $payload=$payloadResp['payload'];
-        // } else {
-        //     throw new \Exception("Payload not generated successfully", 1);
-        // }
+ 
         $payload = '';
-
+        $trackingNumberArray = [1231231231,12312312312312];
         $trackingNumbers = implode(',', $trackingNumberArray);
-        $apiCallRawResponse =  \Utility\WCurl::post('http://www.gati.com/webservices/ECOMDKTTRACK.jsp?p1=' .$trackingNumbers . '&p2=123546BA90234561', '', $payload, $headers);
-        print_r($apiCallRawResponse);
-        die;
-        //XML Parse the response, try to find "success" in it
+        $apiCallRawResponse =  \Utility\WCurl::get('http://www.gati.com/webservices/ECOMDKTTRACK.jsp', 'p1=' .$trackingNumbers . '&p2=123546BA90234561', $payload, $headers);
+
         $xml = self::object2array(simplexml_load_string($apiCallRawResponse['body']));
-        if ($xml["result"]=="successful") {
-            if ($xml['reqcnt'] > 0) {
-                return array('success'=> true, 'data' => ['awb' => $awb, 'details' => 'success']);
-            } else {
-                $error = "";
-                if (isset($xml["details"]['res']["errmsg"])) {
-                    foreach ($xml["details"]['res']["errmsg"] as $err) {
-                        $error = $error .  $err . ", ";
-                    }
-                }
-                throw new \Exception($error);
-            }
-        } else {
-            $error ="";
-            if (isset($xml['errmsg'])) {
-                $error = $xml['errmsg'];
-            }
-            throw new \Exception($error);
+
+        foreach ($xml['dktinfo'] as $info) {
+            $retArray[] = [
+                'awb' => $info['dktno'],
+                'result' => $info['result'],
+                'errmsg' => $info['errmsg']
+            ];
         }
+        return $retArray;
     }
 }
