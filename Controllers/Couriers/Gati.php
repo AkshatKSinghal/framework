@@ -11,6 +11,7 @@ use \DateTime;
 class Gati extends Base
 {
     protected static $baseUrl = 'http://119.235.57.47:9080';
+    protected static $name = 'Gati';
     private static $stateCodes = [
         "Andhra Pradesh"=>"AP",
         "Arunachal Pradesh"=>"AR",
@@ -65,7 +66,7 @@ class Gati extends Base
      *
      * @param mixed $orderInfo Array containing the order information
      * @param string $serviceCode Product service code via which the shipment is to be booked
-     * @param string $credentials json string credentials
+     * @param array $credentials array credentials
      * @param string $awb AWB number to be assigned
      *
      * @throws Exception in case the order information is invalid/ incomplete
@@ -88,16 +89,14 @@ class Gati extends Base
         $apiCallRawResponse =  \Utility\WCurl::post(static::$baseUrl.'/BT2GATI/BT2Gatipickup.jsp', '', $payload, $headers);
         //XML Parse the response, try to find "success" in it
         $xml = self::object2array(simplexml_load_string($apiCallRawResponse['body']));
-        print_r($xml);
-
         if ($xml["result"]=="successful") {
             if ($xml['reqcnt'] > 0) {
                 return array('success'=> true, 'data' => ['awb' => $awb, 'details' => 'success']);
             } else {
                 $error = "";
-                if (isset($xml["details"]["errmsg"])) {
-                    foreach ($xml["details"]["errmsg"] as $err) {
-                        $error .= $err['err'].", ";
+                if (isset($xml["details"]['res']["errmsg"])) {
+                    foreach ($xml["details"]['res']["errmsg"] as $err) {
+                        $error = $error .  $err . ", ";
                     }
                 }
                 throw new \Exception($error);
@@ -112,30 +111,6 @@ class Gati extends Base
     }
 
     /**
-     * Function ot track a shipment on Gati
-     *
-     * @param string $awb AWB Number to be tracked
-     *
-     * @throws Exception in case the AWB number is rejected by Gati
-     * @throws Exception in case the Gati API throws an unknown error
-     *
-     * @return mixed $trackingInfo Tracking information
-     */
-    protected static function trackShipment($awb)
-    {
-        return [
-            'courier' => 'GATI',
-            'awb' => $awb,
-            'status' => 'IN-TRANSIT',
-            'details' => [
-                'timestamp' => 'EPOCH_TIMESTAMP',
-                'location' => 'LOCATION_OF_UPDATE',
-                'message' => 'UPDATE_MESSAGE'
-            ]
-        ];
-    }
-
-    /**
      * Function to generate a string containing the payload in xml
      * @param array $order containing pick and drop details for the package
      * @param array $credentials credentials for courier service
@@ -144,7 +119,7 @@ class Gati extends Base
     private function prepareSchedulePickupPayload($order, $credentials, $awb)
     {
         $today = new DateTime('now');
-        $courierAccount = json_decode($credentials, true);
+        $courierAccount = $credentials;
         if (!isset($courierAccount['code'])) {
             throw new \Exception("Customer code not present", 1);
         }
@@ -256,5 +231,85 @@ class Gati extends Base
             }
         }
         return $state;
+    }
+
+    /**
+     * Function to track the status of the shipment using $awb number.
+     * @param string $trackingNumber the $awb number for the shipment to be tracked.
+     * @return string $status The current status of the shipment
+     */
+    public static function trackShipment1($trackingNumberArray)
+    {
+        //Assume that the status recieved from Bluedart is "Delivered at Home". Replace with code to fetch from web service
+        $o = static::options();
+        // $trackingNumbers = implode(',', $trackingNumberArray);
+        $get_response = static::get('http://www.gati.com/single_dkt_track_int.jsp?dktChoice=docketno&dktNo='.$trackingNumberArray, $o);
+       
+        $xpath = static::xpath($get_response['body']);
+        
+        $nodes = $xpath->query("//table/tr[2]/td[5]/a");
+        $statusFromCourier='';
+        if ($nodes->length) {
+            $view_link=explode('=', $nodes->item(0)->getAttribute('onclick'));
+            $get_response = static::get('http://www.gati.com/gatitrck.jsp?4='.$view_link['1'].'='.$trackingNumber, $o);
+             
+            $path=static::xpath($get_response['body']);
+        
+            $nodes = $path->query("//table[@class='form_table']/tr/td/a/b/text()");
+            $status=explode('[', $nodes->item(0)->nodeValue);
+            $statusFromCourier=str_replace(']', '', $status['1']);
+        } else {
+            throw new \Exception("Invalid\Data not found");
+            
+        }
+        if (!empty($statusFromCourier)) {
+            return [
+                'Courier Name' => static::$name,
+                'AWB' => $trackingNumber,
+                'status' => $statusFromCourier
+            ];
+        } else {
+            throw new \Exception("Status not recieved");
+        }
+    }
+
+    public static function trackShipment($trackingNumberArray)
+    {
+
+        $headers = array('Content-Type: text/xml');
+        // $payloadResp = (new Gati)->prepareSchedulePickupPayload($orderInfo, $credentials, $awb);
+
+        // if ($payloadResp['success']) {
+        //     $payload=$payloadResp['payload'];
+        // } else {
+        //     throw new \Exception("Payload not generated successfully", 1);
+        // }
+        $payload = '';
+
+        $trackingNumbers = implode(',', $trackingNumberArray);
+        $apiCallRawResponse =  \Utility\WCurl::post('http://www.gati.com/webservices/ECOMDKTTRACK.jsp?p1=' .$trackingNumbers . '&p2=123546BA90234561', '', $payload, $headers);
+        print_r($apiCallRawResponse);
+        die;
+        //XML Parse the response, try to find "success" in it
+        $xml = self::object2array(simplexml_load_string($apiCallRawResponse['body']));
+        if ($xml["result"]=="successful") {
+            if ($xml['reqcnt'] > 0) {
+                return array('success'=> true, 'data' => ['awb' => $awb, 'details' => 'success']);
+            } else {
+                $error = "";
+                if (isset($xml["details"]['res']["errmsg"])) {
+                    foreach ($xml["details"]['res']["errmsg"] as $err) {
+                        $error = $error .  $err . ", ";
+                    }
+                }
+                throw new \Exception($error);
+            }
+        } else {
+            $error ="";
+            if (isset($xml['errmsg'])) {
+                $error = $xml['errmsg'];
+            }
+            throw new \Exception($error);
+        }
     }
 }

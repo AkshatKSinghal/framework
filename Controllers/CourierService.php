@@ -9,8 +9,49 @@ use \Model\CourierService as CourierServiceModel;
 */
 class CourierService extends CourierCompany
 {
-    protected $mandatoryFields = ['courierCompanyId', 'serviceType', 'orderType'];
-    protected $optionalFields = ['credentialsRequiredJson', 'pincodes', 'status', 'settings'];
+    protected $fields = [
+        'courier_company_id' => [
+            'mandatory' => true,
+            'data' => [],
+            'multiple' => false
+        ],
+        'service_type' => [
+            'mandatory' => true,
+            'data' => [],
+            'multiple' => false
+        ],
+        'order_type' => [
+            'mandatory' => true,
+            'data' => [],
+            'multiple' => false
+        ],
+        'credentials_required_json' => [
+            'mandatory' => true,
+            'data' => [],
+            'multiple' => false
+        ],
+        'pincodes' => [
+            'mandatory' => false,
+            'data' => [],
+            'multiple' => false
+        ],
+        'status' => [
+            'mandatory' => true,
+            'data' => [],
+            'multiple' => false
+        ],
+        'settings' => [
+            'mandatory' => true,
+            'data' => [
+                'awb_allocation_mode' => [
+                    'data' => [],
+                    'mandatory' => true,
+                    'multiple' => false,
+                ]
+            ],
+            'multiple' => false
+        ],
+    ];
     // protected $model;
     /**
      * Function to return if the Courier Service and Courier Company
@@ -85,28 +126,54 @@ class CourierService extends CourierCompany
 
     public function create($request)
     {
-        $mandatoryData = $this->checkFields($request, 'mandatory');
-        $optionalData = $this->checkFields($request, 'optional');
-        $checkedData = array_merge($mandatoryData, $optionalData);
+        $checkedData = $this->checkFields($request);
         $modelId = $this->setIndividualFields($checkedData);
         return $modelId;
     }
     
     protected function setIndividualFields($data)
     {
-        $model = new CourierServiceModel();
-        foreach ($data as $key => $value) {
+        $modelClass = $this->getModelClass();
+        $model = new $modelClass();
+        $mapArray = [
+            'courier_company_id' => 'courier_company_id',
+            'service_type' => 'service_type',
+            'order_type' => 'order_type',
+            'credentials_required_json' => 'credentials_required_json',
+            'pincodes' => 'pincodes',
+            'status' => 'status',
+            'settings' => 'settings'
+        ];
+
+        foreach ($mapArray as $dbField => $mergeFields) {
+            $resultFields = [];
+            $insertData = $data[$dbField];
+            if ($dbField == 'credentials_required_json' || $dbField == 'settings') {
+                $insertData = json_encode($insertData);
+            }
+            $key = str_replace('_', '', ucwords($dbField, '_'));
             $functionName = 'set'.$key;
-            $model->$functionName($value);
+            $model->$functionName($insertData);
         }
+        #TODO move last updated time to save funciton in base model
         $model->validate();
         return $model->save();
     }
-
 
     public function getById($id)
     {
         $service = new CourierService($id);
         return $service;
+    }
+
+    public function getServiceType()
+    {
+        return $this->model->getServiceType();
+    }
+
+    public function getCourierCompanyShortCode()
+    {
+        $courierCompany = new CourierCompany([$this->model->getCourierCompanyId()]);
+        return $courierCompany->getShortCode();
     }
 }

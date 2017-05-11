@@ -1,7 +1,9 @@
 <?php
 
 namespace Controllers;
+
 use \Controllers\AWBBatch;
+
 /**
 * Controller for Courier Service Accounts
 */
@@ -14,7 +16,7 @@ class CourierServiceAccount extends CourierService
             'mandatory' => true,
             'data' => [],
             'multiple' => false
-        ], 
+        ],
         'courier_service_id' => [
             'mandatory' => true,
             'data' => [],
@@ -39,7 +41,7 @@ class CourierServiceAccount extends CourierService
             'mandatory' => false,
             'data' => [],
             'multiple' => false
-        ],        
+        ],
     ];
     /**
      * Function to get AWB for shipment booking
@@ -49,7 +51,7 @@ class CourierServiceAccount extends CourierService
      * @throws Exception if courier service does not support pre-allocation of AWB
      * @throws Exception if no AWB batches are available
      * @throws Exception if no AWBs are available in the batch
-     * 
+     *
      * @return string $awb AWB Number
      */
     public function getAWB()
@@ -58,7 +60,7 @@ class CourierServiceAccount extends CourierService
             $awbBatch = $this->getAWBBatch();
             return ['awb' => $awbBatch->getAWB(), 'awbBatchId' => $awbBatch->model->getId()];
         } catch (\Exception $e) {
-            throw new \Exception($e->getMessage());            
+            throw new \Exception($e->getMessage());
         }
         // return $awbBatch->getAWB();
     }
@@ -96,7 +98,7 @@ class CourierServiceAccount extends CourierService
             $batchId = $courierServiceAccount->getAWBBatch();
             return new AWBBatch([$batchId]);
         } catch (\Exception $e) {
-            throw new \Exception($e->getMessage());            
+            throw new \Exception($e->getMessage());
         }
     }
 
@@ -126,7 +128,7 @@ class CourierServiceAccount extends CourierService
             $insertData = $data[$dbField];
             if ($dbField == 'credentials') {
                 $insertData = json_encode($insertData);
-            }            
+            }
             $key = str_replace('_', '', ucwords($dbField, '_'));
             $functionName = 'set'.$key;
             $model->$functionName($insertData);
@@ -152,5 +154,22 @@ class CourierServiceAccount extends CourierService
     public function mapAWBBatch($awbBatchId)
     {
         $this->model->mapAWBBatches($awbBatchId, 'add');
+    }
+
+    public function getCredentials()
+    {
+        $credentials = $this->model->getCredentials();
+        return json_decode($credentials, true);
+    }
+
+    public function getCourierCompanyShortCode()
+    {
+        $courierService = new CourierService([$this->model->getCourierServiceId()]);
+        return $courierService->getCourierCompanyShortCode();
+    }
+
+    public function getShipmentFromOrderRef($orderRef)
+    {
+        $ship = \Controllers\ShipmentDetail::getFromOrderRefCourierServiceAccount($orderRef, $this->model->id);
     }
 }

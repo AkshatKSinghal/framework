@@ -235,41 +235,42 @@ class ShipmentDetail extends BaseController
             'order_ref' => $checkedData['order_ref']
         ];
         $courierService = new CourierService([$checkedData['courier_service_id']]);
-        $serviceType = $courierService->model->getServiceType();
+        $serviceType = $courierService->getServiceType();
         $checkedData['shipment_type'] = $serviceType;
         $preAllocateAWB = $courierService->preallocateAWBAllowed();
-        // print_r($courierService->model);
-        // die;
         $courierResponse = '';
-        #TODO courier cariers to be dynamically assigned instead of gati hardcode
+        $courierShortCode = $courierService->getCourierCompanyShortCode();
+        $courierName = '\Controllers\Couriers\\' . ucfirst(array_search($courierShortCode, $this->shortCodeMap));
 
         $courierServiceAccount = CourierServiceAccount::getByAccountAndCourierService($checkedData['account_id'], $checkedData['courier_service_id']);
-        $credentials = $courierServiceAccount->model->getCredentials();
+        $credentials = $courierServiceAccount->getCredentials();
         switch ($preAllocateAWB) {
             case 'pre':
                 $awbDetail = $courierServiceAccount->getAWB();
                 $awb = $awbDetail['awb'];
                 $checkedData['courier_service_account_id'] = $courierServiceAccount->model->getId();
                 try {
-                    $courierResponse = \Controllers\Couriers\Gati::bookShipment($orderInfo, $serviceType, $credentials, $awb);
+                    $courierResponse = $courierName::bookShipment($orderInfo, $serviceType, $credentials, $awb);
                 } catch (\Exception $e) {
-                    //mark awb as not assigned
-                    $awbBatch = new AWBBatch([$awbDetail['awbBatchId']]);
-                    $awbBatch->logAWBEvent('failed', $awb);
-                    $awbBatch->updateTableForFailedAwb();
-                    throw new \Exception($e->getMessage() . "Courier rejected awb in pre allocation", 1);
+                    if (stripos($e->getMessage(), 'INTERNAL ERROR java.lang.NumberFormatException') !== false || stripos($e->getMessage(), 'Docket was already uploaded') !== false) {
+                        $awbBatch = new AWBBatch([$awbDetail['awbBatchId']]);
+                        $awbBatch->logAWBEvent('failed', $awb);
+                        $awbBatch->updateTableForFailedAwb();
+                    }
+                    throw new \Exception($e->getMessage() . " Courier rejected awb in pre allocation", 1);
                 }
                 break;
 
             case 'post':
                 try {
-                    $courierResponse = \Controllers\Couriers\Gati::bookShipment($orderInfo, $serviceType, $credentials);
+                    $courierResponse = $courierName::bookShipment($orderInfo, $serviceType, $credentials);
                 } catch (\Exception $e) {
-                    //mark awb as not assigned
-                    $awbBatch = new AWBBatch([]);
-                    $awbBatch->logAWBEvent('failed', $awb);
-                    $awbBatch->updateTableForFailedAwb();
-                    throw new \Exception("Courier rejected awb post allocation", 1);
+                    if (stripos($e->getMessage(), 'INTERNAL ERROR java.lang.NumberFormatException') !== false || stripos($e->getMessage(), 'Docket was already uploaded') !== false) {
+                        $awbBatch = new AWBBatch([]);
+                        $awbBatch->logAWBEvent('failed', $awb);
+                        $awbBatch->updateTableForFailedAwb();
+                    }
+                    throw new \Exception($e->getMessage() . " Courier rejected awb post allocation", 1);
                 }
                 break;
         }
@@ -291,7 +292,7 @@ class ShipmentDetail extends BaseController
         $awb = $request['awb'];
         $checkedData = $this->checkFields($request);
         $courierService = new CourierService([$checkedData['courier_service_id']]);
-        $serviceType = $courierService->model->getServiceType();
+        $serviceType = $courierService->getServiceType();
         $checkedData['shipment_type'] = $serviceType;
         return $this->addShipmentTODB($checkedData, $awb);
     }
@@ -362,7 +363,7 @@ class ShipmentDetail extends BaseController
 
     /**
      * Function to handel track shipment api request
-     * @param array $request 
+     * @param array $request
      * @return array $response
      */
     public function trackShipment($request)
@@ -373,15 +374,62 @@ class ShipmentDetail extends BaseController
         $shipId = $request['ref_id'];
         $ship = new ShipmentDetail([$shipId]);
         $awb = $ship->model->getCourierServiceReferenceNumber();
+
+        $courierShortCode = $ship->getCourierShortCode();
+        $courierName = '\Controllers\Couriers\\' . ucfirst(array_search($courierShortCode, $this->shortCodeMap));
         try {
-            $courierResponse = \Controllers\Couriers\Gati::trackShipment($awb);
+            $courierResponse = $courierName::trackShipment([$awb]);
+            $ship->updateStatus($courierResponse['status']);
+            return [
+                'Status' => 'SUCCESS',
+                'message' => 'Shipment status is ' . $courierResponse['status'] . '.',
+                'data' => $courierResponse
+            ];
         } catch (\Exception $e) {
-            //mark awb as not assigned
-            $awbBatch = new AWBBatch([]);
-            $awbBatch->logAWBEvent('failed', $awb);
-            $awbBatch->updateTableForFailedAwb();
-            throw new \Exception("Courier rejected awb", 1);
+            throw new \Exception($e->getMessage());
         }
+    }
+
+    public function getCourierShortCode()
+    {
+        $courierServiceAccount = new CourierServiceAccount([$this->model->getCourierServiceAccountId()]);
+        return $courierServiceAccount->getCourierCompanyShortCode();
+    }
+
+    public function trackShipmentByRef($request)
+    {
+        if (!isset($request['account_id'])) {
+            throw new \Exception("account_id id not found", 1);
+        }
+        if (!isset($request['order_ref'])) {
+            throw new \Exception("order_ref not found", 1);
+        }
+        if (!isset($request['courier_service_id'])) {
+            throw new \Exception("courier_service_id not found", 1);
+        }
+        $courierServiceAccount = CourierServiceAccount::getByAccountAndCourierService($request['account_id'], $request['courier_service_id']);
+        $shipments = $courierServiceAccount->getShipmentFromOrderRef($request['order_ref']);
+        foreach ($shipments as $shipment) {
+
+        }
+    }
+
+    public static function getFromOrderRefCourierServiceAccount($orderRef, $courierServiceAccountId)
+    {
+        $model = self::getModelClass();
+        $modelObj = new $model;
+
+        $shipments = $modelObj->getByParam([
+            'order_ref' => $orderRef,
+            'courier_service_account_id' => $courierServiceAccountId
+        ]);
+        return $shipments;
+    }
+
+    public function updatedStatus($status)
+    {
+        $this->model->setStatus($status);
+        $this->model->save();
     }
 
     public function getById($id)

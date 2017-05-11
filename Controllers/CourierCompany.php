@@ -10,8 +10,43 @@ use \Controllers\Base as BaseController;
 */
 class CourierCompany extends BaseController
 {
-    protected $mandatoryFields = ['name', 'shortCode'];
-    protected $optionalFields = ['comments', 'logoUrl', 'status'];
+    protected $fields = [
+        'name' => [
+            'mandatory' => true,
+            'data' => [],
+            'multiple' => false
+        ],
+        'short_code' => [
+            'mandatory' => true,
+            'data' => [],
+            'multiple' => false
+        ],
+        'comments' => [
+            'mandatory' => false,
+            'data' => [],
+            'multiple' => false
+        ],
+        'logo_url' => [
+            'mandatory' => false,
+            'data' => [],
+            'multiple' => false
+        ],
+        'tracking_charge' => [
+            'mandatory' => false,
+            'data' => [],
+            'multiple' => false
+        ],
+        'booking_charge' => [
+            'mandatory' => false,
+            'data' => [],
+            'multiple' => false
+        ],
+        'status' => [
+            'mandatory' => true,
+            'data' => [],
+            'multiple' => false
+        ]
+    ];
     /**
      * Function for handling the calls to the courier classes
      *
@@ -67,20 +102,33 @@ class CourierCompany extends BaseController
 
     public function create($request)
     {
-        $mandatoryData = $this->checkFields($request, 'mandatory');
-        $optionalData = $this->checkFields($request, 'optional');
-        $checkedData = array_merge($mandatoryData, $optionalData);
+        $checkedData = $this->checkFields($request);
         $modelId = $this->setIndividualFields($checkedData);
         return $modelId;
     }
-
+    
     protected function setIndividualFields($data)
     {
-        $model = new CourierCompanyModel();
-        foreach ($data as $key => $value) {
+        $modelClass = $this->getModelClass();
+        $model = new $modelClass();
+        $mapArray = [
+            'name' => 'name',
+            'short_code' => 'short_code',
+            'comments' => 'comments',
+            'logo_url' => 'logo_url',
+            'tracking_charge' => 'tracking_charge',
+            'booking_charge' => 'booking_charge',
+            'status' => 'status'
+        ];
+
+        foreach ($mapArray as $dbField => $mergeFields) {
+            $resultFields = [];
+            $insertData = $data[$dbField];
+            $key = str_replace('_', '', ucwords($dbField, '_'));
             $functionName = 'set'.$key;
-            $model->$functionName($value);
+            $model->$functionName($insertData);
         }
+        #TODO move last updated time to save funciton in base model
         $model->validate();
         return $model->save();
     }
@@ -89,5 +137,10 @@ class CourierCompany extends BaseController
     {
         $courier = new CourierCompanyModel($id);
         return $courier;
+    }
+
+    public function getShortCode()
+    {
+        return $this->model->getShortCode();
     }
 }
