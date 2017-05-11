@@ -1,5 +1,6 @@
 <?php
 namespace Controllers;
+
 /**
  * Controller for all external communications of the BTPost System
  *
@@ -63,13 +64,43 @@ class BTPost
     public function createCourierCompany($name, $shortCode, $comments, $logoURL)
     {
         $company = new \Controllers\CourierCompany([]);
-        $companyId = $batchExecute->create([
+        $companyId = $company->create([
             'name' => $name,
             'shortCode' => $shortCode,
             'comments' => $comments,
             'logoURL' => $logoURL,
         ]);
         return $companyId;
+    }
+
+    public function createCourierService($courierCompanyId, $credentials, $pincodes, $settings, $status, $serviceType, $orderType)
+    {
+        $company = new \Controllers\CourierService([]);
+        $companyServiceId = $company->create([
+            'courier_company_id' => $courierCompanyId,
+            'credentials_required_json' => $credentials,
+            'pincodes' => $pincodes,
+            'settings' => $status,
+            'service_type' => $serviceType,
+            'order_type' => $orderType,
+        ]);
+        return $companyServiceId;
+    }
+
+    public function createCourierServiceAccount()
+    {
+        $ship = new \Controllers\CourierServiceAccount([]);
+        return ($ship->create([
+            'account_id' => '12',
+            'courier_service_id' => '15',
+            'awb_batch_mode' => 'ADMIN',
+            'credentials' => [
+                'code' => '54655501',
+                'cust_vend_code'=>'100001',
+            ],
+            'pincodes' => '7',
+            'status' => 'ACTIVE',
+        ]));
     }
 
     public function getAccountId()
