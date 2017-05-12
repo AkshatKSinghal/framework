@@ -242,7 +242,6 @@ class Gati extends Base
     {
         $headers = array('Content-Type: text/xml');
         $payload = '';
-        $trackingNumberArray = [534289163];
         $trackingNumbers = implode(',', $trackingNumberArray);
         $apiCallRawResponse =  \Utility\WCurl::get('http://www.gati.com/webservices/ECOMDKTTRACK.jsp', 'p1=' .$trackingNumbers . '&p2=85E564FED0FB0518', $payload, $headers);
         $xml = self::object2array(simplexml_load_string($apiCallRawResponse['body']));

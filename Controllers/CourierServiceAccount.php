@@ -181,6 +181,7 @@ class CourierServiceAccount extends CourierService
 
     public function getShipmentFromOrderRef($orderRef)
     {
-        $ship = \Controllers\ShipmentDetail::getFromOrderRefCourierServiceAccount($orderRef, $this->model->id);
+        $ships = \Controllers\ShipmentDetail::getFromOrderRefCourierServiceAccount($orderRef, $this->model->getId());
+        return $ships;
     }
 }

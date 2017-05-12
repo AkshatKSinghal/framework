@@ -408,21 +408,26 @@ class ShipmentDetail extends BaseController
             throw new \Exception("courier_service_id not found");
         }
         $courierServiceAccount = CourierServiceAccount::getByAccountAndCourierService($request['account_id'], $request['courier_service_id']);
+
         $shipments = $courierServiceAccount->getShipmentFromOrderRef($request['order_ref']);
+
         foreach ($shipments as $shipment) {
-            $courierShortCode = $shipment->getCourierShortCode();
-            $trackingIds[$courierShortCode][] = $shipment;
+            $ship = new ShipmentDetail([$shipment['id']]);
+            $courierShortCode = $ship->getCourierShortCode();
+            $trackId = $ship->model->getCourierServiceReferenceNumber();
+            $trackingIds[$courierShortCode][] = $trackId;
         }
 
         $courierResponse = [];
-        foreach ($trackingIds as $shortCode => $shipment) {
+        foreach ($trackingIds as $shortCode => $trackId) {
             $courierName = '\Controllers\Couriers\\' . ucfirst(array_search($shortCode, $this->shortCodeMap));
-            $trackingId = $shipment->model->getCourierServiceReferenceNumber();
             try {
-                $courierResponse = $courierName::trackShipment($trackingId);
+                $courierResponse = $courierName::trackShipment($trackId);
                 print_r($courierResponse);
                 die;
-                $shipment->updateStatus($courierResponse['status']);
+                $courierResponse = reset($courierName::trackShipment([$awb]));
+                $ship->model->setStatus($courierResponse['status']);
+                $ship->model->save();
             } catch (\Exception $e) {
                 throw new \Exception($e->getMessage());
             }

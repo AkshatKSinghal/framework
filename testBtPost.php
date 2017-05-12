@@ -120,8 +120,10 @@
 
         // track shipment
         $ship = new \Controllers\ShipmentDetail([]);
-        var_dump($ship->trackShipment([
-            'ref_id' => 9
+        var_dump($ship->trackShipmentByRef([
+            'account_id' => '12',
+            'order_ref' => '500000013',
+            'courier_service_id' => '15'
         ]));
 
         //Map unmap courier services
