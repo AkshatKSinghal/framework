@@ -108,20 +108,25 @@
         //     'awb' => '10',
         // ]));
 
-        $company = new \Controllers\CourierCompany([]);
-        $companyId = $company->create([
-            'name' => '$name',
-            'short_code' => '$asda',
-            'comments' => '$comments',
-            'logo_url' => '$logoURL',
-            'status' => 'ACTIVE',
-        ]);
-        // track shipment
-        // $ship = new \Controllers\ShipmentDetail([]);
-        // var_dump($ship->trackShipment([
-        //     'ref_id' => 10
-        // ]));
+        //Courier COmpany create
+        // $company = new \Controllers\CourierCompany([]);
+        // $companyId = $company->create([
+        //     'name' => '$name',
+        //     'short_code' => '$asda',
+        //     'comments' => '$comments',
+        //     'logo_url' => '$logoURL',
+        //     'status' => 'ACTIVE',
+        // ]);
 
+        // track shipment
+        $ship = new \Controllers\ShipmentDetail([]);
+        var_dump($ship->trackShipment([
+            'ref_id' => 9
+        ]));
+
+        //Map unmap courier services
+        // $batch = new \Controllers\AWBBatch([$batchId]);
+        // $batch->mapUnmapCourierService($operation, $courierServiceArray, $accountId);
         echo '******end******';
     } catch (Exception $e) {
         echo '<br>';

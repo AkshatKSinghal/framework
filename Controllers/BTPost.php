@@ -138,6 +138,7 @@ class BTPost
      *
      * @param string $awb AWB to be tracked
      * @param string $courierCompanyID ID of the courier company
+     * @param string $orderRef order_ref for the shipment
      *
      * @return mixed $reponse Tracking information for the AWB number
      */
@@ -147,8 +148,8 @@ class BTPost
         $ship = new \Controllers\ShipmentDetail([]);
         $statusArray = $ship->trackShipmentByRef([
             'account_id' => $accountId,
-            'order_ref' => $courierCompanyID,
-            'courier_service_id' => $orderRef
+            'order_ref' => $orderRef,
+            'courier_service_id' => $courierCompanyID
         ]);
         return $statusArray;
     }
@@ -214,5 +215,19 @@ class BTPost
             'courier_service_id' => '15',
             'awb' => '10',
         ]);
+    }
+
+    /**
+     * FUnction to handle map or unmap batch to courierServiceAccountId request
+     * @param string $batchId batch id to be mapped
+     * @param string $operation operation to be performed (set, add, remove)
+     * @param array $courierServiceArray array of courierServiceIds to be used to find out courierServiceAccount id to be mapped
+     * @param string $accountId accountIds to be used to find out courierServiceAccount id to be mapped
+     * @return mixed array containing status and meta data
+     */
+    public function mapUnmapAWbBatches($batchId, $operation, $courierServiceArray, $accountId)
+    {
+        $batch = new \Controllers\AWBBatch([$batchId]);
+        return $batch->mapUnmapCourierService($operation, $courierServiceArray, $accountId);
     }
 }

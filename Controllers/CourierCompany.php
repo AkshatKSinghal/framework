@@ -143,4 +143,9 @@ class CourierCompany extends BaseController
     {
         return $this->model->getShortCode();
     }
+
+    public function getName()
+    {
+        return $this->model->getName();
+    }
 }

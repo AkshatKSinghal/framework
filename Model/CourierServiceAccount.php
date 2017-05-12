@@ -77,7 +77,7 @@ class CourierServiceAccount extends CourierService
                 ." AND batch_id IN (" . implode(", ", $ids) . ")";
                 break;
             default:
-                throw new Exception("Invalid operation");
+                throw new \Exception("Invalid operation");
                 break;
         }
         foreach ($query as $q) {

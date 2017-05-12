@@ -240,22 +240,45 @@ class Gati extends Base
      */
     public static function trackShipment($trackingNumberArray)
     {
-
         $headers = array('Content-Type: text/xml');
- 
         $payload = '';
-        $trackingNumberArray = [1231231231,12312312312312];
+        $trackingNumberArray = [534289163];
         $trackingNumbers = implode(',', $trackingNumberArray);
-        $apiCallRawResponse =  \Utility\WCurl::get('http://www.gati.com/webservices/ECOMDKTTRACK.jsp', 'p1=' .$trackingNumbers . '&p2=123546BA90234561', $payload, $headers);
-
+        $apiCallRawResponse =  \Utility\WCurl::get('http://www.gati.com/webservices/ECOMDKTTRACK.jsp', 'p1=' .$trackingNumbers . '&p2=85E564FED0FB0518', $payload, $headers);
         $xml = self::object2array(simplexml_load_string($apiCallRawResponse['body']));
-
-        foreach ($xml['dktinfo'] as $info) {
-            $retArray[] = [
-                'awb' => $info['dktno'],
-                'result' => $info['result'],
-                'errmsg' => $info['errmsg']
+        if (count($trackingNumberArray) == 1) {
+            $xml['dktinfo'] = [
+                $xml['dktinfo']
             ];
+        }
+        foreach ($xml['dktinfo'] as $info) {
+            switch ($info['result']) {
+                case 'failed':
+                    $retArray[] = [
+                        'awb' => $info['dktno'],
+                        'result' => 'FAILED',
+                        'errmsg' => $info['errmsg']
+                    ];
+                    break;
+
+                case 'successful':
+                    foreach ($info['TRANSIT_DTLS']['ROW'] as $transitDtls) {
+                        $dateStr = $transitDtls['INTRANSIT_DATE'] . ' ' .  $transitDtls['INTRANSIT_TIME'];
+                        $timestamp = \DateTime::createFromFormat('d-M-Y H:i', $dateStr)->getTimestamp();
+                        $dktinfo[] = [
+                            'timestamp' => $timestamp,
+                            'location' => $transitDtls['INTRANSIT_LOCATION'],
+                            'message' => $transitDtls['INTRANSIT_STATUS']
+                        ];
+                    }
+                    $retArray[] = [
+                        'awb' => $info['dktno'],
+                        'result' => "SUCCESS",
+                        'dktinfo' => $dktinfo,
+                        'status' => reset($dktinfo)['message']
+                    ];
+                    break;
+            }
         }
         return $retArray;
     }

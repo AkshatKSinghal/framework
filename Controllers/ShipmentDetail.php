@@ -222,8 +222,8 @@ class ShipmentDetail extends BaseController
     ];
     /**
      * Function to handle bookshipment request in turn calls addSHipmentTODB function
-     * @param array $request
-     * @return array $response
+     * @param mixed $request array contaning all the data related to the shipment
+     * @return mixeed $response array contaning the status and other meta data related to the shipment booked
      */
     public function bookShipment($request)
     {
@@ -281,8 +281,8 @@ class ShipmentDetail extends BaseController
 
     /**
      *  Function to handle addShipment api request in turn calls addSHipmentTODB function
-     * @param array $request
-     * @return array $response
+     * @param mixed $request array contaning all the data related to the shipment
+     * @return mixeed $response array contaning the status and other meta data related to the shipment booked
      */
     public function addShipmentRequest($request)
     {
@@ -299,9 +299,9 @@ class ShipmentDetail extends BaseController
 
     /**
      *  Function to handle addSHipment details in db
-     * @param array $data
-     * @param string $awb
-     * @return array $response
+     * @param mixed $data the incoming data to be inserted in to shpment table
+     * @param string $awb awb assiged to the shipment
+     * @return mixed $response array contaning the status and other meta data related to the shipment booked
      */
     private function addShipmentTODB($data, $awb)
     {
@@ -323,7 +323,7 @@ class ShipmentDetail extends BaseController
     /**
      * Function to set all db fields and save the object in db
      * @param array $data
-     * @return int $id objectId
+     * @return string $id modelId for the object inserted
      */
     protected function setIndividualFields($data)
     {
@@ -362,9 +362,9 @@ class ShipmentDetail extends BaseController
     }
 
     /**
-     * Function to handel track shipment api request
-     * @param array $request
-     * @return array $response
+     * Function to hadnle track shipment api request
+     * @param mixed $request array contaning request data and ref_id
+     * @return mixed $response contaning status and tracking details
      */
     public function trackShipment($request)
     {
@@ -378,8 +378,9 @@ class ShipmentDetail extends BaseController
         $courierShortCode = $ship->getCourierShortCode();
         $courierName = '\Controllers\Couriers\\' . ucfirst(array_search($courierShortCode, $this->shortCodeMap));
         try {
-            $courierResponse = $courierName::trackShipment([$awb]);
-            $ship->updateStatus($courierResponse['status']);
+            $courierResponse = reset($courierName::trackShipment([$awb]));
+            $ship->model->setStatus($courierResponse['status']);
+            $ship->model->save();
             return [
                 'Status' => 'SUCCESS',
                 'message' => 'Shipment status is ' . $courierResponse['status'] . '.',
@@ -390,46 +391,55 @@ class ShipmentDetail extends BaseController
         }
     }
 
-    public function getCourierShortCode()
-    {
-        $courierServiceAccount = new CourierServiceAccount([$this->model->getCourierServiceAccountId()]);
-        return $courierServiceAccount->getCourierCompanyShortCode();
-    }
-
+    /**
+     * Function to handle track shipment using order ref and account id request
+     * @param mixed $request containing account_id, order_ref, courier_service_id
+     * @return mixed $response contaning status and tracking details
+     */
     public function trackShipmentByRef($request)
     {
         if (!isset($request['account_id'])) {
-            throw new \Exception("account_id id not found", 1);
+            throw new \Exception("account_id id not found");
         }
         if (!isset($request['order_ref'])) {
-            throw new \Exception("order_ref not found", 1);
+            throw new \Exception("order_ref not found");
         }
         if (!isset($request['courier_service_id'])) {
-            throw new \Exception("courier_service_id not found", 1);
+            throw new \Exception("courier_service_id not found");
         }
         $courierServiceAccount = CourierServiceAccount::getByAccountAndCourierService($request['account_id'], $request['courier_service_id']);
         $shipments = $courierServiceAccount->getShipmentFromOrderRef($request['order_ref']);
         foreach ($shipments as $shipment) {
             $courierShortCode = $shipment->getCourierShortCode();
-            $trackingIds[$courierShortCode][] = $shipment->model->getCourierServiceReferenceNumber();
+            $trackingIds[$courierShortCode][] = $shipment;
         }
 
-        foreach ($trackingIds as $shortCode => $trackingId) {
-            $courierName = '\Controllers\Couriers\\' . ucfirst(array_search($courierShortCode, $this->shortCodeMap));
+        $courierResponse = [];
+        foreach ($trackingIds as $shortCode => $shipment) {
+            $courierName = '\Controllers\Couriers\\' . ucfirst(array_search($shortCode, $this->shortCodeMap));
+            $trackingId = $shipment->model->getCourierServiceReferenceNumber();
             try {
                 $courierResponse = $courierName::trackShipment($trackingId);
-                $ship->updateStatus($courierResponse['status']);
-                return [
-                    'Status' => 'SUCCESS',
-                    'message' => 'Shipment status is ' . $courierResponse['status'] . '.',
-                    'data' => $courierResponse
-                ];
+                print_r($courierResponse);
+                die;
+                $shipment->updateStatus($courierResponse['status']);
             } catch (\Exception $e) {
                 throw new \Exception($e->getMessage());
             }
         }
+        return [
+            'Status' => 'SUCCESS',
+            'message' => 'Shipment status is ' . $courierResponse['status'] . '.',
+            'data' => $courierResponse
+        ];
     }
 
+    /**
+     * Function to get shipment details object using order ref and courierServiceAccountId
+     * @param string $orderRef
+     * @param string $courierServiceAccountId
+     * @return type
+     */
     public static function getFromOrderRefCourierServiceAccount($orderRef, $courierServiceAccountId)
     {
         $model = self::getModelClass();
@@ -452,5 +462,11 @@ class ShipmentDetail extends BaseController
     {
         $shipmentDetails = new ShipmentDetailModel($id);
         return $courier;
+    }
+
+    public function getCourierShortCode()
+    {
+        $courierServiceAccount = new CourierServiceAccount([$this->model->getCourierServiceAccountId()]);
+        return $courierServiceAccount->getCourierCompanyShortCode();
     }
 }

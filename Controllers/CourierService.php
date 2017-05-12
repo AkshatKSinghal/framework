@@ -173,7 +173,18 @@ class CourierService extends CourierCompany
 
     public function getCourierCompanyShortCode()
     {
-        $courierCompany = new CourierCompany([$this->model->getCourierCompanyId()]);
+        $courierCompany = $this->getCourierCompany();
         return $courierCompany->getShortCode();
+    }
+
+    public function getCourierCompanyName()
+    {
+        $courierCompany = $this->getCourierCompany();
+        return $courierCompany->getName();
+    }
+
+    public function getCourierCompany()
+    {
+        return new CourierCompany([$this->model->getCourierCompanyId()]);
     }
 }

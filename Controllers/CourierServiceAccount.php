@@ -151,9 +151,9 @@ class CourierServiceAccount extends CourierService
         return new CourierServiceAccount($courierServiceAccount[0]['id']);
     }
 
-    public function mapAWBBatch($awbBatchId)
+    public function mapAWBBatch($awbBatchId, $operation)
     {
-        $this->model->mapAWBBatches($awbBatchId, 'add');
+        $this->model->mapAWBBatches($awbBatchId, $operation);
     }
 
     public function getCredentials()
@@ -164,8 +164,19 @@ class CourierServiceAccount extends CourierService
 
     public function getCourierCompanyShortCode()
     {
-        $courierService = new CourierService([$this->model->getCourierServiceId()]);
+        $courierService = $this->getCourierService();
         return $courierService->getCourierCompanyShortCode();
+    }
+
+    public function getCourierCompanyName()
+    {
+        $courierService = $this->getCourierService();
+        return $courierService->getCourierCompanyName();
+    }
+
+    public function getCourierService()
+    {
+        return new CourierService([$this->model->getCourierServiceId()]);
     }
 
     public function getShipmentFromOrderRef($orderRef)

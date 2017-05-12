@@ -22,7 +22,10 @@ class AWBBatch extends BaseController
     const FAILED = 'failed';
     const EVENT_USED = 'used';
     const EVENT_FAILED = 'failed';
-
+    /**
+     * function to return the Cache instance
+     * @return CacheManager Object
+     */
     private static function redis()
     {
         return CacheManager::getInstance();
@@ -40,7 +43,7 @@ class AWBBatch extends BaseController
      * @throws Exception in case the $courierCompanyID is invalid
      * @throws Exception in case the $filePath is invalid/ empty
      *
-     * @return void
+     * @return batchId created
      *
      */
 
@@ -69,17 +72,17 @@ class AWBBatch extends BaseController
         return $this->model->getId();
     }
 
-    public function mapWithCourier($request)
-    {
-        if (!isset($request['awbBatchId'])) {
-            throw new \Exception("AWb batch id not found", 1);
-        }
-        if (!isset($request['courierServiceAccuntId'])) {
-            throw new \Exception("Courier Service Account id not found", 1);
-        }
-        $courierServiceAccount = new CourierServiceAccount([$request['courierServiceAccuntId']]);
-        $courierServiceAccount->mapAWBBatch($request['awbBatchId']);
-    }
+    // public function mapWithCourier($request)
+    // {
+    //     if (!isset($request['awbBatchId'])) {
+    //         throw new \Exception("AWb batch id not found", 1);
+    //     }
+    //     if (!isset($request['courierServiceAccuntId'])) {
+    //         throw new \Exception("Courier Service Account id not found", 1);
+    //     }
+    //     $courierServiceAccount = new CourierServiceAccount([$request['courierServiceAccuntId']]);
+    //     $courierServiceAccount->mapAWBBatch($request['awbBatchId']);
+    // }
     /**
      * Function to perform basic validations on the file
      * i.e. Duplicates within the file, Invalid Characters, Empty lines etc
@@ -383,6 +386,10 @@ class AWBBatch extends BaseController
         return $localFilePath;
     }
 
+    /**
+     * Function to load awbs from existing awbBatches into cache
+     * @return string $processingSetName cache set name where the awbs are loaded
+     */
     private function loadExistingBatches()
     {
         $batches = $this->model->findByCourier();
@@ -434,11 +441,102 @@ class AWBBatch extends BaseController
         return $filePath;
     }
 
+    /**
+     * Function to update awbBatches model in case of a failed awb assignment from the courier side.
+     * @return void
+     */
     public function updateTableForFailedAwb()
     {
         $this->model->setFailedCount($this->model->getFailedCount() + 1);
         $this->model->setAssignedCount($this->model->getAssignedCount() - 1);
         $this->model->save();
+    }
+
+    /**
+     * Function to map or unmap a particular batch with courier_service_account_id.
+     * @param string $operation operation to be performed (set/add/remove)
+     * @param mixed $courierServiceArray array of courierServiceIds to be used to find courierServiceAccountId
+     * @param int $accountId account to be used to find out courierServiceAccountId
+     * @return mixed array of status and meta data
+     */
+    public function mapUnmapCourierService($operation, $courierServiceArray, $accountId)
+    {
+        $response = [];
+        if (!in_array($operation, ['set', 'add', 'remove'])) {
+            return [
+                'status' => 'FAILED',
+                'message' => 'Invalid operation' . $operation
+            ];
+        }
+
+        $checkFields = $this->checkMapCourierFields($courierServiceArray, $accountId, $this->model->getId());
+        if ($checkFields['status']) {
+            return [
+                'status' => 'FAILED',
+                'message' => $checkFields['reason']
+            ];
+        }
+
+        foreach ($courierServiceArray as $courierServiceId) {
+            $courierServiceAccount = CourierServiceAccount::getByAccountAndCourierService($accountId, $courierServiceId);
+            $courierServiceAccount->mapAWBBatches($this->model->getId(), $operation);
+            $response['courier_service_mapped'][] = [
+                'service_name' => $courierServiceAccount->getCourierCompanyName(),
+                'ref_id' => $courierServiceId
+            ];
+        }
+        $response['total'] = $this->model->getTotalCount();
+        $response['valid'] = $this->model->getValidCount();
+        $response['invalid'] = $this->model->getInvalidCount();
+        $response['ref_id'] = $this->model->getId();
+        $response['available'] = $this->model->getAvailableCount();
+        $response['assigned'] = $this->model->getAssignedCount();
+        $response['failed'] = $this->model->getFailedCount();
+        return [
+            'status' => 'success',
+            'message' => 'Operation successful',
+            'data' => $response
+        ];
+    }
+
+    /**
+     * Function to validate the courier service ids and account and also to check if a batch maps to the given accountId and courierService
+     * @param mixed $courierServiceArray array of courierServiceIDs
+     * @param int $accountId account_id to be check against
+     * @return mixed array containing status and reason
+     */
+    private function checkMapCourierFields($courierServiceArray, $accountId)
+    {
+        $courierCompanyArray = [];
+        foreach ($courierServiceArray as $courierServiceId) {
+            try {
+                $courierService = new CourierService([$courierServiceId]);
+                $courierCompanyArray[] =  $courierService->getCourierCompany();
+            } catch (\Exception $e) {
+                return [
+                    'status' => false,
+                    'reason' => 'Invalid Courier Service Id'
+                ];
+            }
+        }
+
+        if (count($courierCompanyArray) > 1) {
+            return [
+                'status' => false,
+                'reason' => 'More than one Courier Company found for the given service id'
+            ];
+        }
+
+        if ($this->model->getCourierCompanyId() != $courierCompanyArray[0] || $this->model->getAccountId() != $accountId) {
+            // awb not for given account id and service id;
+            return [
+                'status' => false,
+                'reason' => 'More than one Courier Company found for the given service id'
+            ];
+        }
+        return [
+            'status' => true
+        ];
     }
 }
 
