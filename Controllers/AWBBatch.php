@@ -479,7 +479,7 @@ class AWBBatch extends BaseController
 
         foreach ($courierServiceArray as $courierServiceId) {
             $courierServiceAccount = CourierServiceAccount::getByAccountAndCourierService($accountId, $courierServiceId);
-            $courierServiceAccount->mapAWBBatches($this->model->getId(), $operation);
+            $courierServiceAccount->mapAWBBatch($this->model->getId(), $operation);
             $response['courier_service_mapped'][] = [
                 'service_name' => $courierServiceAccount->getCourierCompanyName(),
                 'ref_id' => $courierServiceId

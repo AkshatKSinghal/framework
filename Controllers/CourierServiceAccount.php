@@ -151,6 +151,24 @@ class CourierServiceAccount extends CourierService
         return new CourierServiceAccount($courierServiceAccount[0]['id']);
     }
 
+    /**
+     * Function to get the model by params
+     * @param mixed $params associative array containing the key as fields and the value as the value to search
+     * @return mixed Instance of CourierServiceAccount
+     */
+    public static function getByParams($params)
+    {
+        $model = self::getModelClass();
+        $modelObj = new $model;
+
+        $courierServiceAccount = $modelObj->getByParam($params);
+        if (empty($courierServiceAccount)) {
+            return false;
+        } else {
+            return new CourierServiceAccount($courierServiceAccount[0]['id']);
+        }
+    }
+
     public function mapAWBBatch($awbBatchId, $operation)
     {
         $this->model->mapAWBBatches($awbBatchId, $operation);
@@ -183,5 +201,28 @@ class CourierServiceAccount extends CourierService
     {
         $ships = \Controllers\ShipmentDetail::getFromOrderRefCourierServiceAccount($orderRef, $this->model->getId());
         return $ships;
+    }
+
+    public function getId()
+    {
+        return $this->model->getId();
+    }
+
+    /**
+     * Function to map the inserting fields with the incoming and setting additional fields 
+     * @param mixed $params
+     * @return mixed database fields to be inserted
+     */
+    public function mapInsertFields($params)
+    {
+        $insertData = [
+            'account_id' => $params['account_id'],
+            'courier_service_id' => $params['courier_service_id'],
+            'awb_batch_mode' => $params['awb_batch_mode'],
+            'credentials' => '',
+            'pincodes' => '',
+            'status' => 'ACTIVE'
+        ];
+        return $insertData;
     }
 }

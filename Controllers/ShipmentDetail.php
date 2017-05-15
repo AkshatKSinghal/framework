@@ -248,7 +248,7 @@ class ShipmentDetail extends BaseController
             case 'pre':
                 $awbDetail = $courierServiceAccount->getAWB();
                 $awb = $awbDetail['awb'];
-                $checkedData['courier_service_account_id'] = $courierServiceAccount->model->getId();
+                $checkedData['courier_service_account_id'] = $courierServiceAccount->getId();
                 try {
                     $courierResponse = $courierName::bookShipment($orderInfo, $serviceType, $credentials, $awb);
                 } catch (\Exception $e) {
@@ -305,7 +305,7 @@ class ShipmentDetail extends BaseController
      */
     private function addShipmentTODB($data, $awb)
     {
-        $data['status'] = 'ACTIVE';
+        $data['status'] = 'PENDING';
         $btPostId =  $this->setIndividualFields($data);
         $response = [
             'status' => 'SUCCESS',
@@ -457,18 +457,68 @@ class ShipmentDetail extends BaseController
         return $shipments;
     }
 
+    /**
+     * Function to assign awb for multiple bookings from seller end.
+     * @param mixed $request containing an array of orders containing the order_ref, account_id and courier_service_id. can be multiple.
+     * @return mixed $response containing the awb assigned and courier service used and the status(PENDING).
+     */
+    public function assignAwbSellerUpload($request)
+    {
+        $response = [];
+        foreach ($request as $order) {
+            $checkedData = $this->checkFields($order);
+            $orderRef = $order['order_ref'];
+            $courierService = new CourierService([$checkedData['courier_service_id']]);
+
+            $courierServiceAccount = CourierServiceAccount::getByParams([
+                'account_id' => $checkedData['account_id'],
+                'courier_service_id' => $checkedData['courier_service_id'],
+                'awb_batch_mode' => 'USER'
+            ]);
+            if ($courierServiceAccount) {
+                $awbDetail = $courierServiceAccount->getAWB();
+                $checkedData['courier_service_account_id'] = $courierServiceAccount->getId();
+
+                $checkedData['courier_service_details'] = '';
+                $checkedData['courier_service_reference_number'] = $awbDetail['awb'];
+                $checkedData['shipment_type'] = 'FORWARD';
+                $response[]  = $this->addShipmentTODB($checkedData, $awbDetail['awb']);
+            } else {
+                $response[] = [
+                    'status' => 'FAILED',
+                    'MSG' => 'No AWb batch found'
+                ];
+            }
+        }
+        return $response;
+    }
+
+    /**
+     * Function to update the shipment status.
+     * @param string $status the status to be set
+     * @return void
+     */
     public function updatedStatus($status)
     {
         $this->model->setStatus($status);
         $this->model->save();
     }
 
+    /**
+     * Function get the model instance by id
+     * @param string $id
+     * @return mixed the model instance corresponding to the given id
+     */
     public function getById($id)
     {
         $shipmentDetails = new ShipmentDetailModel($id);
-        return $courier;
+        return $shipmentDetails;
     }
 
+    /**
+     * Function to get short_code for the courier company using the courier service account id
+     * @return string $return the short code for the courier company
+     */
     public function getCourierShortCode()
     {
         $courierServiceAccount = new CourierServiceAccount([$this->model->getCourierServiceAccountId()]);

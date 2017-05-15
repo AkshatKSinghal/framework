@@ -377,12 +377,15 @@ class Base
         $sqlParts = [];
         $dbFields = self::searchableFields();
         foreach ($dbFields as $dbField) {
-            $filterQuery[] = new FilterQuery($dbField, $dataArray[$dbField], '=');
+            if (isset($dataArray[$dbField])) {
+                $filterQuery[] = new FilterQuery($dbField, $dataArray[$dbField], '=');
+            }
         }
         $sqlWhere = new FilterList('AND', $filterQuery);
         $query = 'SELECT * from ' . self::tableName() . ' where ' . $sqlWhere->getSQL(DBManager::getInstance());
         $response = DBManager::executeQuery($query);
 
+        $data = [];
         while ($row = $response->fetch_assoc()) {
             $data[] = $row;
         }

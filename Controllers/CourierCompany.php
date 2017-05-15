@@ -100,6 +100,11 @@ class CourierCompany extends BaseController
         return $response;
     }
 
+    /**
+     * Function to create a new object of the class using all the inputs from the request param
+     * @param mixed $request 
+     * @return string id of the new object created
+     */
     public function create($request)
     {
         $checkedData = $this->checkFields($request);
@@ -107,6 +112,11 @@ class CourierCompany extends BaseController
         return $modelId;
     }
     
+    /**
+     * Function to set the fields to be inserted into the db from the incoming data and save the model
+     * @param mixed $data  
+     * @return string $id id of the model created
+     */
     protected function setIndividualFields($data)
     {
         $modelClass = $this->getModelClass();
@@ -147,5 +157,41 @@ class CourierCompany extends BaseController
     public function getName()
     {
         return $this->model->getName();
+    }
+
+    /**
+     * Function to get or create a new instance based on the params
+     * @param mixed $params contaning key value pairs of the fields to be inserted
+     * @return string id of the instance of the class called upon.
+     */
+    public static function getOrCreate($params)
+    {
+        $model = self::getModelClass();
+        $modelObj = new $model;
+
+        $controllerObject = $modelObj->getByParam($params);
+        if (empty($controllerObject)) {
+            $insertData = $this->mapInsertFields($params);
+            return $this->setIndividualFields($insertData);
+        } else {
+            $class = get_class($this);
+            return new $class($controllerObject[0]['id']);
+        }
+    }
+
+    /**
+     * Function to map the inserting fields with the incoming and setting additional fields 
+     * @param mixed $params
+     * @return mixed database fields to be inserted
+     */
+    public function mapInsertFields($params)
+    {
+        $insertData = [
+            'name' => $params['name'],
+            'short_code' => substr($params['name'], 0, 6),
+            'comments' => '',
+            'status' => 'ACTIVE'
+        ];
+        return $insertData;
     }
 }

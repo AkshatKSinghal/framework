@@ -10,7 +10,7 @@ use \DB\DB as DB;
 class CourierServiceAccount extends CourierService
 {
     protected static $tableName = 'courier_service_accounts';
-    protected static $searchableFields = ['courier_service_id', 'account_id'];
+    protected static $searchableFields = ['courier_service_id', 'account_id', 'awb_batch_mode'];
     const ADMIN_ACCOUNT_ID = 0;
 
     public function getCourierCompany()
@@ -46,11 +46,11 @@ class CourierServiceAccount extends CourierService
             " AND awb_batches_courier_services.courier_service_account_id = " . $this->getId().
             " WHERE awb_batches.status = 'PROCESSED'".
             " AND awb_batches.available_count > 0 ORDER BY awb_batches.available_count LIMIT 1";
+            
             $result = DB::executeQuery($query);
             #TODO Extract the ID #Done
             $data = $result->fetch_assoc();
             if (empty($data)) {
-                echo ')))))))))))';
                 throw new \Exception("No AWB batch found for the account id");
             } else {
                 $awbBatchId = $data['id'];
@@ -77,7 +77,7 @@ class CourierServiceAccount extends CourierService
                 ." AND batch_id IN (" . implode(", ", $ids) . ")";
                 break;
             default:
-                throw new \Exception("Invalid operation");
+                throw new \Exception("Invalid operation in mapAWBBatches: " . $operation);
                 break;
         }
         foreach ($query as $q) {

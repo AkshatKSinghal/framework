@@ -187,4 +187,23 @@ class CourierService extends CourierCompany
     {
         return new CourierCompany([$this->model->getCourierCompanyId()]);
     }
+
+    /**
+     * Function to map the inserting fields with the incoming and setting additional fields 
+     * @param mixed $params
+     * @return mixed database fields to be inserted
+     */
+    public function mapInsertFields($params)
+    {
+        $insertData = [
+            'courier_company_id' => $params['courier_company_id'],
+            'service_type' => $params['service_type'],
+            'order_type' => $params['order_type'],
+            'credentials_required_json' => '',
+            'pincodes' => '',
+            'settings' => json_encode(['awb_allocation_mode' => 'pre']),
+            'status' => 'ACTIVE'
+        ];
+        return $insertData;
+    }
 }
