@@ -24,14 +24,14 @@ class CourierServiceAccount extends CourierService
     {
         #TODO Do it via Model::find()
         $searchFiters = array(
-            'account_id' => $this->getAccountId(),
+            'account_id' => 0,
             'courier_service_id' => $this->getCourierServiceId()
             );
         $accountId = DB::searchOne($this->tableName(), $searchFiters, ['id']);
         if (empty($accountId)) {
             throw new \Exception("Admin account not found for courier. Please contact admin.");
         }
-        return new CourierServiceAccount($accountId);
+        return new CourierServiceAccount($accountId['id']);
     }
 
     public function getAWBBatch()
@@ -46,7 +46,6 @@ class CourierServiceAccount extends CourierService
             " AND awb_batches_courier_services.courier_service_account_id = " . $this->getId().
             " WHERE awb_batches.status = 'PROCESSED'".
             " AND awb_batches.available_count > 0 ORDER BY awb_batches.available_count LIMIT 1";
-            
             $result = DB::executeQuery($query);
             #TODO Extract the ID #Done
             $data = $result->fetch_assoc();

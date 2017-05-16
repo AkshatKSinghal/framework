@@ -166,16 +166,17 @@ class CourierCompany extends BaseController
      */
     public static function getOrCreate($params)
     {
-        $model = self::getModelClass();
+        $model = static::getModelClass();
         $modelObj = new $model;
-
         $controllerObject = $modelObj->getByParam($params);
         if (empty($controllerObject)) {
-            $insertData = $this->mapInsertFields($params);
-            return $this->setIndividualFields($insertData);
+            $class = get_called_class();
+            $insertData = (new $class([]))->mapInsertFields($params);
+            return (new $class([]))->setIndividualFields($insertData);
         } else {
-            $class = get_class($this);
-            return new $class($controllerObject[0]['id']);
+            $class = get_called_class();
+            // return new $class([$controllerObject[0]['id']]);
+            return $controllerObject[0]['id'];
         }
     }
 
@@ -190,7 +191,8 @@ class CourierCompany extends BaseController
             'name' => $params['name'],
             'short_code' => substr($params['name'], 0, 6),
             'comments' => '',
-            'status' => 'ACTIVE'
+            'status' => 'ACTIVE',
+            'logo_url' => 'ACTIVE'
         ];
         return $insertData;
     }

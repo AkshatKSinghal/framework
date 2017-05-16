@@ -1,9 +1,9 @@
 <?php
 // namespace Controllers;
 
-require _DIR_ . '/../vendor/autoload.php';
-   require _DIR_ . '/../vendor/malkusch/php-autoloader/autoloader.php';
-   require _DIR_ . "/../config.php";
+require __DIR__ . '/../vendor/autoload.php';
+   require __DIR__ . '/../vendor/malkusch/php-autoloader/autoloader.php';
+   require __DIR__ . "/../config.php";
 /**
  * Controller for all external communications of the BTPost System
  *
@@ -154,9 +154,21 @@ class BTPost
         return $statusArray;
     }
 
-    public function bookShipment($orderData)
+    public function addShipment($orderData, $courierId, $orderType, $serviceType)
     {
+        $orderData['courier_service_id'] = $this->getOrCreateCourierService($courierId, $serviceType, $orderType);
+        $courierServiceAccountId = $this->getOrCreateCourierAccount($accountId, $orderData['courier_service_id'], 'USER');
         $ship = new \Controllers\ShipmentDetail([]);
+        return $ship->addShipmentRequest($orderData);
+    }
+
+    public function bookShipment($orderData, $accountId, $courierId, $orderType, $serviceType)
+    {
+        $orderData['courier_service_id'] = $this->getOrCreateCourierService($courierId, $serviceType, $orderType); 
+        $courierServiceAccountId = $this->getOrCreateCourierAccount($accountId, $orderData['courier_service_id'], 'ADMIN');
+        $ship = new \Controllers\ShipmentDetail([]);
+        echo '***********';
+        // return $orderData;
         return $ship->bookShipment($orderData);
         // return $ship->bookShipment([
         //     'order_ref' => '500000013',
@@ -297,12 +309,7 @@ class BTPost
 
     public function checkCourierId($courierName) {
         $courier = new \Controllers\CourierCompany([]);
-        $insertData = [
-            'name' => $courierName,
-            'short_code' =>  substr($name, 0, 6),
-            'comments' => '',
-            'status' => 'ACTIVE'
-        ];
+
         $courierId = $courier->getOrCreate(['name' => $courierName]);
         return $courierId;
     }
@@ -310,7 +317,7 @@ class BTPost
     public function getOrCreateCourierService($courierId, $serviceType, $orderType) {
         $courierService = new \Controllers\CourierService([]);
         $courierServiceId = $courierService->getOrCreate([
-            'courier_id' => $courierId,
+            'courier_company_id' => $courierId,
             'service_type' => $serviceType,
             'order_type' => $orderType,
         ]);
@@ -320,9 +327,9 @@ class BTPost
     public function getOrCreateCourierAccount($accountId, $courierServiceId, $awbBatchMode = 'USER') {
         $courierServiceAccount = new \Controllers\CourierServiceAccount([]);
         $courierServiceAccountId = $courierServiceAccount->getOrCreate([
-            'accountId' => $accountId,
-            'courierServiceId' => $courierServiceId,
-            'awbBatchMode' => $awbBatchMode,
+            'account_id' => $accountId,
+            'courier_service_id' => $courierServiceId,
+            'awb_batch_mode' => $awbBatchMode,
         ]);
         return $courierServiceAccountId;
     }

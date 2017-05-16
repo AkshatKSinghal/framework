@@ -236,7 +236,7 @@ class ShipmentDetail extends BaseController
         ];
         $courierService = new CourierService([$checkedData['courier_service_id']]);
         $serviceType = $courierService->getServiceType();
-        $checkedData['shipment_type'] = $serviceType;
+        $checkedData['shipment_type'] = $checkedData['shipment_details']['type'];
         $preAllocateAWB = $courierService->preallocateAWBAllowed();
         $courierResponse = '';
         $courierShortCode = $courierService->getCourierCompanyShortCode();
@@ -291,9 +291,14 @@ class ShipmentDetail extends BaseController
         }
         $awb = $request['awb'];
         $checkedData = $this->checkFields($request);
+        
         $courierService = new CourierService([$checkedData['courier_service_id']]);
         $serviceType = $courierService->getServiceType();
-        $checkedData['shipment_type'] = $serviceType;
+        $checkedData['shipment_type'] = $checkedData['shipment_details']['type'] == '' ? 'FORWARD': $checkedData['shipment_details']['type'] ;
+        $courierServiceAccount = CourierServiceAccount::getByAccountAndCourierService($checkedData['account_id'], $checkedData['courier_service_id']);
+        $checkedData['courier_service_account_id'] = $courierServiceAccount->getId();
+        $checkedData['courier_service_details'] = '';
+        $checkedData['courier_service_reference_number'] = $awb;
         return $this->addShipmentTODB($checkedData, $awb);
     }
 

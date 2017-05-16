@@ -78,7 +78,7 @@ class DB
             $query = "UPDATE $tableName SET $updateQuery WHERE `$primaryKey` = '$id'";
         }
         if (!self::executeQuery($query)) {
-            throw new \Exception("Query not success" . $query);
+            throw new \Exception("Query not success: " . $query);
         }
         if ($object->isNew()) {
             return self::getInstance()->insert_id;
@@ -149,7 +149,7 @@ class DB
     {
         $response = self::search($table, $queryParams, $fieldList, 1);
         $data = $response->fetch_assoc();
-        return end($data);
+        return ($data);
     }
 
 

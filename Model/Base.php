@@ -375,9 +375,9 @@ class Base
     public function getByParam($dataArray)
     {
         $sqlParts = [];
-        $dbFields = self::searchableFields();
+        $dbFields = static::searchableFields();
         foreach ($dbFields as $dbField) {
-            if (isset($dataArray[$dbField])) {
+            if (isset( $dataArray[$dbField])) {
                 $filterQuery[] = new FilterQuery($dbField, $dataArray[$dbField], '=');
             }
         }

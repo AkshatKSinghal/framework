@@ -9,7 +9,7 @@ namespace Model;
 class CourierService extends CourierCompany
 {
     protected static $tableName = 'courier_services';
-    protected static $searchableFields = ['courier_company_id'];
+    protected static $searchableFields = ['courier_company_id', 'service_type', 'order_type'];
 
     public function validate()
     {
