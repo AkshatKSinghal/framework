@@ -1,6 +1,7 @@
 <?php
 // namespace Controllers;
 
+
 require __DIR__ . '/../vendor/autoload.php';
    require __DIR__ . '/../vendor/malkusch/php-autoloader/autoloader.php';
    require __DIR__ . "/../config.php";
@@ -167,9 +168,9 @@ class BTPost
         $orderData['courier_service_id'] = $this->getOrCreateCourierService($courierId, $serviceType, $orderType); 
         $courierServiceAccountId = $this->getOrCreateCourierAccount($accountId, $orderData['courier_service_id'], 'ADMIN');
         $ship = new \Controllers\ShipmentDetail([]);
-        echo '***********';
-        // return $orderData;
-        return $ship->bookShipment($orderData);
+        $res = '';
+        $res = $ship->bookShipment($orderData);        
+        return $res;
         // return $ship->bookShipment([
         //     'order_ref' => '500000013',
         //     'account_id' => '12',

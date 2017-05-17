@@ -79,13 +79,11 @@ class Gati extends Base
     {
         $headers = array('Content-Type: text/xml');
         $payloadResp = (new Gati)->prepareSchedulePickupPayload($orderInfo, $credentials, $awb);
-
         if ($payloadResp['success']) {
             $payload=$payloadResp['payload'];
         } else {
             throw new \Exception("Payload not generated successfully", 1);
         }
-
         $apiCallRawResponse =  \Utility\WCurl::post(static::$baseUrl.'/BT2GATI/BT2Gatipickup.jsp', '', $payload, $headers);
         //XML Parse the response, try to find "success" in it
         $xml = self::object2array(simplexml_load_string($apiCallRawResponse['body']));
@@ -94,9 +92,13 @@ class Gati extends Base
                 return array('success'=> true, 'data' => ['awb' => $awb, 'details' => 'success']);
             } else {
                 $error = "";
-                if (isset($xml["details"]['res']["errmsg"])) {
-                    foreach ($xml["details"]['res']["errmsg"] as $err) {
-                        $error = $error .  $err . ", ";
+                if (isset($xml["details"]['res']["errmsg"]['err'])) {
+                    if (is_array($xml["details"]['res']["errmsg"]['err'])) {
+                        foreach ($xml["details"]['res']["errmsg"]['err'] as $err) {
+                            $error = $error .  $err . ", ";
+                        }                        
+                    } else {
+                        $error = $xml["details"]['res']["errmsg"]['err'];
                     }
                 }
                 throw new \Exception($error);
@@ -121,10 +123,12 @@ class Gati extends Base
         $today = new DateTime('now');
         $courierAccount = $credentials;
         if (!isset($courierAccount['code'])) {
-            throw new \Exception("Customer code not present", 1);
+            $courierAccount['code'] = 54655501;
+            // throw new \Exception("Customer code not present", 1);
         }
         if (!isset($courierAccount['cust_vend_code'])) {
-            throw new \Exception("cust_vend_code code not present", 1);
+            $courierAccount['cust_vend_code'] = 100001;
+            // throw new \Exception("cust_vend_code code not present", 1);
         }
 
         // array(
@@ -156,7 +160,7 @@ class Gati extends Base
                 'custcode' => $courierAccount['code'],
                 'details' => [
                     'req' => [
-                        'DOCKET_NO' => $awb,
+                        'DOCKET_NO' => $awb ,
                         'GOODS_CODE' => $goodsCode,
                         'DECL_CARGO_VAL' => $orderVal,
                         'ACTUAL_WT' => $order['shipment_details']['weight']/1000,
@@ -166,8 +170,8 @@ class Gati extends Base
                         'RECEIVER_CODE' => 99999,
                         'RECEIVER_NAME' => $order['drop_address']['name'],
                         'RECEIVER_ADD1' => $order['drop_address']['text'],
-                        'RECEIVER_ADD2' => isset($order['drop_address']['landmark'])?$order['drop_address']['landmark']: '',
-                        'RECEIVER_ADD3' => isset($order['drop_address']['landmark'])?$order['drop_address']['landmark']: '',
+                        'RECEIVER_ADD2' => (isset($order['drop_address']['landmark']) && $order['drop_address']['landmark'] != '')?$order['drop_address']['landmark']: '-',
+                        'RECEIVER_ADD3' => (isset($order['drop_address']['landmark']) && $order['drop_address']['landmark'] != '')?$order['drop_address']['landmark']: '-',
                         'RECEIVER_CITY' => $this->getCItyFromPincode($order['drop_address']['pincode']),
                         'RECEIVER_STATE' => $order['drop_address']['state'],
                         'RECEIVER_PHONE_NO' => $order['drop_address']['phone'],
@@ -190,8 +194,8 @@ class Gati extends Base
                         'ORDER_QUANTITY' => $orderQty,
                         'SELLER_NAME' => $order['pickup_address']['name'],
                         'SELLER_ADD1' => $order['pickup_address']['text'],
-                        'SELLER_ADD2' => isset($order['pickup_address']['landmark'])?$order['pickup_address']['landmark']: '',
-                        'SELLER_ADD3' => isset($order['pickup_address']['landmark'])?$order['pickup_address']['landmark']: '',
+                        'SELLER_ADD2' => (isset($order['pickup_address']['landmark']) && $order['pickup_address']['landmark'] != '')?$order['pickup_address']['landmark']: '-',
+                        'SELLER_ADD3' => (isset($order['pickup_address']['landmark']) && $order['pickup_address']['landmark'] != '')?$order['pickup_address']['landmark']: '-',
                         'SELLER_CITY' => $this->getCItyFromPincode($order['pickup_address']['pincode']),
                         'SELLER_PINCODE' => $order['pickup_address']['pincode'],
                         'SELLER_STATE_CODE' => $this->getStateCode($order['pickup_address']['state']),

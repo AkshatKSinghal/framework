@@ -131,7 +131,7 @@ class AWBBatch extends BaseController
             $type = self::VALID;
             if (CacheManager::existsInSet($existingBatchesSet, $awb)) {
                 $type = self::INVALID;
-                $awb = $awb . FS . "DUPLICATE";
+                $awb = $awb . btpFS . "DUPLICATE";
             }
             $fileName = $type . "AWBFile";
             $counter = $type . "Count";
@@ -293,7 +293,7 @@ class AWBBatch extends BaseController
             if (empty($row)) {
                 continue;
             }
-            $rowData = explode(FS, $row);
+            $rowData = explode(btpFS, $row);
             if (!isset($rowData[1]) || !isset($rowData[2])) {
                 #TODO Log this
                 continue;
@@ -339,7 +339,7 @@ class AWBBatch extends BaseController
 
     public function logAWBEvent($event, $awb)
     {
-        file_put_contents($this->getLogFile(), time() . FS . $awb . FS . $event . PHP_EOL, FILE_APPEND);
+        file_put_contents($this->getLogFile(), time() . btpFS . $awb . btpFS . $event . PHP_EOL, FILE_APPEND);
     }
 
 
@@ -403,7 +403,7 @@ class AWBBatch extends BaseController
 
     private function getTempFile($type)
     {
-        $dir = TMP . "/temp/";
+        $dir = btpTMP . "/temp/";
         FileManager::verifyDirectory($dir);
         $filename = $this->model->getId() . $type . '.txt';
         
@@ -412,7 +412,7 @@ class AWBBatch extends BaseController
 
     private function getLocalPath($type)
     {
-        $dir = TMP . "/local/";
+        $dir = btpTMP . "/local/";
         FileManager::verifyDirectory($dir);
         $filename = $this->model->getId() . $type . '.txt';
         return $dir . $filename;
@@ -421,8 +421,8 @@ class AWBBatch extends BaseController
     private function getS3Path($type)
     {
         // return "s3://btpost/awb/$type/{$this->model->getId()}.txt";
-        FileManager::verifyDirectory(TMP . "/s3/$type");
-        return TMP . "/s3/$type/{$this->model->getId()}.txt";
+        FileManager::verifyDirectory(btpTMP . "/s3/$type");
+        return btpTMP . "/s3/$type/{$this->model->getId()}.txt";
     }
 
     private function getRedisSetKey($type)
@@ -432,7 +432,7 @@ class AWBBatch extends BaseController
 
     private function getLogFile()
     {
-        $dir = TMP . "/logs/";
+        $dir = btpTMP . "/logs/";
         FileManager::verifyDirectory($dir);
         $filePath = $dir . "{$this->model->getId()}.log";
         if (!file_exists($filePath)) {

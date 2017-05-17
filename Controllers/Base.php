@@ -12,7 +12,7 @@ class Base
     protected $model;
     protected $fields = [];
     protected $shortCodeMap = [
-        'gati' => '123456'
+        'gati' => 'Gati'
     ];
     /**
      * Function to instantiate controller

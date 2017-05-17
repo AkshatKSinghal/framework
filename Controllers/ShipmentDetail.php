@@ -429,7 +429,7 @@ class ShipmentDetail extends BaseController
             try {
                 $courierResponse = $courierName::trackShipment($trackId);
                 print_r($courierResponse);
-                die;
+                // die;
                 $courierResponse = reset($courierName::trackShipment([$awb]));
                 $ship->model->setStatus($courierResponse['status']);
                 $ship->model->save();
