@@ -130,6 +130,7 @@ class CourierServiceAccount extends CourierService
                 $insertData = json_encode($insertData);
             }
             $arr = explode('_', $dbField);
+            $valueArr = [];
             foreach ($arr as $value) {
                 $valueArr[] = ucfirst($value);
             }

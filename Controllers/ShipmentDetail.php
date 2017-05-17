@@ -355,6 +355,7 @@ class ShipmentDetail extends BaseController
                 $insertData = $data[$dbField];
             }
             $arr = explode('_', $dbField);
+            $valueArr = [];
             foreach ($arr as $value) {
                 $valueArr[] = ucfirst($value);
             }
