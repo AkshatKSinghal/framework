@@ -102,8 +102,15 @@ class Base
 
     public function convertToPropertyName($input)
     {
-        $propertyName = lcfirst(str_replace('_', '', ucwords($input, '_')));
+        $arr = explode('_', $input);
+        foreach ($arr as $value) {
+            $valueArr[] = ucfirst($value);
+        }
+        $ucdbField = implode('_', $valueArr); 
+        $propertyName = lcfirst(str_replace('_', '', /*ucwords($dbField, '_')*/$ucdbField));
         return $propertyName;
+        // $propertyName = lcfirst(str_replace('_', '', ucwords($input, '_')));
+        // return $propertyName;
     }
 
     /**
@@ -118,6 +125,7 @@ class Base
      */
     public function save($validate = true, $fields = [])
     {
+
         if ($this->new) {
             $fields = array_keys($this->dbFields(false, true));
         }

@@ -134,7 +134,13 @@ class CourierCompany extends BaseController
         foreach ($mapArray as $dbField => $mergeFields) {
             $resultFields = [];
             $insertData = $data[$dbField];
-            $key = str_replace('_', '', ucwords($dbField, '_'));
+            $arr = explode('_', $dbField);
+            foreach ($arr as $value) {
+                $valueArr[] = ucfirst($value);
+            }
+            $ucdbField = implode('_', $valueArr); 
+            $key = (str_replace('_', '', /*ucwords($dbField, '_')*/$ucdbField));
+            // $key = str_replace('_', '', ucwords($dbField, '_'));
             $functionName = 'set'.$key;
             $model->$functionName($insertData);
         }

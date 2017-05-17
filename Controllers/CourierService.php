@@ -151,7 +151,13 @@ class CourierService extends CourierCompany
             if ($dbField == 'credentials_required_json' || $dbField == 'settings') {
                 $insertData = json_encode($insertData);
             }
-            $key = str_replace('_', '', ucwords($dbField, '_'));
+            $arr = explode('_', $dbField);
+            foreach ($arr as $value) {
+                $valueArr[] = ucfirst($value);
+            }
+            $ucdbField = implode('_', $valueArr); 
+            $key = (str_replace('_', '', /*ucwords($dbField, '_')*/$ucdbField));
+            // $key = str_replace('_', '', ucwords($dbField, '_'));
             $functionName = 'set'.$key;
             $model->$functionName($insertData);
         }
