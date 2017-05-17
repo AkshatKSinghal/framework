@@ -135,6 +135,7 @@ class CourierCompany extends BaseController
             $resultFields = [];
             $insertData = $data[$dbField];
             $arr = explode('_', $dbField);
+            $valueArr = [];
             foreach ($arr as $value) {
                 $valueArr[] = ucfirst($value);
             }

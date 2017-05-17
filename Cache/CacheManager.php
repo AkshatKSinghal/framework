@@ -8,7 +8,7 @@ namespace Cache;
 class CacheManager extends \Redis
 {
     private static $singleton = null;
-    const DEFAULT_EXPIRY = 3 * 24 * 60 * 60;
+    const DEFAULT_EXPIRY = 259200; //3 * 24 * 60 * 60
     /**
      * Function to instantiate, if not already done,
      * and return the singleton object

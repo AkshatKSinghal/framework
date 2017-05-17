@@ -310,7 +310,6 @@ class BTPost
 
     public function checkCourierId($courierName) {
         $courier = new \Controllers\CourierCompany([]);
-
         $courierId = $courier->getOrCreate(['name' => $courierName]);
         return $courierId;
     }

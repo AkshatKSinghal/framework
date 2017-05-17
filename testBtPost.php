@@ -1,15 +1,4 @@
  <?php
-    $input = 'archit_ahluwa_browntape';
-    $key = str_replace('_', '', ucwords($input, '_'));
-    $arr = explode('_', $input);
-        foreach ($arr as $value) {
-            $valueArr[] = ucfirst($value);
-        }
-        $ucdbField = implode('_', $valueArr); 
-        $propertyName = (str_replace('_', '', /*ucwords($dbField, '_')*/$ucdbField));
-
-        print_r($key);
-        print_r($propertyName);die;
     error_reporting(E_ALL);
     ini_set('display_errors', 1);
     ini_set("auto_detect_line_endings", true);
@@ -19,10 +8,10 @@
     require __DIR__ . "/config.php";
     try {
         // upload awb;
-        $batchExecute = new \Controllers\AWBBatch([]);
-        $awbId = $batchExecute->createBatch(btpTMP . '/btpost.txt', 1, 1);
-        var_dump($awbId);
-        die;
+        // $batchExecute = new \Controllers\AWBBatch([]);
+        // $awbId = $batchExecute->createBatch(btpTMP . '/btpost.txt', 1, 1);
+        // var_dump($awbId);
+        // die;
         // $batchExecute = new \Controllers\AWBBatch([133]);
         // $batchExecute->mapUnmapCourierService('add', [17], 12);
         // die;
@@ -313,7 +302,7 @@
     // ]));
 
         $btPost = new BTPost([]);
-        $courierId = $btPost->getOrCreateCourierAccount(12, 18);
+        $courierId = $btPost->checkCourierId('Gati');
         print_r($courierId) ;
         echo '******end******';
     } catch (Exception $e) {
