@@ -3,7 +3,8 @@
     "version": "0.0.1",
     "source": {
         "url": "https://archit2511@bitbucket.org/browntape_tech/btpost.git",
-        "type": "git"
+        "type": "git",
+        "reference": "origin/archit"
     },
     "require": {
         "malkusch/php-autoloader": "^1.14"
