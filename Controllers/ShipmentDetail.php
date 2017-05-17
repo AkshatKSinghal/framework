@@ -240,7 +240,8 @@ class ShipmentDetail extends BaseController
         $preAllocateAWB = $courierService->preallocateAWBAllowed();
         $courierResponse = '';
         $courierShortCode = $courierService->getCourierCompanyShortCode();
-        $courierName = '\Controllers\Couriers\\' . ucfirst(array_search($courierShortCode, $this->shortCodeMap));
+        // $courierName = '\Controllers\Couriers\\' . ucfirst(array_search($courierShortCode, $this->shortCodeMap));
+        $courierName = '\Controllers\Couriers\\' . 'Gati';
 
         $courierServiceAccount = CourierServiceAccount::getByAccountAndCourierService($checkedData['account_id'], $checkedData['courier_service_id']);
         $credentials = $courierServiceAccount->getCredentials();
