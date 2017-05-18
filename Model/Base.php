@@ -316,7 +316,6 @@ class Base
      */
     private function get($name)
     {
-        print_r($this->data);
         if (!array_key_exists($name, $this->data)) {
             throw new \Exception("Invalid field name : " . $name);
         }
