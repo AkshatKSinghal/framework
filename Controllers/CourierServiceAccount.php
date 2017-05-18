@@ -226,7 +226,7 @@ class CourierServiceAccount extends CourierService
             'account_id' => $params['account_id'],
             'courier_service_id' => $params['courier_service_id'],
             'awb_batch_mode' => $params['awb_batch_mode'],
-            'credentials' => '',
+            'credentials' => $params['credentials'],
             'pincodes' => '',
             'status' => 'ACTIVE'
         ];

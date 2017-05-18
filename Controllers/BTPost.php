@@ -163,10 +163,10 @@ class BTPost
         return $ship->addShipmentRequest($orderData);
     }
 
-    public function bookShipment($orderData, $accountId, $courierId, $orderType, $serviceType)
+    public function bookShipment($orderData, $accountId, $courierId, $orderType, $serviceType, $credentials = null)
     {
         $orderData['courier_service_id'] = $this->getOrCreateCourierService($courierId, $serviceType, $orderType); 
-        $courierServiceAccountId = $this->getOrCreateCourierAccount($accountId, $orderData['courier_service_id'], 'ADMIN');
+        $courierServiceAccountId = $this->getOrCreateCourierAccount($accountId, $orderData['courier_service_id'], $credentials, 'ADMIN');
         $ship = new \Controllers\ShipmentDetail([]);
         $res = '';
         $res = $ship->bookShipment($orderData);        
@@ -324,12 +324,13 @@ class BTPost
         return $courierServiceId;
     }
     
-    public function getOrCreateCourierAccount($accountId, $courierServiceId, $awbBatchMode = 'ADMIN') {
+    public function getOrCreateCourierAccount($accountId, $courierServiceId, $credentials, $awbBatchMode = 'ADMIN') {
         $courierServiceAccount = new \Controllers\CourierServiceAccount([]);
         $courierServiceAccountId = $courierServiceAccount->getOrCreate([
             'account_id' => $accountId,
             'courier_service_id' => $courierServiceId,
             'awb_batch_mode' => $awbBatchMode,
+            'credentials' => $credentials
         ]);
         return $courierServiceAccountId;
     }

@@ -175,9 +175,16 @@ class CourierCompany extends BaseController
     {
         $model = static::getModelClass();
         $modelObj = new $model;
+        if ($class == 'CourierServiceAccount') {
+            $credentials = $params['credentials'];
+            unset($params['credentials']);
+        }
         $controllerObject = $modelObj->getByParam($params);
         if (empty($controllerObject)) {
             $class = get_called_class();
+            if ($class == 'CourierServiceAccount') {
+                $params['credentials'] = $credentials;                
+            }
             $insertData = (new $class([]))->mapInsertFields($params);
             return (new $class([]))->setIndividualFields($insertData);
         } else {
