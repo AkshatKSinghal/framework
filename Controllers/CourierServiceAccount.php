@@ -232,4 +232,10 @@ class CourierServiceAccount extends CourierService
         ];
         return $insertData;
     }
+
+    public function setCredentials($credentialArray)
+    {
+        $this->model->setCredentials(json_encode($credentialArray));
+        $this->model->save();
+    }
 }
