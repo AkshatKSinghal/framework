@@ -158,7 +158,7 @@ class BTPost
     public function addShipment($orderData, $courierId, $orderType, $serviceType)
     {
         $orderData['courier_service_id'] = $this->getOrCreateCourierService($courierId, $serviceType, $orderType);
-        $courierServiceAccountId = $this->getOrCreateCourierAccount($accountId, $orderData['courier_service_id'], 'USER');
+        $courierServiceAccountId = $this->getOrCreateCourierAccount($accountId, $orderData['courier_service_id'], 'ADMIN');
         $ship = new \Controllers\ShipmentDetail([]);
         return $ship->addShipmentRequest($orderData);
     }
@@ -324,7 +324,7 @@ class BTPost
         return $courierServiceId;
     }
     
-    public function getOrCreateCourierAccount($accountId, $courierServiceId, $awbBatchMode = 'USER') {
+    public function getOrCreateCourierAccount($accountId, $courierServiceId, $awbBatchMode = 'ADMIN') {
         $courierServiceAccount = new \Controllers\CourierServiceAccount([]);
         $courierServiceAccountId = $courierServiceAccount->getOrCreate([
             'account_id' => $accountId,

@@ -155,7 +155,7 @@ class CourierServiceAccount extends CourierService
             'account_id' => $accountId,
             'courier_service_id' => $courierServiceId
         ]);
-        return new CourierServiceAccount($courierServiceAccount[0]['id']);
+        return new CourierServiceAccount([$courierServiceAccount[0]['id']]);
     }
 
     /**
