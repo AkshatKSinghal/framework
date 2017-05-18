@@ -307,6 +307,7 @@ class AWBBatch extends BaseController
             $files[$fileType] = $this->getFromPersistentStore($fileType);
         }
         $available = fopen($files[self::AVAILABLE], 'r');
+
         $files[self::AVAILABLE] = $this->getTempFile(self::AVAILABLE);
         while (!feof($available)) {
             $awb = trim(fgets($available));

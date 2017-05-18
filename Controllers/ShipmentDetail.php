@@ -258,7 +258,7 @@ class ShipmentDetail extends BaseController
                         $awbBatch->logAWBEvent('failed', $awb);
                         $awbBatch->updateTableForFailedAwb();
                     }
-                    throw new \Exception($e->getMessage() . " Courier rejected awb in pre allocation", 1);
+                    throw new \Exception($e->getMessage() . " Courier rejected awb in pre allocation for awb". $awb, 1);
                 }
                 break;
 
@@ -271,7 +271,7 @@ class ShipmentDetail extends BaseController
                         $awbBatch->logAWBEvent('failed', $awb);
                         $awbBatch->updateTableForFailedAwb();
                     }
-                    throw new \Exception($e->getMessage() . " Courier rejected awb post allocation", 1);
+                    throw new \Exception($e->getMessage() . " Courier rejected awb post allocation for awb". $awb, 1);
                 }
                 break;
         }
