@@ -122,14 +122,14 @@ class Gati extends Base
     {
         $today = new DateTime('now');
         $courierAccount = $credentials;
-        // if (!isset($courierAccount['code'])) {
-        //     $courierAccount['code'] = 54655501;
-        //     // throw new \Exception("Customer code not present", 1);
-        // }
-        // if (!isset($courierAccount['cust_vend_code'])) {
-        //     $courierAccount['cust_vend_code'] = 100001;
-        //     // throw new \Exception("cust_vend_code code not present", 1);
-        // }
+        if (!isset($courierAccount['code'])) {
+            $courierAccount['code'] = 54655501;
+            // throw new \Exception("Customer code not present", 1);
+        }
+        if (!isset($courierAccount['cust_vend_code'])) {
+            $courierAccount['cust_vend_code'] = 100001;
+            // throw new \Exception("cust_vend_code code not present", 1);
+        }
 
         // array(
         //     'CourierAccount' => array(
