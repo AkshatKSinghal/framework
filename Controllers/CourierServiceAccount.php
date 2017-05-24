@@ -199,6 +199,13 @@ class CourierServiceAccount extends CourierService
         return $courierService->getCourierCompanyName();
     }
 
+
+    public function getCourierClassName()
+    {
+        $courierService = $this->getCourierService();
+        return $courierService->getClassName();
+    }
+
     public function getCourierService()
     {
         return new CourierService([$this->model->getCourierServiceId()]);
@@ -237,5 +244,14 @@ class CourierServiceAccount extends CourierService
     {
         $this->model->setCredentials(json_encode($credentialArray));
         $this->model->save();
+    }
+
+    public function getCouriersByAccountId($accountId)
+    {
+        $courierAccounts = $this->model->getByParam(['account_id' => $accountId]);
+        foreach ($courierAccounts as $courierAccount) {
+            $courierService = $courierAccount->getCourierService();
+            $courierCompany = $courierService->getCourierCompany();
+        }
     }
 }

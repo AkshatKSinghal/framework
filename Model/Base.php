@@ -399,6 +399,22 @@ class Base
         }
         return $data;
     }
+
+    public function getAll($fieldList = null)
+    {
+        if ($fieldList == null) {
+            $fields = '*';
+        }
+        $fields = implode(', ', $fieldList);
+        $query = 'SELECT '. $fields .' from ' . self::tableName();
+        $response = DBManager::executeQuery($query);
+
+        $data = [];
+        while ($row = $response->fetch_assoc()) {
+            $data[] = $row;
+        }
+        return $data;
+    }
 }
 
 /**

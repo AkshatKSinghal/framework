@@ -361,7 +361,7 @@ class AWBBatch extends BaseController
     {
         $remoteFilePath = $this->getS3Path($type);
         // shell_exec("aws s3 cp $filePath $remoteFilePath");
-        shell_exec("cp $filePath $remoteFilePath");
+        shell_exec("aws s3 cp $filePath $remoteFilePath");
         // Check if the copy was successful, else throw exception
     }
 
@@ -378,7 +378,7 @@ class AWBBatch extends BaseController
         $remoteFilePath = $this->getS3Path($type);
         $localFilePath = $this->getLocalPath($type);
         // shell_exec("s3 cp $remoteFilePath $localFilePath");
-        shell_exec("cp $remoteFilePath $localFilePath");
+        shell_exec("aws s3 cp $remoteFilePath $localFilePath");
         // #TODO Check if the copy was successful, else throw exception
         if (!file_exists($localFilePath)) {
             touch($localFilePath);
@@ -421,9 +421,9 @@ class AWBBatch extends BaseController
 
     private function getS3Path($type)
     {
-        // return "s3://btpost/awb/$type/{$this->model->getId()}.txt";
-        FileManager::verifyDirectory(btpTMP . "/s3/$type");
-        return btpTMP . "/s3/$type/{$this->model->getId()}.txt";
+        return "s3://btpost/awb/$type/{$this->model->getId()}.txt";
+        // FileManager::verifyDirectory(btpTMP . "/s3/$type");
+        // return btpTMP . "/s3/$type/{$this->model->getId()}.txt";
     }
 
     private function getRedisSetKey($type)

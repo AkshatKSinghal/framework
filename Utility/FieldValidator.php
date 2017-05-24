@@ -33,9 +33,6 @@ class FieldValidator
                 }
             }
         }
-        #TODO archit
-        // print_r($checkedData);
-        // die;
         return $checkedData;
     }
 }

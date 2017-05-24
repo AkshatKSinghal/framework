@@ -334,4 +334,11 @@ class BTPost
         ]);
         return $courierServiceAccountId;
     }
+
+    public function getCouriersByAccountId($accountId)
+    {
+        $courierAccount = new CourierServiceAccount([]);
+        $courierAccounts = $courierAccount->getCouriersByAccountId($accountId);
+
+    }
 }

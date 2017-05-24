@@ -172,7 +172,10 @@ class CourierService extends CourierCompany
         $service = new CourierService($id);
         return $service;
     }
-
+    /**
+     * Function to get the service type of the courier service
+     * @return string servicType
+     */
     public function getServiceType()
     {
         return $this->model->getServiceType();
@@ -212,5 +215,14 @@ class CourierService extends CourierCompany
             'status' => 'ACTIVE'
         ];
         return $insertData;
+    }
+
+    /**
+     * Function to get the class name of the courier service
+     * @return string classname
+     */
+    public function getClassName()
+    {
+        return $this->model->getClassName();
     }
 }

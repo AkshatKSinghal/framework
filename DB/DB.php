@@ -11,13 +11,13 @@ class DB
     public static $singleton = array();
     public static $transaction;
     public static $defaultConfig = array(
-        // "hostname" => "localhost",
-        // "username" => "root",
-        // "password" => "archit@2905",
+        "hostname" => "localhost",
+        "username" => "root",
+        "password" => "archit@2905",
         // "database" => "btpost"
-        "hostname" => "browntape-staging-new.crkstpypjzpm.us-east-1.rds.amazonaws.com",
-        "username" => "browntape_rds",
-        "password" => "Flame~#$#123",
+        // "hostname" => "browntape-staging-new.crkstpypjzpm.us-east-1.rds.amazonaws.com",
+        // "username" => "browntape_rds",
+        // "password" => "Flame~#$#123",
         "database" => "btpost"
         );
 

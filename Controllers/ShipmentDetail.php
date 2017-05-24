@@ -225,59 +225,68 @@ class ShipmentDetail extends BaseController
      * @param mixed $request array contaning all the data related to the shipment
      * @return mixeed $response array contaning the status and other meta data related to the shipment booked
      */
-    public function bookShipment($request)
+    public function bookShipment($request, $cnt = 0)
     {
         $checkedData = $this->checkFields($request);
         $orderInfo = [
             'pickup_address' => $checkedData['pickup_address'],
             'drop_address' => $checkedData['drop_address'],
             'shipment_details' => $checkedData['shipment_details'],
-            'order_ref' => $checkedData['order_ref']
+            'order_ref' => $checkedData['order_ref'],
+            'cod_value' => $checkedData['cod_value']
         ];
         $courierService = new CourierService([$checkedData['courier_service_id']]);
         $serviceType = $courierService->getServiceType();
         $checkedData['shipment_type'] = $checkedData['shipment_details']['type'];
-        $preAllocateAWB = $courierService->preallocateAWBAllowed();
+        // $preAllocateAWB = $courierService->preallocateAWBAllowed();
         $courierResponse = '';
-        $courierShortCode = $courierService->getCourierCompanyShortCode();
-        // $courierName = '\Controllers\Couriers\\' . ucfirst(array_search($courierShortCode, $this->shortCodeMap));
-        $courierName = '\Controllers\Couriers\\' . 'Gati';
+        $className = $courierService->getClassName();
+        $courierClass = '\Controllers\Couriers\\' . $className;
+        // $courierClass = '\Controllers\Couriers\\' . 'Gati';
 
-        $courierServiceAccount = CourierServiceAccount::getByAccountAndCourierService($checkedData['account_id'], $checkedData['courier_service_id']);
-        $credentials = $courierServiceAccount->getCredentials();
-        switch ($preAllocateAWB) {
-            case 'pre':
-                $awbDetail = $courierServiceAccount->getAWB();
-                $awb = $awbDetail['awb'];
-                $checkedData['courier_service_account_id'] = $courierServiceAccount->getId();
-                try {
-                    $courierResponse = $courierName::bookShipment($orderInfo, $serviceType, $credentials, $awb);
-                } catch (\Exception $e) {
-                    if (stripos($e->getMessage(), 'INTERNAL ERROR java.lang.NumberFormatException') !== false || stripos($e->getMessage(), 'Docket was already uploaded') !== false) {
-                        $awbBatch = new AWBBatch([$awbDetail['awbBatchId']]);
-                        $awbBatch->logAWBEvent('failed', $awb);
-                        $awbBatch->updateTableForFailedAwb();
-                    }
-                    throw new \Exception($e->getMessage() . " Courier rejected awb in pre allocation for awb". $awb, 1);
-                }
-                break;
-
-            case 'post':
-                try {
-                    $courierResponse = $courierName::bookShipment($orderInfo, $serviceType, $credentials);
-                } catch (\Exception $e) {
-                    if (stripos($e->getMessage(), 'INTERNAL ERROR java.lang.NumberFormatException') !== false || stripos($e->getMessage(), 'Docket was already uploaded') !== false) {
-                        $awbBatch = new AWBBatch([]);
-                        $awbBatch->logAWBEvent('failed', $awb);
-                        $awbBatch->updateTableForFailedAwb();
-                    }
-                    throw new \Exception($e->getMessage() . " Courier rejected awb post allocation for awb". $awb, 1);
-                }
-                break;
+        try {
+            $courierResponse = $courierClass::bookShipment($orderInfo, $checkedData['account_id'], $checkedData['courier_service_id'], $serviceType);
+        } catch (\Exception $e) {
+            if ($cnt < 2) {
+                // print_r('retrying...');
+                $this->bookShipment($request, ++$cnt);            
+            }
+            throw new \Exception($e->getMessage() . " Courier rejected awb", 1);
         }
+        // $courierServiceAccount = CourierServiceAccount::getByAccountAndCourierService($checkedData['account_id'], $checkedData['courier_service_id']);
+        // $credentials = $courierServiceAccount->getCredentials();
+        // switch ($preAllocateAWB) {
+        //     case 'pre':
+        //         $awbDetail = $courierServiceAccount->getAWB();
+        //         $awb = $awbDetail['awb'];
+        //         $checkedData['courier_service_account_id'] = $courierServiceAccount->getId();
+        //         try {
+        //             $courierResponse = $courierClass::bookShipment($orderInfo, $serviceType, $credentials, $awb);
+        //         } catch (\Exception $e) {
+        //             if (stripos($e->getMessage(), 'INTERNAL ERROR java.lang.NumberFormatException') !== false || stripos($e->getMessage(), 'Docket was already uploaded') !== false) {
+        //                 $awbBatch = new AWBBatch([$awbDetail['awbBatchId']]);
+        //                 $awbBatch->logAWBEvent('failed', $awb);
+        //                 $awbBatch->updateTableForFailedAwb();
+        //             }
+        //             throw new \Exception($e->getMessage() . " Courier rejected awb in pre allocation for awb". $awb, 1);
+        //         }
+        //         break;
+
+        //     case 'post':
+        //         try {
+        //             $courierResponse = $courierClass::bookShipment($orderInfo, $serviceType, $credentials);
+        //         } catch (\Exception $e) {
+        //             throw new \Exception($e->getMessage() . " Courier rejected awb post allocation for awb", 1);
+        //         }
+        //         break;
+        // }
+        $checkedData['courier_service_account_id'] = $courierResponse['data']['courier_service_account_id'];
         $checkedData['courier_service_details'] = $courierResponse['data']['details'];
         $checkedData['courier_service_reference_number'] = $courierResponse['data']['awb'];
-        return $this->addShipmentTODB($checkedData, $awb);
+        if ($className == 'Postmen') {
+            $this->model->setCourierRefAWb($courierResponse['data']['awb'], $courierResponse['data']['courier_ref_id'], 'add');
+        }
+        return $this->addShipmentTODB($checkedData, $courierResponse['data']['awb'],  $courierService->getCourierCompanyName());
     }
 
     /**
@@ -300,7 +309,7 @@ class ShipmentDetail extends BaseController
         $checkedData['courier_service_account_id'] = $courierServiceAccount->getId();
         $checkedData['courier_service_details'] = '';
         $checkedData['courier_service_reference_number'] = $awb;
-        return $this->addShipmentTODB($checkedData, $awb);
+        return $this->addShipmentTODB($checkedData, $awb, $courierService->getCourierCompanyName());
     }
 
     /**
@@ -309,7 +318,7 @@ class ShipmentDetail extends BaseController
      * @param string $awb awb assiged to the shipment
      * @return mixed $response array contaning the status and other meta data related to the shipment booked
      */
-    private function addShipmentTODB($data, $awb)
+    private function addShipmentTODB($data, $awb, $courierName)
     {
         $data['status'] = 'PENDING';
         $btPostId =  $this->setIndividualFields($data);
@@ -318,7 +327,7 @@ class ShipmentDetail extends BaseController
             'message' => 'Couier booked',
             'data' => [
                 'awb' => $awb,
-                'courier' => 'Gati',
+                'courier' => $courierName,
                 'ref_id' => $btPostId,
                 'label' => 'label'
             ]
@@ -360,7 +369,7 @@ class ShipmentDetail extends BaseController
             foreach ($arr as $value) {
                 $valueArr[] = ucfirst($value);
             }
-            $ucdbField = implode('_', $valueArr); 
+            $ucdbField = implode('_', $valueArr);
             $key = (str_replace('_', '', /*ucwords($dbField, '_')*/$ucdbField));
             // $key = str_replace('_', '', ucwords($dbField, '_'));
             $functionName = 'set'.$key;
@@ -388,10 +397,13 @@ class ShipmentDetail extends BaseController
         $ship = new ShipmentDetail([$shipId]);
         $awb = $ship->model->getCourierServiceReferenceNumber();
 
-        $courierShortCode = $ship->getCourierShortCode();
-        $courierName = '\Controllers\Couriers\\' . ucfirst(array_search($courierShortCode, $this->shortCodeMap));
+        $courierServiceAccount = new CourierServiceAccount([$ship->model->getCourierServiceAccountId()]);
+        $courierClass = '\Controllers\Couriers\\' . $courierServiceAccount->getCourierClassName();
+
+        // $courierShortCode = $ship->getCourierShortCode();
+        // $courierName = '\Controllers\Couriers\\' . ucfirst(array_search($courierShortCode, $this->shortCodeMap));
         try {
-            $courierResponse = reset($courierName::trackShipment([$awb]));
+            $courierResponse = reset($courierClass::trackShipment([$awb]));
             $ship->model->setStatus($courierResponse['status']);
             $ship->model->save();
             return [
@@ -436,8 +448,6 @@ class ShipmentDetail extends BaseController
             $courierName = '\Controllers\Couriers\\' . ucfirst(array_search($shortCode, $this->shortCodeMap));
             try {
                 $courierResponse = $courierName::trackShipment($trackId);
-                print_r($courierResponse);
-                // die;
                 $courierResponse = reset($courierName::trackShipment([$awb]));
                 $ship->model->setStatus($courierResponse['status']);
                 $ship->model->save();
@@ -495,7 +505,7 @@ class ShipmentDetail extends BaseController
                 $checkedData['courier_service_details'] = '';
                 $checkedData['courier_service_reference_number'] = $awbDetail['awb'];
                 $checkedData['shipment_type'] = 'FORWARD';
-                $response[]  = $this->addShipmentTODB($checkedData, $awbDetail['awb']);
+                $response[]  = $this->addShipmentTODB($checkedData, $awbDetail['awb'],  $courierService->getCourierCompanyName());
             } else {
                 $response[] = [
                     'status' => 'FAILED',

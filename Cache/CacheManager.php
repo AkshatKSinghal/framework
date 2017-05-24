@@ -21,6 +21,7 @@ class CacheManager extends \Redis
             // instantiate the object
             self::$singleton = new CacheManager();
             self::$singleton->connect('127.0.0.1', 6379);
+            self::$singleton->select(1);
         }
         return self::$singleton;
     }
