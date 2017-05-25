@@ -12,7 +12,7 @@ class FieldValidator
         $checkedData = [];
         $arrayTrace = $subArrayName;
         foreach ($fields as $field => $fieldDetail) {
-            if ($fieldDetail['mandatory'] && !array_key_exists($field, $requestData)) {
+            if ($fieldDetail['mandatory'] && !(array_key_exists($field, $requestData) && $requestData[$field] != '')) {
                 throw new \Exception("Mandatory Field not found " . $arrayTrace . '->' . $field);
             } else {
                 $nextRequestData = $requestData[$field];

@@ -99,7 +99,6 @@ class Gati extends Base
         $apiCallRawResponse =  \Utility\WCurl::post(static::$baseUrl.'/BT2GATI/BT2Gatipickup.jsp', '', $payload, $headers);
         //XML Parse the response, try to find "success" in it
         $xml = self::object2array(simplexml_load_string($apiCallRawResponse['body']));
-
         if ($xml["result"]=="successful") {
             if ($xml['reqcnt'] > 0) {
                 return array('success'=> true, 'data' => ['awb' => $awb, 'details' => 'success', 'courier_service_id' => $courierServiceAccountId]);
@@ -114,11 +113,11 @@ class Gati extends Base
                         $error = $xml["details"]['res']["errmsg"]['err'];
                     }
                 }
-                }
                 if (stripos($error, 'INTERNAL ERROR java.lang.NumberFormatException') !== false || stripos($error, 'Docket was already uploaded') !== false) {
                     $awbBatch = new AWBBatch([$awbDetail['awbBatchId']]);
                     $awbBatch->logAWBEvent('failed', $awb);
                     $awbBatch->updateTableForFailedAwb();
+                }
                 throw new \Exception($error);
             }
         } else {
@@ -194,7 +193,7 @@ class Gati extends Base
                 'custcode' => $courierAccount['code'],
                 'details' => [
                     'req' => [
-                        // 'DOCKET_NO' => $awb ,
+                        'DOCKET_NO' => $awb ,
                         'GOODS_CODE' => $goodsCode,
                         'DECL_CARGO_VAL' => $orderVal,
                         'ACTUAL_WT' => $order['shipment_details']['weight']/1000,
@@ -214,15 +213,15 @@ class Gati extends Base
                         'NO_OF_PKGS' => 1,
                         'PKGDETAILS' => [
                             'PKG_INFO' => [
-                                // 'PKG_NO' => $awb,
+                                'PKG_NO' => $awb,
                                 'PKG_LN' => $order['shipment_details']['length']/1000,
                                 'PKG_BR' => $order['shipment_details']['breadth']/1000,
                                 'PKG_HT' => $order['shipment_details']['height']/1000,
                                 'PKG_WT' => $order['shipment_details']['weight']/1000,
                             ],
                         ],
-                        // 'FROM_PKG_NO' => $awb,
-                        // 'TO_PKG_NO' => $awb,
+                        'FROM_PKG_NO' => $awb,
+                        'TO_PKG_NO' => $awb,
                         'RECEIVER_MOBILE_NO' => $order['drop_address']['phone'],
                         'CUSTVEND_CODE' => $courierAccount['cust_vend_code'],
                         'ORDER_QUANTITY' => $orderQty,
