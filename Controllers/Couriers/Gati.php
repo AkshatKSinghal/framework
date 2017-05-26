@@ -101,7 +101,7 @@ class Gati extends Base
         $xml = self::object2array(simplexml_load_string($apiCallRawResponse['body']));
         if ($xml["result"]=="successful") {
             if ($xml['reqcnt'] > 0) {
-                return array('success'=> true, 'data' => ['awb' => $awb, 'details' => 'success', 'courier_service_id' => $courierServiceAccountId]);
+                return array('success'=> true, 'data' => ['awb' => $awb, 'details' => 'success', 'courier_service_account_id' => $courierServiceAccountId]);
             } else {
                 $error = "";
                 if (isset($xml["details"]['res']["errmsg"]['err'])) {

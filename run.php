@@ -5,7 +5,7 @@
 
     require __DIR__ . '/vendor/autoload.php';
     require __DIR__ . '/vendor/malkusch/php-autoloader/autoloader.php';
-    require __DIR__ . "/config.php";
+    require __DIR__ . "/constants.php";
     try {
         echo '****start*******';
         // $batchExecute = new \Controllers\AWBBatch([]);

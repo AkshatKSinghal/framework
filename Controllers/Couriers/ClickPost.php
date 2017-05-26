@@ -5,7 +5,7 @@
 */
 class ClickPost extends Base
 {
-	private static var $services = array(
+	private static $services = array(
 		'bookShipment' => array(
 			),
 		'schedulePickup' => array(

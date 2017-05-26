@@ -1,3 +1,4 @@
 config.php
+constants.php
 vendor/*
 upload.txt

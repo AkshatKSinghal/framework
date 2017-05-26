@@ -9,6 +9,21 @@ class CacheManager extends \Redis
 {
     private static $singleton = null;
     const DEFAULT_EXPIRY = 259200; //3 * 24 * 60 * 60
+    private static $host;
+    private static $port;
+
+    /**
+     * FUnction to set the config for cache from config file
+     * @return void
+     */
+    public function __construct($conf = [])
+    {
+        foreach ($conf as $key => $value) {
+            if (property_exists(get_class($this), $key)) {
+                static::$$key = $value;
+            }
+        }
+    }
     /**
      * Function to instantiate, if not already done,
      * and return the singleton object
@@ -20,7 +35,7 @@ class CacheManager extends \Redis
         if (self::$singleton == null) {
             // instantiate the object
             self::$singleton = new CacheManager();
-            self::$singleton->connect('127.0.0.1', 6379);
+            self::$singleton->connect(static::$host, static::$port);
             self::$singleton->select(1);
         }
         return self::$singleton;

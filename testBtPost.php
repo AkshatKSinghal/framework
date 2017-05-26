@@ -5,7 +5,7 @@
 
     require __DIR__ . '/vendor/autoload.php';
     require __DIR__ . '/vendor/malkusch/php-autoloader/autoloader.php';
-    require __DIR__ . "/config.php";
+    require __DIR__ . "/constants.php";
     try {
         // upload awb;
         echo '****start*******';
@@ -48,7 +48,7 @@
         // //     'pincodes' => '7',
         // //     'status' => 'ACTIVE',
         // // ]));die;
-
+        $bokk = new BTPost([]);
 
         // book a shipment
         $ship = new \Controllers\ShipmentDetail([]);
@@ -57,23 +57,23 @@
             'account_id' => '6418',
             'pickup_address' => [
                 'name' => 'Archit',
-                'text' => '30 Rockefeller Plaza,',
-                'landmark' => '30 Rockefeller Plaza,',
+                'text' => 'C23,',
+                'landmark' => 'Shakti Nagar Extension,',
                 'time' => 'epoch timestamp',
                 'phone' => '9876543210',
-                'pincode' => '10112',
+                'pincode' => '110052',
                 'email_id' => 'email id to be notified with updates',
-                'state'=> 'NY',
-                'country'=> 'USA'
+                'state'=> 'Delhi',
+                'country'=> 'IND'
             ],
             'drop_address' => [
                 'name' => 'Drop contact person name',
-                'pincode' => '10004',
-                'text' => '25 Broadway',
+                'pincode' => '110007',
+                'text' => 'Chandini chowk',
                 'phone' => '9876543210',
-                'landmark' => '20 Castle Terrace',
-                'state'=> 'NY',
-                'country'=> 'USA'
+                'landmark' => 'Near majnu tilla',
+                'state'=> 'Delhi',
+                'country'=> 'IND'
             ],
             'shipment_details' => [
                 'orders' => [

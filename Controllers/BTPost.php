@@ -4,7 +4,7 @@
 
 require __DIR__ . '/../vendor/autoload.php';
    require __DIR__ . '/../vendor/malkusch/php-autoloader/autoloader.php';
-   require __DIR__ . "/../config.php";
+   require __DIR__ . "/../constants.php";
 /**
  * Controller for all external communications of the BTPost System
  *
@@ -17,6 +17,12 @@ class BTPost
     public function __construct($accountID)
     {
         $this->accountID = $accountID;
+        $config = require(__DIR__ . '/../config.php');
+        foreach ($config as $class => $conf) {
+            if (class_exists($class)) {
+                $classInst = new $class($conf);            
+            }
+        }
     }
 
     /**

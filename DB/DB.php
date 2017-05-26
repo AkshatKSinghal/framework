@@ -10,20 +10,51 @@ class DB
 {
     public static $singleton = array();
     public static $transaction;
-    public static $defaultConfig = array(
-        // "hostname" => "localhost",
-        // "username" => "root",
-        // "password" => "archit@2905",
-        "hostname" => "browntape-staging-new.crkstpypjzpm.us-east-1.rds.amazonaws.com",
-        "username" => "browntape_rds",
-        "password" => "Flame~#$#123",
-        "database" => "btpost"
-        );
+    // public static $defaultConfig = array(
+    //     // "hostname" => "localhost",
+    //     // "username" => "root",
+    //     // "password" => "archit@2905",
+    //     "hostname" => "browntape-staging-new.crkstpypjzpm.us-east-1.rds.amazonaws.com",
+    //     "username" => "browntape_rds",
+    //     "password" => "Flame~#$#123",
+    //     "database" => "btpost"
+        // );
 
+    public static $hostname;
+    public static $username;
+    public static $password;
+    public static $database;
+    /**
+     * FUnction to set the config for cache from config file
+     * @return void
+     */
+    public function __construct($conf = [])
+    {
+        foreach ($conf as $key => $value) {
+            if (property_exists(get_class($this), $key)) {
+                static::$$key = $value;
+            }
+        }
+    }
+
+    public static function getConfig()
+    {
+        return [
+            'hostname' => static::$hostname,
+            'username' => static::$username,
+            'password' => static::$password,
+            'database' => static::$database
+        ];
+    }
+    /**
+     * Function to return the instance of DB manager
+     * @param mixed|null $config 
+     * @return mixed object of the class
+     */
     public static function getInstance($config = null)
     {
         if (empty($config)) {
-            $config = self::$defaultConfig;
+            $config = self::getConfig();
         }
         $hash = $config['hostname'] . $config['username'] . $config ['database'];
         if (!isset(self::$singleton[$hash])) {
@@ -194,7 +225,7 @@ class DB
 
     public static function getDBSchema($tableName)
     {
-        $query = "SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE table_name = '". $tableName . "' and TABLE_SCHEMA = '" . static::$defaultConfig['database'] . "'";
+        $query = "SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE table_name = '". $tableName . "' and TABLE_SCHEMA = '" . static::$database . "'";
         $response = self::executeQuery($query);
         $fieldsArray = [];
         while ($row = $response->fetch_assoc()) {
