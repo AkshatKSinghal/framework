@@ -37,7 +37,6 @@ class Postmen extends Base
     {
         $url = static::$baseUrl . 'labels';
         $method = 'POST';
-		
 		$courierServiceAccount = static::getCourierServcieAccount($accountId, $courierServiceId);
 
         $credentials = $courierServiceAccount->getCredentials();
@@ -50,8 +49,8 @@ class Postmen extends Base
         if (!isset($credentials['api_key'])) {
             throw new \Exception("Api key not found");
         }
-        $serviceType = 'fedex_first_overnight';
-            $credentials['id'] = 'f74497e8-e7d0-419f-ae95-d3f164f8cfd5';
+        $serviceType = 'fedex_express_saver_one_rate';
+            $credentials['id'] = '5560a67f-5e2a-4081-b06e-a167acd11153';
         if (!isset($credentials['id'])) {
             // throw new \Exception("Api id not found");
         }
@@ -121,7 +120,7 @@ class Postmen extends Base
                 $newItem['sku'] = $item['sku_id'];
                 $newItem['price'] = [
                     'amount' =>  (float) $item['price'],
-                    'currency' => 'INR'
+                    'currency' => 'EUR'
                 ];
 
                 $newItem['weight'] = [
@@ -149,10 +148,10 @@ class Postmen extends Base
                 "paid_by"=> "shipper"
             ],
             "customs"=> [
-                "billing"=> [
-                    "paid_by"=> "recipient"
-                ],
-                "purpose"=> "merchandise"
+                // "billing"=> [
+                //     "paid_by"=> "recipient"
+                // ],
+                "purpose"=> "gift"
             ],
             "service_options"=> [[
             //checnge this depending on cod or prepaid
@@ -193,7 +192,7 @@ class Postmen extends Base
                     "city"=> $this->getCItyFromPincode($order['pickup_address']['pincode']),
                     "state"=> $order['pickup_address']['state'],
                     "postal_code"=>  $order['pickup_address']['pincode'],
-                    "country"=> "USA",
+                    "country"=> $order['pickup_address']['country'],
                     "type"=> "business",
                     "tax_id" =>  $order['shipment_details']['tin']
                 ],
@@ -205,7 +204,7 @@ class Postmen extends Base
                     "city"=> $this->getCItyFromPincode($order['drop_address']['pincode']),
                     "postal_code"=> $order['drop_address']['pincode'],
                     "state"=> $order['drop_address']['state'],
-                    "country"=> "USA",
+                    "country"=> $order['drop_address']['country'],
                     "tax_id" =>  $order['shipment_details']['tin'],
                     "type"=> "business"
                 ]

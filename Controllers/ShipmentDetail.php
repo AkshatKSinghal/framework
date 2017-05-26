@@ -29,7 +29,7 @@ class ShipmentDetail extends BaseController
             'multiple' => false
         ],
         'cod_value' => [
-            'mandatory' => true,
+            'mandatory' => false,
             'data' => [],
             'multiple' => false
         ],
@@ -212,7 +212,7 @@ class ShipmentDetail extends BaseController
                     'multiple' => false
                 ],
                 'reason' => [
-                    'mandatory' =>true,
+                    'mandatory' =>false,
                     'data' => [],
                     'multiple' => false
                 ]
@@ -238,11 +238,9 @@ class ShipmentDetail extends BaseController
         $courierService = new CourierService([$checkedData['courier_service_id']]);
         $serviceType = $courierService->getServiceType();
         $checkedData['shipment_type'] = $checkedData['shipment_details']['type'];
-        // $preAllocateAWB = $courierService->preallocateAWBAllowed();
         $courierResponse = '';
         $className = $courierService->getClassName();
         $courierClass = '\Controllers\Couriers\\' . $className;
-        // $courierClass = '\Controllers\Couriers\\' . 'Gati';
 
         try {
             $courierResponse = $courierClass::bookShipment($orderInfo, $checkedData['account_id'], $checkedData['courier_service_id'], $serviceType);
@@ -253,33 +251,6 @@ class ShipmentDetail extends BaseController
             }
             throw new \Exception($e->getMessage() . " Courier rejected awb", 1);
         }
-        // $courierServiceAccount = CourierServiceAccount::getByAccountAndCourierService($checkedData['account_id'], $checkedData['courier_service_id']);
-        // $credentials = $courierServiceAccount->getCredentials();
-        // switch ($preAllocateAWB) {
-        //     case 'pre':
-        //         $awbDetail = $courierServiceAccount->getAWB();
-        //         $awb = $awbDetail['awb'];
-        //         $checkedData['courier_service_account_id'] = $courierServiceAccount->getId();
-        //         try {
-        //             $courierResponse = $courierClass::bookShipment($orderInfo, $serviceType, $credentials, $awb);
-        //         } catch (\Exception $e) {
-        //             if (stripos($e->getMessage(), 'INTERNAL ERROR java.lang.NumberFormatException') !== false || stripos($e->getMessage(), 'Docket was already uploaded') !== false) {
-        //                 $awbBatch = new AWBBatch([$awbDetail['awbBatchId']]);
-        //                 $awbBatch->logAWBEvent('failed', $awb);
-        //                 $awbBatch->updateTableForFailedAwb();
-        //             }
-        //             throw new \Exception($e->getMessage() . " Courier rejected awb in pre allocation for awb". $awb, 1);
-        //         }
-        //         break;
-
-        //     case 'post':
-        //         try {
-        //             $courierResponse = $courierClass::bookShipment($orderInfo, $serviceType, $credentials);
-        //         } catch (\Exception $e) {
-        //             throw new \Exception($e->getMessage() . " Courier rejected awb post allocation for awb", 1);
-        //         }
-        //         break;
-        // }
         $checkedData['courier_service_account_id'] = $courierResponse['data']['courier_service_account_id'];
         $checkedData['courier_service_details'] = $courierResponse['data']['details'];
         $checkedData['courier_service_reference_number'] = $courierResponse['data']['awb'];

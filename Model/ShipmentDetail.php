@@ -2,6 +2,7 @@
 
 namespace Model;
 
+use DB\DB;
 /**
 * CRUD for Couriers
 */

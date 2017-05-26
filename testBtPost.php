@@ -57,22 +57,22 @@
             'account_id' => '6418',
             'pickup_address' => [
                 'name' => 'Archit',
-                'text' => 'C23,',
-                'landmark' => 'Shakti Nagar Extension,',
+                'text' => 'C23, Shakti Nagar Extension',
+                'landmark' => 'Ashok vihar',
                 'time' => 'epoch timestamp',
                 'phone' => '9876543210',
-                'pincode' => '110052',
+                'pincode' => ' 110052',
                 'email_id' => 'email id to be notified with updates',
-                'state'=> 'Delhi',
+                'state'=> 'DELHI',
                 'country'=> 'IND'
             ],
             'drop_address' => [
                 'name' => 'Drop contact person name',
-                'pincode' => '110007',
-                'text' => 'Chandini chowk',
+                'pincode' => '400060',
+                'text' => '212, HUBTOWN VIVA, W E HIGHWAY,',
                 'phone' => '9876543210',
-                'landmark' => 'Near majnu tilla',
-                'state'=> 'Delhi',
+                'landmark' => 'SHANKARWADI, JOGESHWARI - EAST',
+                'state'=> 'MH',
                 'country'=> 'IND'
             ],
             'shipment_details' => [
@@ -107,7 +107,7 @@
                 'reason' => 'reverse pickup reason'
             ],
             'cod_value' => '1200',
-            'courier_service_id' => '23',
+            'courier_service_id' => '26',
             // 'awb' => '10',
         ]));
         die;
