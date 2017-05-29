@@ -13,6 +13,10 @@ class CourierServiceAccount extends CourierService
     protected static $searchableFields = ['courier_service_id', 'account_id', 'awb_batch_mode'];
     const ADMIN_ACCOUNT_ID = 0;
 
+    /**
+     * Function to get courier company from courier service account
+     * @return string courier company id
+     */
     public function getCourierCompany()
     {
         $courierServiceClass = get_parent_class();
@@ -20,6 +24,10 @@ class CourierServiceAccount extends CourierService
         return $courierService->getCourierCompanyId();
     }
 
+    /**
+     * FUnction to get the admin account related to the courierServiceId
+     * @return mixed object of courierServiceAccount
+     */
     public function getAdminAccount()
     {
         #TODO Do it via Model::find()
@@ -34,6 +42,10 @@ class CourierServiceAccount extends CourierService
         return new CourierServiceAccount($accountId['id']);
     }
 
+    /**
+     * Function to get the awbbatch for the courierServiceAccount
+     * @return string awbBatchId
+     */
     public function getAWBBatch()
     {
         $awbBatchId = '';
@@ -60,6 +72,12 @@ class CourierServiceAccount extends CourierService
         return $awbBatchId;
     }
 
+    /**
+     * Function to map/unmap courierServiceAccountId with awb batch id
+     * @param string $awbBatchId awbBatchId to be mapped
+     * @param string $operation operation to be performed
+     * @return void
+     */
     public function mapAWBBatches($awbBatchId, $operation)
     {
         switch ($operation) {
@@ -80,7 +98,9 @@ class CourierServiceAccount extends CourierService
                 break;
         }
         foreach ($query as $q) {
-            DB::executeQuery($q);
+            if (DB::executeQuery($q) == 0) {
+                throw new \Exception("Error Processing Request");
+            }
         }
     }
 }

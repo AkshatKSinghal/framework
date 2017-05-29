@@ -3,6 +3,7 @@
 namespace Model;
 
 use DB\DB;
+
 /**
 * CRUD for Couriers
 */
@@ -16,6 +17,13 @@ class ShipmentDetail extends Base
     {
     }
 
+    /**
+     * Function to set courier ref for those courier services which provide only tracking by their id and not by awb
+     * @param string $awb awb number from shipment detasils table
+     * @param string $courierRef courier reference id recieved from courier
+     * @param string $operation operation to make
+     * @return void
+     */
     public function setCourierRefAWb($awb, $courierRef, $operation)
     {
         switch ($operation) {

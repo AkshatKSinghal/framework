@@ -54,7 +54,7 @@ class Base
             $id = $this->getId();
         }
 
-        $response = DBManager::get(get_called_class(), $id);
+        $response = (new DBManager())->get(get_called_class(), $id);
         if ($response->num_rows == 0) {
             // echo '********';
             // echo get_called_class();
@@ -106,7 +106,7 @@ class Base
         foreach ($arr as $value) {
             $valueArr[] = ucfirst($value);
         }
-        $ucdbField = implode('_', $valueArr); 
+        $ucdbField = implode('_', $valueArr);
         $propertyName = lcfirst(str_replace('_', '', /*ucwords($dbField, '_')*/$ucdbField));
         return $propertyName;
         // $propertyName = lcfirst(str_replace('_', '', ucwords($input, '_')));
@@ -125,7 +125,6 @@ class Base
      */
     public function save($validate = true, $fields = [])
     {
-
         if ($this->new) {
             $fields = array_keys($this->dbFields(false, true));
         }
@@ -140,7 +139,7 @@ class Base
         #TODO DO not call the DBManager::saveObject function in case the fields are all non-DB fields
         #done
         if (!empty(array_intersect($fields, $compareArray))) {
-            $result = DBManager::saveObject($this, $fields, $this->relativeValues);
+            $result = (new DBManager())->saveObject($this, $fields, $this->relativeValues);
             if (($this->new && $result) || !empty($this->relativeValues)) {
                 $this->data = $this->getDataFromDB($result);
                 $this->new = false;
@@ -359,16 +358,28 @@ class Base
         }
     }
 
+    /**
+     * Function to get the table name for the model
+     * @return string $tableName
+     */
     public static function tableName()
     {
         return static::$tableName;
     }
 
+    /**
+     * get all the searchableFIelds in a model.
+     * @return mixed array containing fields for searching in snake case
+     */
     public static function searchableFields()
     {
         return static::$searchableFields;
     }
 
+    /**
+     * Function to get all the fields in a model
+     * @return mixed fields
+     */
     public function allFields()
     {
         return array_keys($this->data);
@@ -380,12 +391,17 @@ class Base
         return end($parts);
     }
 
+    /**
+     * Function to get by certain params
+     * @param mixed $dataArray key value pair of the fields and value to be searched in the model
+     * @return mixed data according to the search performed
+     */
     public function getByParam($dataArray)
     {
         $sqlParts = [];
         $dbFields = static::searchableFields();
         foreach ($dbFields as $dbField) {
-            if (isset( $dataArray[$dbField])) {
+            if (isset($dataArray[$dbField])) {
                 $filterQuery[] = new FilterQuery($dbField, $dataArray[$dbField], '=');
             }
         }
@@ -400,6 +416,11 @@ class Base
         return $data;
     }
 
+    /**
+     * Function to get all the records and the selected fields of the model
+     * @param mixed|null $fieldList list of fields to be selected
+     * @return mixed data after fetching from db
+     */
     public function getAll($fieldList = null)
     {
         if ($fieldList == null) {
@@ -414,6 +435,42 @@ class Base
             $data[] = $row;
         }
         return $data;
+    }
+
+    /**
+     * Function to begin the transaction for DB
+     * @return void
+     */
+    public function startTransaction()
+    {
+        $dbInstance = DBManager::getInstance();
+        $dbInstance->begin_transaction(MYSQLI_TRANS_START_READ_WRITE);
+        $cache = CacheManager::getInstance();
+        $cache->startTransaction();
+    }
+
+    /**
+     * Function to commit the trasaction
+     * @return void
+     */
+    public function commitTransaction()
+    {
+        $dbInstance = DBManager::getInstance();
+        $dbInstance->commit();
+        $cache = CacheManager::getInstance();
+        $cache->commitTransaction();
+    }
+
+    /**
+     * function to rollback the trasaction
+     * @return void
+     */
+    public function rollbackTransaction()
+    {
+        $dbInstance = DBManager::getInstance();
+        $dbInstance->rollback();
+        $cache = CacheManager::getInstance();
+        $cache->rollbackTransaction();
     }
 }
 

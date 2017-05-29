@@ -247,7 +247,7 @@ class ShipmentDetail extends BaseController
         } catch (\Exception $e) {
             if ($cnt < 2) {
                 // print_r('retrying...');
-                $this->bookShipment($request, ++$cnt);            
+                $this->bookShipment($request, ++$cnt);
             }
             throw new \Exception($e->getMessage() . " Courier rejected awb", 1);
         }
@@ -257,7 +257,9 @@ class ShipmentDetail extends BaseController
         if ($className == 'Postmen') {
             $this->model->setCourierRefAWb($courierResponse['data']['awb'], $courierResponse['data']['courier_ref_id'], 'add');
         }
-        return $this->addShipmentTODB($checkedData, $courierResponse['data']['awb'],  $courierService->getCourierCompanyName());
+        $return = $this->addShipmentTODB($checkedData, $courierResponse['data']['awb'], $courierService->getCourierCompanyName());
+
+        return $return;
     }
 
     /**
@@ -476,7 +478,7 @@ class ShipmentDetail extends BaseController
                 $checkedData['courier_service_details'] = '';
                 $checkedData['courier_service_reference_number'] = $awbDetail['awb'];
                 $checkedData['shipment_type'] = 'FORWARD';
-                $response[]  = $this->addShipmentTODB($checkedData, $awbDetail['awb'],  $courierService->getCourierCompanyName());
+                $response[]  = $this->addShipmentTODB($checkedData, $awbDetail['awb'], $courierService->getCourierCompanyName());
             } else {
                 $response[] = [
                     'status' => 'FAILED',

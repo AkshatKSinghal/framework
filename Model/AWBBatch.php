@@ -11,6 +11,10 @@ class AWBBatch extends \Model\Base
 {
     protected static $tableName = 'awb_batches';
 
+    /**
+     * Function to find the awb batch by courier_company_id for the given account_id
+     * @return mixed awb_batch found
+     */
     public function findByCourier()
     {
         $searchCondition = array(
@@ -18,7 +22,7 @@ class AWBBatch extends \Model\Base
             'account_id' => $this->getAccountId(),
             'status' => 'PROCESSED'
             );
-        $response = DBManager::search($this->tableName(), $searchCondition, array($this->primaryKeyName()));
+        $response = (new DBManager())->search($this->tableName(), $searchCondition, array($this->primaryKeyName()));
         $data = [];
         while ($row = $response->fetch_assoc()) {
             $data[] = $row[$this->primaryKeyName()];
@@ -26,7 +30,14 @@ class AWBBatch extends \Model\Base
         return $data;
     }
 
-    public function save($validate = true, $fields = []) {
+    /**
+     * Function to savse the awb batch record in the db
+     * @param bool $validate
+     * @param array $fields
+     * @return void
+     */
+    public function save($validate = true, $fields = [])
+    {
         parent::save($validate, $fields);
     }
 }

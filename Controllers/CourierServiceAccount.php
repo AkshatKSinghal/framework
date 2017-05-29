@@ -92,7 +92,7 @@ class CourierServiceAccount extends CourierService
                 break;
             default:
                 throw new \Exception("Unknown AWB Batch Mode set");
-                break;
+            break;
         }
         try {
             $batchId = $courierServiceAccount->getAWBBatch();
@@ -105,8 +105,15 @@ class CourierServiceAccount extends CourierService
 
     public function create($request)
     {
-        $checkedData = $this->checkFields($request);
-        $modelId = $this->setIndividualFields($checkedData);
+        try {
+            $this->model->startTransaction();
+            $checkedData = $this->checkFields($request);
+            $modelId = $this->setIndividualFields($checkedData);
+            $this->model->commitTransaction();
+        } catch (\Exception $e) {
+            $this->model->rollbackTransaction();
+            throw new \Exception($e->getMessage());
+        }
         return $modelId;
     }
     
@@ -134,14 +141,14 @@ class CourierServiceAccount extends CourierService
             foreach ($arr as $value) {
                 $valueArr[] = ucfirst($value);
             }
-            $ucdbField = implode('_', $valueArr); 
+            $ucdbField = implode('_', $valueArr);
             $key = (str_replace('_', '', /*ucwords($dbField, '_')*/$ucdbField));
-            // $key = str_replace('_', '', ucwords($dbField, '_'));
-            $functionName = 'set'.$key;
+                    // $key = str_replace('_', '', ucwords($dbField, '_'));
+                    $functionName = 'set'.$key;
             $model->$functionName($insertData);
         }
-        #TODO move last updated time to save funciton in base model
-        $model->validate();
+                #TODO move last updated time to save funciton in base model
+                $model->validate();
         return $model->save();
     }
 
@@ -223,7 +230,7 @@ class CourierServiceAccount extends CourierService
     }
 
     /**
-     * Function to map the inserting fields with the incoming and setting additional fields 
+     * Function to map the inserting fields with the incoming and setting additional fields
      * @param mixed $params
      * @return mixed database fields to be inserted
      */

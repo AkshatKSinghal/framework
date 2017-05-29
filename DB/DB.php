@@ -25,19 +25,25 @@ class DB
     public static $password;
     public static $database;
     /**
-     * FUnction to set the config for cache from config file
+     * function to set Standard config for the db
+     * @param mixed $conf configuration array
      * @return void
      */
-    public function __construct($conf = [])
+    public static function setStdConfig($conf)
     {
         foreach ($conf as $key => $value) {
-            if (property_exists(get_class($this), $key)) {
+            if (property_exists(self::class, $key)) {
+                // $this->$key = $value;
                 static::$$key = $value;
             }
         }
     }
-
-    public static function getConfig()
+    
+    /**
+     * Function to get the config set
+     * @return mixed array containing the configuration
+     */
+    private static function getConfig()
     {
         return [
             'hostname' => static::$hostname,
@@ -46,9 +52,10 @@ class DB
             'database' => static::$database
         ];
     }
+
     /**
-     * Function to return the instance of DB manager
-     * @param mixed|null $config 
+     * Function to return the instance of mysql
+     * @param mixed|null $config
      * @return mixed object of the class
      */
     public static function getInstance($config = null)
@@ -67,7 +74,6 @@ class DB
         return self::$singleton[$hash];
     }
 
-
     /**
      * Function to save model object into DB
      *
@@ -82,7 +88,7 @@ class DB
      *
      * @return string $id Primary ID of the record
      */
-    public static function saveObject($object, $fields, $incrementValues = [])
+    public function saveObject($object, $fields, $incrementValues = [])
     {
         #TODO Add validation to check if the fields are part of DB fields
         $tableName = $object->tableName();
@@ -111,15 +117,15 @@ class DB
             $updateQuery = implode(", ", $updateValues);
             $query = "UPDATE $tableName SET $updateQuery WHERE `$primaryKey` = '$id'";
         }
-        if (!self::executeQuery($query)) {
+        if (!$this->executeQuery($query)) {
             throw new \Exception("Query not success: " . $query);
         }
         if ($object->isNew()) {
-            return self::getInstance()->insert_id;
+            return $this->getInstance()->insert_id;
         }
     }
 
-    public static function updateValues($object, $fields)
+    public function updateValues($object, $fields)
     {
         $tableName = $object->tableName();
         $primaryKey = $object->primaryKeyName();
@@ -132,7 +138,7 @@ class DB
         }
         $updateQuery = implode(", ", $updateValues);
         $query = "UPDATE $tableName SET $updateQuery WHERE `$primaryKey` = '$id'";
-        self::executeQuery($query);
+        $this->executeQuery($query);
     }
 
     /**
@@ -151,7 +157,7 @@ class DB
      *
      * @return array $result Array of results
      */
-    public static function search($table, $queryParams, $fieldList = [], $limit = 100, $page = 1)
+    public function search($table, $queryParams, $fieldList = [], $limit = 100, $page = 1)
     {
         if (empty($queryParams)) {
             throw new Exception("Filter parameters mandatory");
@@ -168,20 +174,20 @@ class DB
         $filterQuery = implode(" AND ", $filterQuery);
         $offset = ($page - 1) * $limit;
         $query = "SELECT $fieldList FROM $table WHERE $filterQuery LIMIT $offset, $limit";
-        return self::executeQuery($query);
+        return $this->executeQuery($query);
     }
 
 
     /**
      * Function to search and return single value for given query
-     * 
+     *
      * @uses search function to get the data
-     * 
+     *
      * @return array $data First record for the given query
      */
-    public static function searchOne($table, $queryParams, $fieldList = [])
+    public function searchOne($table, $queryParams, $fieldList = [])
     {
-        $response = self::search($table, $queryParams, $fieldList, 1);
+        $response = $this->search($table, $queryParams, $fieldList, 1);
         $data = $response->fetch_assoc();
         return ($data);
     }
@@ -199,14 +205,14 @@ class DB
      *
      * @return mixed $result
      */
-    public static function get($model, $id, $fields = array())
+    public function get($model, $id, $fields = array())
     {
         $tableName = $model::tableName();
         $primaryKey = $model::primaryKeyName();
         $queryParams = array(
             $primaryKey => $id
             );
-        return self::search($tableName, $queryParams, $fields, 1);
+        return $this->search($tableName, $queryParams, $fields, 1);
     }
 
     /**
@@ -220,9 +226,14 @@ class DB
      */
     public static function executeQuery($query)
     {
-        return self::getInstance()->query($query);
+        return static::getInstance()->query($query);
     }
 
+    /**
+     * Function to get the schema of the table
+     * @param string $tableName
+     * @return mixed fields array contaning the data type, limit, is_null etc of every field
+     */
     public static function getDBSchema($tableName)
     {
         $query = "SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE table_name = '". $tableName . "' and TABLE_SCHEMA = '" . static::$database . "'";
@@ -250,7 +261,7 @@ class DB
                 $columnType = $row['COLUMN_TYPE'];
                 $matches = [];
                 preg_match_all('/(?<=[(,])([^,)]+)(?=[,)])/', $columnType, $matches);
-                $values = array_map(function($m) {
+                $values = array_map(function ($m) {
                     return trim($m, "'");
                 }, $matches[1]);
             }

@@ -16,24 +16,26 @@
         // $batchExecute = new \Controllers\AWBBatch([133]);
         // $batchExecute->mapUnmapCourierService('add', [17], 12);
         // die;
+        $bokk = new BTPost([]);
 
         //file, courierCompanyId, AccountId
-        // $ship = new \Controllers\CourierServiceAccount([16]);
+        $ship = new \Controllers\CourierServiceAccount([]);
         // $ship->setCredentials([
         //     'api_key' => '07b55d06-48af-4b02-a6b0-1e311e22b1e6',
         //     'id'=>'8fc7966b-679b-4a57-911d-c5a663229c9e',
         // ]);die;
-        // var_dump($ship->create([
-        //     'account_id' => '0',
-        //     'courier_service_id' => '26',
-        //     'awb_batch_mode' => 'ADMIN',
-        //     'credentials' => [
-        //         'id' => '8fc7966b-679b-4a57-911d-c5a663229c9e',
-        //         'api_key' => '25dddfc8-b793-4aa2-b13b-64963bee5820'
-        //     ],
-        //     'pincodes' => '7',
-        //     'status' => 'ACTIVE',
-        // ]));die;
+        var_dump($ship->create([
+            'account_id' => '0',
+            'courier_service_id' => '26',
+            'awb_batch_mode' => 'ADMIN',
+            'credentials' => [
+                'id' => '8fc7966b-679b-4a57-911d-c5a663229c9e',
+                'api_key' => '25dddfc8-b793-4aa2-b13b-64963bee5820'
+            ],
+            'pincodes' => '7',
+            'status' => 'ACTIVE',
+        ]));
+        die;
 
         // //file, courierCompanyId, AccountId
         // // $ship = new \Controllers\CourierServiceAccount([]);
@@ -48,7 +50,6 @@
         // //     'pincodes' => '7',
         // //     'status' => 'ACTIVE',
         // // ]));die;
-        $bokk = new BTPost([]);
 
         // book a shipment
         $ship = new \Controllers\ShipmentDetail([]);
@@ -136,7 +137,7 @@
         // // track shipment
         // $ship = new \Controllers\ShipmentDetail([]);
         // var_dump($ship->trackShipment([
-        //     'ref_id' => 97 
+        //     'ref_id' => 97
         // ]));die;
 
         //Map unmap courier services

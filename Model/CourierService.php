@@ -15,6 +15,11 @@ class CourierService extends CourierCompany
     {
     }
 
+    /**
+     * Function to get the setting keyy for a particaulara CourierService
+     * @param string $key
+     * @return string
+     */
     public function getSettingsKey($key)
     {
         $settings = $this->getSettings();

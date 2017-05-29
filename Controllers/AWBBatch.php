@@ -69,6 +69,8 @@ class AWBBatch extends BaseController
         $this->model->save();
         $this->saveToPersistentStore($filePath, self::UPLOAD);
         $this->processFile();
+
+
         return $this->model->getId();
     }
 
