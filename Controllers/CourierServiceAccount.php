@@ -253,12 +253,28 @@ class CourierServiceAccount extends CourierService
         $this->model->save();
     }
 
-    public function getCouriersByAccountId($accountId)
-    {
-        $courierAccounts = $this->model->getByParam(['account_id' => $accountId]);
-        foreach ($courierAccounts as $courierAccount) {
-            $courierService = $courierAccount->getCourierService();
-            $courierCompany = $courierService->getCourierCompany();
-        }
-    }
+    // public function getCouriersByAccountId($accountId)
+    // {
+    //     $courierAccounts = $this->model->getByParam(['account_id' => $accountId]);
+
+    //     // if (empty($courierAccounts)) {
+    //     //     $courierAccounts = $this->model->getByParam(['nam'])
+    //     // }
+    //     foreach ($courierAccounts as $courierAccount) {
+    //         $courierService = $courierAccount->getCourierService();
+    //         $courierCompany = $courierService->getCourierCompany();
+
+
+    //         $courierService = [
+    //             'serviceType' => $courierService->getServiceType(),
+    //             'orderType' => $courierService->getOrderType()
+    //         ];
+    //         $couriers = [
+    //             'name' => $courierCompany->getName(),
+    //             'shortCode' => $courierCompany->getShortCode(),
+    //             'logoUrl' => $courierCompany->getLogoUrl(),
+
+    //         ];
+    //     }
+    // }
 }

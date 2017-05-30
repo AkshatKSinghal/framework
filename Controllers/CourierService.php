@@ -199,6 +199,15 @@ class CourierService extends CourierCompany
     }
 
     /**
+     * fUNCTION TO get the ordertype of the CourierSservice object
+     * @return type
+     */
+    public function getOrderType()
+    {
+        return $courierCompany->getOrderType();
+    }
+
+    /**
      * Function to map the inserting fields with the incoming and setting additional fields 
      * @param mixed $params
      * @return mixed database fields to be inserted
@@ -224,5 +233,29 @@ class CourierService extends CourierCompany
     public function getClassName()
     {
         return $this->model->getClassName();
+    }
+
+    /**
+     * Function to get services associated to the courier id supplied
+     * @param string $courierId 
+     * @return mixed services
+     */
+    public function getByCourierId($courierId)
+    {
+        $services = $this->getByParam(['courier_id' => $courierId ]);
+        return $services;
+    }
+
+    /**
+     * Function get the admin account associated with the courier service
+     * @return mixed courierServiceAccount or false if not found
+     */
+    public function getAdminAccount()
+    {
+        $courierAccount = CourierServiceAccount::getByParams([
+            'account_id' => 0,
+            'courier_service_id' => $this->model->getId()
+        ]);
+        return $courierAccount;
     }
 }

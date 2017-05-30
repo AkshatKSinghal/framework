@@ -346,9 +346,24 @@ class BTPost
         return $courierServiceAccountId;
     }
 
+    /**
+     * Function to get allthe courier services associated with the account id
+     * @param string $accountId seller account id to be used to search
+     * @return array contaning courier services and other details
+     */
     public function getCouriersByAccountId($accountId)
     {
         $courierAccount = new CourierServiceAccount([]);
         $courierAccounts = $courierAccount->getCouriersByAccountId($accountId);
+    }
+
+    public function getAdminCouriers()
+    {
+        $courierCompany = new \Controllers\CourierCompany([]);
+        $adminCompanies = $courierCompany->getAdminCouriers();
+        return $adminCompanies;
+        // foreach ($courierCompanies as $courier) {
+
+        // }
     }
 }

@@ -102,7 +102,7 @@ class CourierCompany extends BaseController
 
     /**
      * Function to create a new object of the class using all the inputs from the request param
-     * @param mixed $request 
+     * @param mixed $request
      * @return string id of the new object created
      */
     public function create($request)
@@ -114,7 +114,7 @@ class CourierCompany extends BaseController
     
     /**
      * Function to set the fields to be inserted into the db from the incoming data and save the model
-     * @param mixed $data  
+     * @param mixed $data
      * @return string $id id of the model created
      */
     protected function setIndividualFields($data)
@@ -139,7 +139,7 @@ class CourierCompany extends BaseController
             foreach ($arr as $value) {
                 $valueArr[] = ucfirst($value);
             }
-            $ucdbField = implode('_', $valueArr); 
+            $ucdbField = implode('_', $valueArr);
             $key = (str_replace('_', '', /*ucwords($dbField, '_')*/$ucdbField));
             // $key = str_replace('_', '', ucwords($dbField, '_'));
             $functionName = 'set'.$key;
@@ -183,7 +183,7 @@ class CourierCompany extends BaseController
         $controllerObject = $modelObj->getByParam($params);
         if (empty($controllerObject)) {
             if ($class == 'CourierServiceAccount') {
-                $params['credentials'] = $credentials;                
+                $params['credentials'] = $credentials;
             }
             $insertData = (new $class([]))->mapInsertFields($params);
             return (new $class([]))->setIndividualFields($insertData);
@@ -195,7 +195,7 @@ class CourierCompany extends BaseController
     }
 
     /**
-     * Function to map the inserting fields with the incoming and setting additional fields 
+     * Function to map the inserting fields with the incoming and setting additional fields
      * @param mixed $params
      * @return mixed database fields to be inserted
      */
@@ -209,5 +209,41 @@ class CourierCompany extends BaseController
             'logo_url' => 'ACTIVE'
         ];
         return $insertData;
+    }
+
+    /**
+     * Function to get all the courier and services with admin account
+     * @return mixed
+     */
+    public function getAdminCouriers()
+    {
+        $couriers = $this->model->getAll();
+        foreach ($couriers as $courier) {
+            return $this->getCourierServices($courier['id']);
+        }
+    }
+
+    public function getCourierServices($courierId)
+    {
+        $courierServices = (new CourierService([]))->getByCourierId($this->model->getId());
+        foreach ($courierServices as $service) {
+            $serviceObject = new CourierService([$service['id']]);
+            $courierAccount = $serviceObject->getAdminAccount();
+            if ($courierAccount) {
+
+                $awbBatch = $courierAccount->getAWBBatch();
+                return $awbBatch;
+                print_r($awbBatch);die
+                // $batch = [
+                //     'available' => $awbBatch['available']
+                // ];
+            }
+            $servicesData = [
+                'credentials_required' => $service['credentials_required_json'],
+                'status' => $service['status'],
+                'service_type' => $service['service_type']
+            ];
+            $couriers[] = $servicesData;
+        }
     }
 }
