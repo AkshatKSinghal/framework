@@ -254,4 +254,9 @@ class CourierServiceAccount extends CourierService
             $courierCompany = $courierService->getCourierCompany();
         }
     }
+
+    public function getExtraParams($pincode)
+    {
+        return $this->model->getExtraParams($pincode);
+    }
 }

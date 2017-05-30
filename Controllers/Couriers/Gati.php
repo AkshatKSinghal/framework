@@ -87,6 +87,7 @@ class Gati extends Base
 
         $credentials = $courierServiceAccount->getCredentials();
         $awbDetail = $courierServiceAccount->getAWB();
+        $credentials['cust_vend_code'] = $courierServiceAccount->getExtraParams($orderInfo['pickup_address']['pincode'])['value'];
         $awb = $awbDetail['awb'];
         $courierServiceAccountId = $courierServiceAccount->getId();
 
