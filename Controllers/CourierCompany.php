@@ -233,7 +233,7 @@ class CourierCompany extends BaseController
 
                 $awbBatch = $courierAccount->getAWBBatch();
                 return $awbBatch;
-                print_r($awbBatch);die
+                print_r($awbBatch);die;
                 // $batch = [
                 //     'available' => $awbBatch['available']
                 // ];
