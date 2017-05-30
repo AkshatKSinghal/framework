@@ -252,9 +252,9 @@ class CourierCompany extends BaseController
             if ($courierAccount) {
                 try {
                     $awbBatch = $courierAccount->getAWBBatch();
-                    $servicesData['awb'] += $awbBatch->getAvailableCount();
+                    $servicesData['awb'] = $awbBatch->getAvailableCount();
                 } catch (\Exception $e) {
-                    $servicesData['awb'] += 0;
+                    $servicesData['awb'] = 0;
                 }
             }
             $returnServices[] = $servicesData;

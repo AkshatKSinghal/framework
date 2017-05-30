@@ -131,7 +131,7 @@ class CourierService extends CourierCompany
         return $modelId;
     }
     
-    protected function setIndividualFields($data)
+    protected function setIndividualFields($data, $new = true)
     {
         $modelClass = $this->getModelClass();
         $model = new $modelClass();
