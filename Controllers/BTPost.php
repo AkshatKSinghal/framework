@@ -3,7 +3,8 @@
 
 
 require_once __DIR__ . '/../vendor/autoload.php';
-require_once __DIR__ . '/../vendor/malkusch/php-autoloader/autoloader.php';
+require_once/* __DIR__ . */'/var/www/html/btapp/app/Vendor/btpost/vendor/malkusch/php-autoloader/autoloader.php';
+// require_once __DIR__ . '/../vendor/malkusch/php-autoloader/autoloader.php';
 require_once __DIR__ . "/../constants.php";
 /**
  * Controller for all external communications of the BTPost System
@@ -361,9 +362,47 @@ class BTPost
     {
         $courierCompany = new \Controllers\CourierCompany([]);
         $adminCompanies = $courierCompany->getAdminCouriers();
+        print_r($adminCompanies);
         return $adminCompanies;
-        // foreach ($courierCompanies as $courier) {
+    }
 
-        // }
+    /**
+     * Function to add courier and courier service from admin panel
+     * @return bool true/false if added or not
+     */
+    public function addCourierAdmin($request)
+    {
+        try {
+            $courierId = $this->createCourierCompany($request['name'], $request['short_code'], $request['comments'], $request['logo_url']);
+            foreach ($$request['services'] as $service) {
+                $credentialsRequired = json_encode($service['credentials_required']);
+                $serviceId = $this->createCourierService($courierId, $credentialsRequired, '', '', 'ACTIVE', $service['type'], $service['order_type']);
+            }            
+        } catch (\Exception $e) {
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * Function to save the general tab setting for the coourier company
+     * @param  $request data from the user panel 
+     * @return bool
+     */
+    public function saveCourierGeneral($request)
+    {
+        $courier = new \Controllers\CourierCompany([$request['id']]);
+        $courier->saveData($request);
+    }
+
+    /**
+     * Function to update courier services from ui
+     * @param mixed $request
+     * @return void
+     */
+    public function updateCourierServices($request)
+    {
+        $courier = new \Controllers\CourierCompany([$request['id']]);
+        $courier->updateServices($request['services']);
     }
 }

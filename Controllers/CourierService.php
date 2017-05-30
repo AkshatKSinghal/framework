@@ -115,12 +115,12 @@ class CourierService extends CourierCompany
      *
      * @return void
      */
-    public function checkService($service)
+    public function checkService($courierCompanyClass, $service)
     {
         #TODO get $courierCompanyClass,
         if (!class_exists($courierCompanyClass)
             || !method_exists($courierCompanyClass, $service)) {
-            throw new Exception("$service service not available for the courier");
+            throw new \Exception("$service service not available for the courier");
         }
     }
 
@@ -204,9 +204,27 @@ class CourierService extends CourierCompany
      */
     public function getOrderType()
     {
-        return $courierCompany->getOrderType();
+        return $this->model->getOrderType();
     }
 
+    /**
+     * fUNCTION TO get the credentials required of the CourierSservice object
+     * @return type
+     */
+    public function getCredentialsRequiredJson()
+    {
+        return $this->model->getCredentialsRequiredJson();
+    }
+
+    /**
+     * fUNCTION TO set the credentials required of the CourierSservice object
+     * @return type
+     */
+    public function setCredentialsRequiredJson($credentials)
+    {
+        $this->model->setCredentialsRequiredJson();
+        $this->model->save();
+    }
     /**
      * Function to map the inserting fields with the incoming and setting additional fields 
      * @param mixed $params
@@ -242,7 +260,9 @@ class CourierService extends CourierCompany
      */
     public function getByCourierId($courierId)
     {
-        $services = $this->getByParam(['courier_id' => $courierId ]);
+        $model = static::getModelClass();
+        $modelObj = new $model;
+        $services = $modelObj->getByParam(['courier_company_id' => $courierId ]);
         return $services;
     }
 

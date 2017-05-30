@@ -117,10 +117,14 @@ class CourierCompany extends BaseController
      * @param mixed $data
      * @return string $id id of the model created
      */
-    protected function setIndividualFields($data)
+    protected function setIndividualFields($data, $new = true)
     {
         $modelClass = $this->getModelClass();
-        $model = new $modelClass();
+        if ($new) {
+            $model = new $modelClass();        
+        } else {
+            $model = new $modelClass($this->model->getId());
+        }
         $mapArray = [
             'name' => 'name',
             'short_code' => 'short_code',
@@ -213,37 +217,76 @@ class CourierCompany extends BaseController
 
     /**
      * Function to get all the courier and services with admin account
+     * @uses getCourierServices
      * @return mixed
      */
     public function getAdminCouriers()
     {
         $couriers = $this->model->getAll();
+        $returnCouriers = [];
         foreach ($couriers as $courier) {
-            return $this->getCourierServices($courier['id']);
+            $courierData['name'] = $courier['name'];
+            $courierData['short_code'] = $courier['short_code'];
+            $courierData['logo_url'] = $courier['logo_url'];
+            $courierData['services'] = $this->getCourierServices($courier['id']);
+            $returnCouriers[] = $courierData;
+        }
+        return $returnCouriers;
+    }
+
+    /**
+     * Function to get the courier services for a particular courier company
+     * @param string $courierId
+     * @return mixed $returnServices
+     */
+    public function getCourierServices($courierId)
+    {
+        $courierServices = (new CourierService([]))->getByCourierId($courierId);
+        $returnServices = [];
+        foreach ($courierServices as $service) {
+            $serviceObject = new CourierService([$service['id']]);
+            $servicesData['service_type'] = $serviceObject->getServiceType();
+            $servicesData['order_type'] = $serviceObject->getOrderType();
+            $servicesData['credentials_required_json'] = $serviceObject->getCredentialsRequiredJson();
+            $courierAccount = $serviceObject->getAdminAccount();
+            if ($courierAccount) {
+                try {
+                    $awbBatch = $courierAccount->getAWBBatch();
+                    $servicesData['awb'] += $awbBatch->getAvailableCount();
+                } catch (\Exception $e) {
+                    $servicesData['awb'] += 0;
+                }
+            }
+            $returnServices[] = $servicesData;
+        }
+        return $returnServices;
+    }
+
+    /**
+     * save edit data for courier company
+     * @uses setIndividualFields
+     * @param mixed $data array contaning the fields and values
+     * @return bool if saved or not
+     */
+    public function saveData($data)
+    {
+        $courierSaved = $this->setIndividualFields($data, false);
+        if ($courierSaved) {
+            $courierServices = (new CourierService([]))->getByCourierId($data['id']);
+            foreach ($courierServices as $service) {
+                $serviceObject = new CourierSservice([$service['id']]);
+                $serviceObject->setCredentialsRequiredJson(json_encode($data['credentials_required']));
+            } 
         }
     }
 
-    public function getCourierServices($courierId)
+    /**
+     * Function to update the services from ui
+     * @param mixed $servicesData
+     * @return bool true false
+     */
+    public function updateServices($servicesData)
     {
-        $courierServices = (new CourierService([]))->getByCourierId($this->model->getId());
-        foreach ($courierServices as $service) {
-            $serviceObject = new CourierService([$service['id']]);
-            $courierAccount = $serviceObject->getAdminAccount();
-            if ($courierAccount) {
 
-                $awbBatch = $courierAccount->getAWBBatch();
-                return $awbBatch;
-                print_r($awbBatch);die;
-                // $batch = [
-                //     'available' => $awbBatch['available']
-                // ];
-            }
-            $servicesData = [
-                'credentials_required' => $service['credentials_required_json'],
-                'status' => $service['status'],
-                'service_type' => $service['service_type']
-            ];
-            $couriers[] = $servicesData;
-        }
     }
 }

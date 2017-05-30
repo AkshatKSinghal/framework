@@ -17,6 +17,8 @@
         // $batchExecute->mapUnmapCourierService('add', [17], 12);
         // die;
         $bokk = new BTPost([]);
+        $bokk->getAdminCouriers();
+        die;
 
         //file, courierCompanyId, AccountId
         $ship = new \Controllers\CourierServiceAccount([]);

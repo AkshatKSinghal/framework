@@ -80,7 +80,7 @@ class CourierServiceAccount extends CourierService
      * @return AWBBatch $awbBatch AWBBatch Controller object
      */
 
-    private function getAWBBatch()
+    public function getAWBBatch()
     {
         $mode = $this->model->getAwbBatchMode();
         switch ($mode) {
@@ -179,7 +179,7 @@ class CourierServiceAccount extends CourierService
         if (empty($courierServiceAccount)) {
             return false;
         } else {
-            return new CourierServiceAccount($courierServiceAccount[0]['id']);
+            return new CourierServiceAccount([$courierServiceAccount[0]['id']]);
         }
     }
 

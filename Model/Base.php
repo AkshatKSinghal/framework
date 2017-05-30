@@ -425,8 +425,9 @@ class Base
     {
         if ($fieldList == null) {
             $fields = '*';
+        } else {
+            $fields = implode(', ', $fieldList);        
         }
-        $fields = implode(', ', $fieldList);
         $query = 'SELECT '. $fields .' from ' . self::tableName();
         $response = DBManager::executeQuery($query);
 

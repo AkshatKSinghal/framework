@@ -35,7 +35,7 @@ class CourierServiceAccount extends CourierService
             'account_id' => 0,
             'courier_service_id' => $this->getCourierServiceId()
             );
-        $accountId = DB::searchOne($this->tableName(), $searchFiters, ['id']);
+        $accountId = (new DB())->searchOne($this->tableName(), $searchFiters, ['id']);
         if (empty($accountId)) {
             throw new \Exception("Admin account not found for courier. Please contact admin.");
         }
