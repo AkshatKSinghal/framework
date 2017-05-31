@@ -281,4 +281,17 @@ class CourierServiceAccount extends CourierService
     //         ];
     //     }
     // }
+    public function getCouriersByAccountId($accountId)
+    {
+        $courierAccounts = $this->model->getByParam(['account_id' => $accountId]);
+        foreach ($courierAccounts as $courierAccount) {
+            $courierService = $courierAccount->getCourierService();
+            $courierCompany = $courierService->getCourierCompany();
+        }
+    }
+
+    public function getExtraParams($pincode)
+    {
+        return $this->model->getExtraParams($pincode);
+    }
 }

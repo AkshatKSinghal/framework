@@ -50,7 +50,7 @@ class Base
 
     public function getCItyFromPincode($pincode)
     {
-        return 'New York';
+        return 'Delhi';
     }
 
     private static function object2array($object)

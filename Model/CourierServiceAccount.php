@@ -59,6 +59,7 @@ class CourierServiceAccount extends CourierService
             " WHERE awb_batches.status = 'PROCESSED'".
             " AND awb_batches.available_count > 0 ORDER BY awb_batches.available_count LIMIT 1";
             $result = DB::executeQuery($query);
+            
             #TODO Extract the ID #Done
             $data = $result->fetch_assoc();
             if (empty($data)) {
@@ -102,5 +103,27 @@ class CourierServiceAccount extends CourierService
                 throw new \Exception("Error Processing Request");
             }
         }
+    }
+
+    /**
+     * Function to get extra params for the courier service account
+     * @return mixed
+     */
+    public function getExtraParams($pincode)
+    {
+        $query = "SELECT * FROM account_extra_params"
+                ." WHERE courier_service_account_id = " . $this->getId()
+                . " AND description = '" . trim($pincode) . "'";
+
+        $extraParams = DB::executeQuery($query);
+        $data = [];
+        while ($row = $extraParams->fetch_assoc()) {
+            $data[] = $row;
+        }
+        if (!$data[0]) {
+            throw new \Exception("Error Processing Request");
+        }
+
+        return $data[0];
     }
 }
