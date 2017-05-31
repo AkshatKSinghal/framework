@@ -24,7 +24,7 @@ class ShipmentDetail extends BaseController
             'multiple' => false
         ],
         'courier_service_id' => [
-            'mandatory' => true,
+            'mandatory' => false,
             'data' => [],
             'multiple' => false
         ],
@@ -228,6 +228,9 @@ class ShipmentDetail extends BaseController
     public function bookShipment($request, $cnt = 0)
     {
         $checkedData = $this->checkFields($request);
+        if ($checkedData['courier_service_id']) {
+            throw new \Exception("Courier Service id not found");
+        }
         $orderInfo = [
             'pickup_address' => $checkedData['pickup_address'],
             'drop_address' => $checkedData['drop_address'],
@@ -247,7 +250,7 @@ class ShipmentDetail extends BaseController
         } catch (\Exception $e) {
             if ($cnt < 2) {
                 // print_r('retrying...');
-                $this->bookShipment($request, ++$cnt);            
+                $this->bookShipment($request, ++$cnt);
             }
             throw new \Exception($e->getMessage() . " Courier rejected awb", 1);
         }
@@ -257,7 +260,7 @@ class ShipmentDetail extends BaseController
         if ($className == 'Postmen') {
             $this->model->setCourierRefAWb($courierResponse['data']['awb'], $courierResponse['data']['courier_ref_id'], 'add');
         }
-        return $this->addShipmentTODB($checkedData, $courierResponse['data']['awb'],  $courierService->getCourierCompanyName());
+        return $this->addShipmentTODB($checkedData, $courierResponse['data']['awb'], $courierService->getCourierCompanyName());
     }
 
     /**
@@ -272,6 +275,9 @@ class ShipmentDetail extends BaseController
         }
         $awb = $request['awb'];
         $checkedData = $this->checkFields($request);
+        if ($checkedData['courier_service_id']) {
+            throw new \Exception("Courier Service id not found");
+        }
         
         $courierService = new CourierService([$checkedData['courier_service_id']]);
         $serviceType = $courierService->getServiceType();
@@ -459,28 +465,25 @@ class ShipmentDetail extends BaseController
     public function assignAwbSellerUpload($request)
     {
         $response = [];
-        foreach ($request as $order) {
+        foreach ($request as $index => $order) {
             $checkedData = $this->checkFields($order);
             $orderRef = $order['order_ref'];
-            $courierService = new CourierService([$checkedData['courier_service_id']]);
-
             $courierServiceAccount = CourierServiceAccount::getByParams([
-                'account_id' => $checkedData['account_id'],
-                'courier_service_id' => $checkedData['courier_service_id'],
-                'awb_batch_mode' => 'USER'
+                'account_id' => $checkedData['account_id']
             ]);
             if ($courierServiceAccount) {
+                $courierService = $courierServiceAccount->getCourierService();
                 $awbDetail = $courierServiceAccount->getAWB();
                 $checkedData['courier_service_account_id'] = $courierServiceAccount->getId();
 
                 $checkedData['courier_service_details'] = '';
                 $checkedData['courier_service_reference_number'] = $awbDetail['awb'];
                 $checkedData['shipment_type'] = 'FORWARD';
-                $response[]  = $this->addShipmentTODB($checkedData, $awbDetail['awb'],  $courierService->getCourierCompanyName());
+                $response[$$index]  = $this->addShipmentTODB($checkedData, $awbDetail['awb'], $courierService->getCourierCompanyName());
             } else {
-                $response[] = [
+                $response[$$index] = [
                     'status' => 'FAILED',
-                    'MSG' => 'No AWb batch found'
+                    'MSG' => 'CourierService Account not found for the seller account'
                 ];
             }
         }

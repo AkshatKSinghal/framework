@@ -172,7 +172,7 @@ class CourierServiceAccount extends CourierService
         if (empty($courierServiceAccount)) {
             return false;
         } else {
-            return new CourierServiceAccount($courierServiceAccount[0]['id']);
+            return new CourierServiceAccount([$courierServiceAccount[0]['id']]);
         }
     }
 
