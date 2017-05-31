@@ -120,7 +120,11 @@ class CourierServiceAccount extends CourierService
     protected function setIndividualFields($data, $new = true)
     {
         $modelClass = $this->getModelClass();
-        $model = new $modelClass();
+        if ($new) {
+            $model = new $modelClass();        
+        } else {
+            $model = new $modelClass($this->model->getId());
+        }
         $mapArray = [
             'account_id' => 'account_id',
             'courier_service_id' => 'courier_service_id',

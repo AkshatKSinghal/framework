@@ -228,7 +228,7 @@ class CourierCompany extends BaseController
             $courierData['name'] = $courier['name'];
             $courierData['short_code'] = $courier['short_code'];
             $courierData['logo_url'] = $courier['logo_url'];
-            $courierData['services'] = $this->getCourierServices($courier['id']);
+            $courierData['services'] = $this->getCourierServices();
             $returnCouriers[] = $courierData;
         }
         return $returnCouriers;
@@ -239,8 +239,9 @@ class CourierCompany extends BaseController
      * @param string $courierId
      * @return mixed $returnServices
      */
-    public function getCourierServices($courierId)
+    public function getCourierServices()
     {
+        $courierId = $this->model->getId();
         $courierServices = (new CourierService([]))->getByCourierId($courierId);
         $returnServices = [];
         foreach ($courierServices as $service) {
@@ -287,6 +288,24 @@ class CourierCompany extends BaseController
      */
     public function updateServices($servicesData)
     {
+        $servicesInDb = $this->getCourierServices();
+        foreach ($servicesInDb as $index => $service) {
+            if (array_key_exists($service['id'], $servicesData)) {
+                $serviceObject = new CourierService([$service['id']]);
+                $service['courier_company_id'] = $this->model->getId();
+                $serviceObject->setIndividualFields($service);
+                unset($servicesData[$service['id']]);
+            }
+        }
 
+        foreach ($servicesData as $service) {
+            $serviceObject = new CourierService([]);
+            $newService = $service;
+            $newService['courier_company_id'] = $this->model->getId();
+            $newService['pincodes'] = $this->model->getId();
+            $newService['status'] = 'ACTIVE';
+            $newService['class_name'] = $newService['service_type'];
+            $serviceObject->create($newService);
+        }
     }
 }

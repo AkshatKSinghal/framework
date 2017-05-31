@@ -134,7 +134,11 @@ class CourierService extends CourierCompany
     protected function setIndividualFields($data, $new = true)
     {
         $modelClass = $this->getModelClass();
-        $model = new $modelClass();
+        if ($new) {
+            $model = new $modelClass();        
+        } else {
+            $model = new $modelClass($this->model->getId());
+        }
         $mapArray = [
             'courier_company_id' => 'courier_company_id',
             'service_type' => 'service_type',
@@ -144,6 +148,8 @@ class CourierService extends CourierCompany
             'status' => 'status',
             'settings' => 'settings'
         ];
+
+        $data['class_name'] = '';
 
         foreach ($mapArray as $dbField => $mergeFields) {
             $resultFields = [];
