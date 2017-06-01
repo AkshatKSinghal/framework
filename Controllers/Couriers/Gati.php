@@ -81,16 +81,23 @@ class Gati extends Base
     protected static function bookShipment($orderInfo, $accountId, $courierServiceId, $serviceType)
     {
         $headers = array('Content-Type: text/xml');
-        // $awb = null;
-
         $courierServiceAccount = static::getCourierServcieAccount($accountId, $courierServiceId);
-
         $credentials = $courierServiceAccount->getCredentials();
+        $custVendRow = $courierServiceAccount->getExtraParams($orderInfo['pickup_address']['pincode'], 'cust_vend_code');
+        $custVendRow = false;
+        if ($custVendRow) {
+            $credentials['cust_vend_code'] = $custVendRow['value'];
+        } else {
+            $lastValue = $courierServiceAccount->getExtraParamsLastValue('cust_vend_code');
+            $lastValue = $lastValue ? $lastValue : 1;
+            $registerResponse = (new Gati)->registerWarehouse($orderInfo, $credentials['code'], ++$lastValue);
+            if(!$courierServiceAccount->saveExtraParams('cust_vend_code', $lastValue, $orderInfo['pickup_address']['pincode'])) {
+                throw new \Exception("Save new cust vend code failed");                
+            }
+        }
         $awbDetail = $courierServiceAccount->getAWB();
-        $credentials['cust_vend_code'] = $courierServiceAccount->getExtraParams($orderInfo['pickup_address']['pincode'])['value'];
         $awb = $awbDetail['awb'];
         $courierServiceAccountId = $courierServiceAccount->getId();
-
         $payloadResp = (new Gati)->prepareSchedulePickupPayload($orderInfo, $credentials, $awb, $serviceType);
         if ($payloadResp['success']) {
             $payload=$payloadResp['payload'];
@@ -98,7 +105,6 @@ class Gati extends Base
             throw new \Exception("Payload not generated successfully", 1);
         }
         $apiCallRawResponse =  \Utility\WCurl::post(static::$baseUrl.'/BT2GATI/BT2Gatipickup.jsp', '', $payload, $headers);
-        //XML Parse the response, try to find "success" in it
         $xml = self::object2array(simplexml_load_string($apiCallRawResponse['body']));
         if ($xml["result"]=="successful") {
             if ($xml['reqcnt'] > 0) {
@@ -109,7 +115,7 @@ class Gati extends Base
                     if (is_array($xml["details"]['res']["errmsg"]['err'])) {
                         foreach ($xml["details"]['res']["errmsg"]['err'] as $err) {
                             $error = $error .  $err . ", ";
-                        }                        
+                        }
                     } else {
                         $error = $xml["details"]['res']["errmsg"]['err'];
                     }
@@ -143,11 +149,9 @@ class Gati extends Base
         $today = new DateTime('now');
         $courierAccount = $credentials;
         if (!isset($courierAccount['code'])) {
-            // $courierAccount['code'] = 54655501;
             throw new \Exception("Customer code not present", 1);
         }
         if (!isset($courierAccount['cust_vend_code'])) {
-            // $courierAccount['cust_vend_code'] = 100001;
             throw new \Exception("cust_vend_code code not present", 1);
         }
 
@@ -162,15 +166,10 @@ class Gati extends Base
 
             #TODO remove the default case. only there for the time being for testing pupose
             default:
-                $serviceCode = 2;                
+                $serviceCode = 2;
                 break;
         }
-        // array(
-        //     'CourierAccount' => array(
-        //         'code' => '54655501',
-        //         'cust_vend_code' => 100001
-        //         )
-        //     );
+
         $goodsCode = '202';
         $orderQty = 0;
         $orderVal = 0;
@@ -180,7 +179,6 @@ class Gati extends Base
             }
             $orderVal += (int) $orderInd['invoice']['value'];
         }
-        // $orderQty = $order['shipment_details']['orders']['items']['quantity'];
         if ($orderQty == 0) {
             throw new \Exception("Order quantity cannot be zero", 1);
         }
@@ -189,7 +187,6 @@ class Gati extends Base
         }
 
         $payloadArray = [
-            // 'gati' => [
                 'pickuprequest' => $today->format("d-m-Y H:i:s"),
                 'custcode' => $courierAccount['code'],
                 'details' => [
@@ -206,7 +203,8 @@ class Gati extends Base
                         'RECEIVER_ADD1' => $order['drop_address']['text'],
                         'RECEIVER_ADD2' => (isset($order['drop_address']['landmark']) && $order['drop_address']['landmark'] != '')?$order['drop_address']['landmark']: '-',
                         'RECEIVER_ADD3' => (isset($order['drop_address']['landmark']) && $order['drop_address']['landmark'] != '')?$order['drop_address']['landmark']: '-',
-                        'RECEIVER_CITY' => $this->getCItyFromPincode($order['drop_address']['pincode']),
+                        // 'RECEIVER_CITY' => $this->getCItyFromPincode($order['drop_address']['pincode']),
+                        'RECEIVER_CITY' => $order['drop_address']['city'],
                         'RECEIVER_STATE' => $order['drop_address']['state'],
                         'RECEIVER_PHONE_NO' => $order['drop_address']['phone'],
                         'RECEIVER_EMAIL' => $order['pickup_address']['email_id'],
@@ -230,7 +228,8 @@ class Gati extends Base
                         'SELLER_ADD1' => $order['pickup_address']['text'],
                         'SELLER_ADD2' => (isset($order['pickup_address']['landmark']) && $order['pickup_address']['landmark'] != '')?$order['pickup_address']['landmark']: '-',
                         'SELLER_ADD3' => (isset($order['pickup_address']['landmark']) && $order['pickup_address']['landmark'] != '')?$order['pickup_address']['landmark']: '-',
-                        'SELLER_CITY' => $this->getCItyFromPincode($order['pickup_address']['pincode']),
+                        // 'SELLER_CITY' => $this->getCItyFromPincode($order['pickup_address']['pincode']),
+                        'SELLER_CITY' => $order['pickup_address']['city'],
                         'SELLER_PINCODE' => $order['pickup_address']['pincode'],
                         'SELLER_STATE_CODE' => $this->getStateCode($order['pickup_address']['state']),
                         'SELLER_TINNO' => $order['shipment_details']['tin'],
@@ -239,7 +238,6 @@ class Gati extends Base
                         'PROD_SERV_CODE' => $serviceCode,
                     ]
                 ]
-            // ]
         ];
 
         $payloadXml = SimpleXMLElementWrapper::arrayToXML($payloadArray);
@@ -309,5 +307,82 @@ class Gati extends Base
             }
         }
         return $retArray;
+    }
+
+    /**
+     * Function to register new warehouse in gati with the newly generated cust_vend_code
+     * @param mixed $order order details
+     * @param string $custcode cust code
+     * @param string cust vend code
+     * @return mixed status and details of api call
+     */
+    private function registerWarehouse($order, $custcode, $newCustVendCode)
+    {
+        $headers = array('Content-Type: text/xml');
+        $payloadResp = $this->prepareRegisterWarehousePayload($order, $custcode, $newCustVendCode);
+        if ($payloadResp['success']) {
+            $payload=$payloadResp['payload'];
+        } else {
+            throw new \Exception("Register Warehouse Payload not generated successfully", 1);
+        }
+        $apiCallRawResponse =  \Utility\WCurl::post(static::$baseUrl.'/GatiCustVendDtls.jsp', '', $payload, $headers);
+        $xml = self::object2array(simplexml_load_string($apiCallRawResponse['body']));
+        if ($xml["result"]=="successful") {
+            if ($xml['reqcnt'] > 0) {
+                return array('success'=> true, 'data' => ['custVendCode' => $xml['details']['res']['custVendorCode']]);
+            } else {
+                $error = "";
+                if (isset($xml["details"]['res']["errmsg"]['err'])) {
+                    if (is_array($xml["details"]['res']["errmsg"]['err'])) {
+                        foreach ($xml["details"]['res']["errmsg"]['err'] as $err) {
+                            $error = $error .  $err . ", ";
+                        }
+                    } else {
+                        $error = $xml["details"]['res']["errmsg"]['err'];
+                    }
+                }
+                throw new \Exception($error . ' while Register new warehouse');
+            }
+        } else {
+            $error ="";
+            if (isset($xml['errmsg'])) {
+                $error = $xml['errmsg'];
+            }
+            throw new \Exception($error . ' while Register new warehouse');
+        }
+        return $retArray;
+    }
+
+    /**
+     * Function to prepare payload for registere warehousr api
+     * @param mxied $order orderdetails array
+     * @param string $custcode cust code
+     * @param string cust vend code
+     * @return mixed generatedd payload array
+     */
+    private function prepareRegisterWarehousePayload($order, $custcode, $custVendCode)
+    {
+        $pickupAddress = $order['pickup_address'];
+        $payloadArray = [
+            // 'gati' => [
+                'custCode' => $custcode,
+                'details' => [
+                    'req' => [
+                        'custVendorCode' => $custVendCode ,
+                        'custVendorName' => $pickupAddress['name'],
+                        'vendorAdd1' => $pickupAddress['text'],
+                        'vendorAdd2' => (isset($pickupAddress['landmark']) && $pickupAddress['landmark'] != '')?$pickupAddress['landmark']: '-',
+                        'vendorAdd3' => (isset($pickupAddress['landmark']) && $pickupAddress['landmark'] != '')?$pickupAddress['landmark']: '-',
+                        'vendorCity' => $this->getCItyFromPincode($pickupAddress['pincode']),
+                        'vendorPhoneNo' => $pickupAddress['phone'],
+                        'vendorPincode' => isset($pickupAddress['pincode']) ? $pickupAddress['pincode'] : '-',
+                        'vendorEmail' => isset($pickupAddress['email']) ? $pickupAddress['email'] : '-',
+                        'vendorReceiverFlag' => 'V'
+                    ]
+                ]
+            // ]
+        ];
+        $payloadXml = SimpleXMLElementWrapper::arrayToXML($payloadArray);
+        return array('success'=>true, 'payload'=>$payloadXml);
     }
 }

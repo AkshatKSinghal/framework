@@ -228,9 +228,10 @@ class ShipmentDetail extends BaseController
     public function bookShipment($request, $cnt = 0)
     {
         $checkedData = $this->checkFields($request);
-        if ($checkedData['courier_service_id']) {
-            throw new \Exception("Courier Service id not found");
+        if (!$request['courier_service_id']) {
+            throw new \Exception("Courier Service ID not found");
         }
+        $checkedData['courier_service_id'] = $request['courier_service_id'];
         $orderInfo = [
             'pickup_address' => $checkedData['pickup_address'],
             'drop_address' => $checkedData['drop_address'],

@@ -85,15 +85,17 @@ class CourierServiceAccount extends CourierService
         }
     }
 
+    #TODO make a common function for extra params select insert update
     /**
      * Function to get extra params for the courier service account
      * @return mixed
      */
-    public function getExtraParams($pincode)
+    public function getExtraParams($description, $columnName)
     {
         $query = "SELECT * FROM account_extra_params"
                 ." WHERE courier_service_account_id = " . $this->getId()
-                . " AND description = '" . trim($pincode) . "'";
+                . " AND description = '" . trim($description) . "'"
+                . " AND column_name = '" . trim($columnName) . "'";
 
         $extraParams = DB::executeQuery($query);
         $data = [];
@@ -101,9 +103,48 @@ class CourierServiceAccount extends CourierService
             $data[] = $row;
         }
         if (!$data[0]) {
-            throw new \Exception("Error Processing Request");
+            return false;
+            // throw new \Exception("Error Processing Request");
         }
-
         return $data[0];
+    }
+
+    /**
+     * Function to get the last value in account_extra_params with the defined coulmn name for this courierServiceAccount
+     * @param string $columnName
+     * @return mixed data or false
+     */
+    public function getExtraParamsLastValue($columnName)
+    {
+        $query = "SELECT * FROM account_extra_params"
+                ." WHERE courier_service_account_id = " . $this->getId()
+                . " AND column_name = '" . trim($columnName) . "'";
+
+        $extraParams = DB::executeQuery($query);
+        $data = [];
+        while ($row = $extraParams->fetch_assoc()) {
+            $data[] = $row;
+        }
+        if (empty($data)) {
+            return false;
+            // throw new \Exception("Error Processing Request");
+        }
+        return $data[0];
+    }
+
+    /**
+     * Function to save the extra params value for the column name
+     * @param string $columnName
+     * @param string $value
+     * @param string $description
+     * @return mixed True or false
+     */
+    public function saveExtraParams($columnName, $value, $description)
+    {
+        $query = "INSERT INTO account_extra_params(courier_service_account_id, column_name, value, description)"
+                ." values('" . $this->getId() . "', '" . trim($columnName) . "', '" . trim($value) . "', '" . trim($description) . "')";
+
+        $extraParams = DB::executeQuery($query);
+        return $extraParams;
     }
 }
