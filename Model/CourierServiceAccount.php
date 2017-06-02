@@ -127,7 +127,7 @@ class CourierServiceAccount extends CourierService
         if (empty($data)) {
             return false;
         }
-        return $end(end($data));
+        return end(end($data));
     }
 
     /**
