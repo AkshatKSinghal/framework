@@ -83,7 +83,7 @@ class Gati extends Base
         $headers = array('Content-Type: text/xml');
         $courierServiceAccount = static::getCourierServcieAccount($accountId, $courierServiceId);
         $credentials = $courierServiceAccount->getCredentials();
-        $custVendRow = $courierServiceAccount->getExtraParams($orderInfo['pickup_address']['pincode'], 'cust_vend_code');
+        $custVendRow = $courierServiceAccount->getExtraParams(/*$orderInfo['pickup_address']['pincode']*/'1', 'cust_vend_code');
         if ($custVendRow) {
             $credentials['cust_vend_code'] = $custVendRow['value'];
         } else {
@@ -92,6 +92,7 @@ class Gati extends Base
             if (!$courierServiceAccount->saveExtraParams('cust_vend_code', $lastValue, $orderInfo['pickup_address']['pincode'])) {
                 throw new \Exception("Save new cust vend code failed");
             }
+            $credentials['cust_vend_code'] = $lastValue;
         }
         $awbDetail = $courierServiceAccount->getAWB();
         $awb = $awbDetail['awb'];
