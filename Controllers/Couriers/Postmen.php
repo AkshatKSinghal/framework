@@ -413,10 +413,8 @@ class Postmen extends Base
                 ]
             ]
         ];
-        // echo '<pre>';
-        // print_r($payloadArray);
+
         $payloadJson = json_encode($payloadArray);
         return array('success'=>true, 'payload'=>$payloadJson);
     }
-
 }

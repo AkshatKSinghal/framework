@@ -104,7 +104,6 @@ class CourierServiceAccount extends CourierService
         }
         if (!$data[0]) {
             return false;
-            // throw new \Exception("Error Processing Request");
         }
         return $data[0];
     }
@@ -116,7 +115,7 @@ class CourierServiceAccount extends CourierService
      */
     public function getExtraParamsLastValue($columnName)
     {
-        $query = "SELECT * FROM account_extra_params"
+        $query = "SELECT MAX(value) FROM account_extra_params"
                 ." WHERE courier_service_account_id = " . $this->getId()
                 . " AND column_name = '" . trim($columnName) . "'";
 
@@ -127,9 +126,8 @@ class CourierServiceAccount extends CourierService
         }
         if (empty($data)) {
             return false;
-            // throw new \Exception("Error Processing Request");
         }
-        return $data[0];
+        return $end(end($data));
     }
 
     /**

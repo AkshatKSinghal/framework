@@ -276,7 +276,7 @@ class CourierServiceAccount extends CourierService
         $value = $this->model->getExtraParamsLastValue($columnName);
 
         if ($value) {
-            return $value['value'];
+            return $value;
         } else {
             return false;
         }

@@ -84,15 +84,13 @@ class Gati extends Base
         $courierServiceAccount = static::getCourierServcieAccount($accountId, $courierServiceId);
         $credentials = $courierServiceAccount->getCredentials();
         $custVendRow = $courierServiceAccount->getExtraParams($orderInfo['pickup_address']['pincode'], 'cust_vend_code');
-        $custVendRow = false;
         if ($custVendRow) {
             $credentials['cust_vend_code'] = $custVendRow['value'];
         } else {
             $lastValue = $courierServiceAccount->getExtraParamsLastValue('cust_vend_code');
-            $lastValue = $lastValue ? $lastValue : 1;
             $registerResponse = (new Gati)->registerWarehouse($orderInfo, $credentials['code'], ++$lastValue);
-            if(!$courierServiceAccount->saveExtraParams('cust_vend_code', $lastValue, $orderInfo['pickup_address']['pincode'])) {
-                throw new \Exception("Save new cust vend code failed");                
+            if (!$courierServiceAccount->saveExtraParams('cust_vend_code', $lastValue, $orderInfo['pickup_address']['pincode'])) {
+                throw new \Exception("Save new cust vend code failed");
             }
         }
         $awbDetail = $courierServiceAccount->getAWB();
@@ -204,7 +202,7 @@ class Gati extends Base
                         'RECEIVER_ADD2' => (isset($order['drop_address']['landmark']) && $order['drop_address']['landmark'] != '')?$order['drop_address']['landmark']: '-',
                         'RECEIVER_ADD3' => (isset($order['drop_address']['landmark']) && $order['drop_address']['landmark'] != '')?$order['drop_address']['landmark']: '-',
                         // 'RECEIVER_CITY' => $this->getCItyFromPincode($order['drop_address']['pincode']),
-                        'RECEIVER_CITY' => $order['drop_address']['city'],
+                        'RECEIVER_CITY' => isset($order['drop_address']['city']) ? isset($order['drop_address']['city']) : '-' ,
                         'RECEIVER_STATE' => $order['drop_address']['state'],
                         'RECEIVER_PHONE_NO' => $order['drop_address']['phone'],
                         'RECEIVER_EMAIL' => $order['pickup_address']['email_id'],
@@ -229,7 +227,7 @@ class Gati extends Base
                         'SELLER_ADD2' => (isset($order['pickup_address']['landmark']) && $order['pickup_address']['landmark'] != '')?$order['pickup_address']['landmark']: '-',
                         'SELLER_ADD3' => (isset($order['pickup_address']['landmark']) && $order['pickup_address']['landmark'] != '')?$order['pickup_address']['landmark']: '-',
                         // 'SELLER_CITY' => $this->getCItyFromPincode($order['pickup_address']['pincode']),
-                        'SELLER_CITY' => $order['pickup_address']['city'],
+                        'SELLER_CITY' => isset($order['pickup_address']['city']) ? $order['pickup_address']['city'] : '-' ,
                         'SELLER_PINCODE' => $order['pickup_address']['pincode'],
                         'SELLER_STATE_CODE' => $this->getStateCode($order['pickup_address']['state']),
                         'SELLER_TINNO' => $order['shipment_details']['tin'],
