@@ -83,7 +83,7 @@ class Gati extends Base
         $headers = array('Content-Type: text/xml');
         $courierServiceAccount = static::getCourierServcieAccount($accountId, $courierServiceId);
         $credentials = $courierServiceAccount->getCredentials();
-        $custVendRow = $courierServiceAccount->getExtraParams(/*$orderInfo['pickup_address']['pincode']*/'1', 'cust_vend_code');
+        $custVendRow = $courierServiceAccount->getExtraParams($orderInfo['pickup_address']['pincode'], 'cust_vend_code');
         if ($custVendRow) {
             $credentials['cust_vend_code'] = $custVendRow['value'];
         } else {
