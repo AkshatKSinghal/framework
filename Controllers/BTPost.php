@@ -3,8 +3,8 @@
 
 
 require_once __DIR__ . '/../vendor/autoload.php';
-require_once/* __DIR__ . */'/var/www/html/btapp/app/Vendor/btpost/vendor/malkusch/php-autoloader/autoloader.php';
-// require_once __DIR__ . '/../vendor/malkusch/php-autoloader/autoloader.php';
+// require_once/* __DIR__ . */'/var/www/html/btapp/app/Vendor/btpost/vendor/malkusch/php-autoloader/autoloader.php';
+require_once __DIR__ . '/../vendor/malkusch/php-autoloader/autoloader.php';
 require_once __DIR__ . "/../constants.php";
 /**
  * Controller for all external communications of the BTPost System
@@ -15,7 +15,7 @@ class BTPost
 {
     private $accountID;
 
-    public function __construct($accountID)
+    public function __construct()
     {
         $config = require_once(__DIR__ . '/../config.php');
 
@@ -180,64 +180,6 @@ class BTPost
         $res = '';
         $res = $ship->bookShipment($orderData);
         return $res;
-        // return $ship->bookShipment([
-        //     'order_ref' => '500000013',
-        //     'account_id' => '12',
-        //     'pickup_address' => [
-        //         'name' => 'Pickup contact person name',
-        //         'text' => '#301, Some Road Name, City Name',
-        //         'landmark' => 'landmark text (optional)',
-        //         'time' => 'epoch timestamp',
-        //         'phone' => '9876543210',
-        //         'pincode' => '110052',
-        //         'email_id' => 'email id to be notified with updates',
-        //         'state'=> 'Goa',
-        //         'country'=> 'India'
-        //     ],
-        //     'drop_address' => [
-        //         'name' => 'Drop contact person name',
-        //         'pincode' => '500021',
-        //         'text' => '#301, Some Road Name, City Name',
-        //         'phone' => '9876543210',
-        //         'landmark' => 'landmark text (optional)',
-        //         'state'=> 'Goa',
-        //         'country'=> 'India'
-        //     ],
-        //     'shipment_details' => [
-        //         'orders' => [
-        //             [
-        //                 'items' => [
-        //                     [
-        //                         'price'=> '1200.23',
-        //                         'sku_id' => 'A152AFD',
-        //                         'quantity' => '2',
-        //                         'description' => 'item description (optional)'
-        //                     ], [
-        //                         'price'=> 'asdasd',
-        //                         'sku_id' => 'A152AFD',
-        //                         'quantity' => '2',
-        //                         'description' => 'item description (optional)'
-        //                     ]
-        //                 ],
-        //                 'invoice' => [
-        //                     'ref_id' => '2017-18/ABC123',
-        //                     'value' => '400.26',
-        //                     'date' => '2017-04-03'
-        //                 ]
-        //             ]
-        //         ],
-        //         'length' => '20',
-        //         'breadth' => '30',
-        //         'height' => '24',
-        //         'weight' => '350',
-        //         'tin' => '02513642510',
-        //         'type' => 'forward',
-        //         'reason' => 'reverse pickup reason'
-        //     ],
-        //     'cod_value' => '120',
-        //     'courier_service_id' => '15',
-        //     'awb' => '10',
-        // ]);
     }
 
     /**
@@ -360,9 +302,11 @@ class BTPost
 
     public function getAdminCouriers()
     {
+        debug('$courierCompany');
+
         $courierCompany = new \Controllers\CourierCompany([]);
+        debug($courierCompany);
         $adminCompanies = $courierCompany->getAdminCouriers();
-        print_r($adminCompanies);
         return $adminCompanies;
     }
 
