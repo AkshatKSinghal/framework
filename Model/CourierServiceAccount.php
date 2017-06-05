@@ -102,10 +102,10 @@ class CourierServiceAccount extends CourierService
         while ($row = $extraParams->fetch_assoc()) {
             $data[] = $row;
         }
-        if (!$data[0]) {
+        if (empty($data)) {
             return false;
         }
-        return $data[0];
+        return end($data);
     }
 
     /**

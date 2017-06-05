@@ -83,13 +83,14 @@ class Gati extends Base
         $headers = array('Content-Type: text/xml');
         $courierServiceAccount = static::getCourierServcieAccount($accountId, $courierServiceId);
         $credentials = $courierServiceAccount->getCredentials();
-        $custVendRow = $courierServiceAccount->getExtraParams($orderInfo['pickup_address']['pincode'], 'cust_vend_code');
+        $searchParam = $orderInfo['pickup_address']['text'] . $orderInfo['pickup_address']['landmark'] . $orderInfo['pickup_address']['pincode'];
+        $custVendRow = $courierServiceAccount->getExtraParams($searchParam, 'cust_vend_code');
         if ($custVendRow) {
             $credentials['cust_vend_code'] = $custVendRow['value'];
         } else {
-            $lastValue = $courierServiceAccount->getExtraParamsLastValue('cust_vend_code');
-            $registerResponse = (new Gati)->registerWarehouse($orderInfo, $credentials['code'], ++$lastValue);
-            if (!$courierServiceAccount->saveExtraParams('cust_vend_code', $lastValue, $orderInfo['pickup_address']['pincode'])) {
+            $lastValue = substr(time(), -6);
+            $registerResponse = (new Gati)->registerWarehouse($orderInfo, $credentials['code'], $lastValue);
+            if (!$courierServiceAccount->saveExtraParams('cust_vend_code', $lastValue, $searchParam)) {
                 throw new \Exception("Save new cust vend code failed");
             }
             $credentials['cust_vend_code'] = $lastValue;
