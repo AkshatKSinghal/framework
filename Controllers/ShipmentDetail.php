@@ -220,6 +220,7 @@ class ShipmentDetail extends BaseController
             'multiple' => false
         ]
     ];
+    
     /**
      * Function to handle bookshipment request in turn calls addSHipmentTODB function
      * @param mixed $request array contaning all the data related to the shipment
