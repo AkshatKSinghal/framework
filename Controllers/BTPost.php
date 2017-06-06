@@ -318,8 +318,8 @@ class BTPost
     {
         try {
             $courierId = $this->createCourierCompany($request['name'], $request['short_code'], $request['comments'], $request['logo_url']);
+            $credentialsRequired = json_encode($request['fields']);
             foreach ($$request['services'] as $service) {
-                $credentialsRequired = json_encode($service['credentials_required']);
                 $serviceId = $this->createCourierService($courierId, $credentialsRequired, '', '', 'ACTIVE', $service['type'], $service['order_type']);
             }            
         } catch (\Exception $e) {
