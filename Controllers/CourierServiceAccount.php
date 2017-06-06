@@ -290,8 +290,42 @@ class CourierServiceAccount extends CourierService
         }
     }
 
-    public function getExtraParams($pincode)
+    /**
+     * Function to get extra params with matching column_name and description
+     * @param string $description
+     * @param string $columnName
+     * @return return false/data
+     */
+    public function getExtraParams($description, $columnName)
     {
-        return $this->model->getExtraParams($pincode);
+        return $this->model->getExtraParams($description, $columnName);
+    }
+
+    /**
+     * Function to get the last value in account_extra_params with the defined coulmn name for this courierServiceAccount
+     * @param string $columnName
+     * @return string value column of the data
+     */
+    public function getExtraParamsLastValue($columnName)
+    {
+        $value = $this->model->getExtraParamsLastValue($columnName);
+
+        if ($value) {
+            return $value;
+        } else {
+            return false;
+        }
+    }
+
+    /**
+     * Function to save the extra params for the given columns name and account id
+     * @param string $value
+     * @param string $description
+     * @param string $columnName
+     * @return return false/true
+     */
+    public function saveExtraParams($columnName, $value, $description)
+    {
+        return $this->model->saveExtraParams($columnName, $value, $description);
     }
 }
