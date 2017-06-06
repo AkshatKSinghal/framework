@@ -47,7 +47,7 @@ class ShipmentDetail extends BaseController
                     'multiple' => false
                 ],
                 'time' => [
-                    'mandatory' => true,
+                    'mandatory' => false,
                     'data' => [],
                     'multiple' => false
                 ],
