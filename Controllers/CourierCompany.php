@@ -4,6 +4,7 @@ namespace Controllers;
 
 use \Model\CourierCompany as CourierCompanyModel;
 use \Controllers\Base as BaseController;
+use \Utility\FileManager as FileManager;
 
 /**
 *
@@ -107,11 +108,40 @@ class CourierCompany extends BaseController
      */
     public function create($request)
     {
+        $file = $request['logo_url'];
+        if ($request['filename'] !== null) {
+            if (!FileManager::validate($file, 'img')) {
+                throw new \Exception("File not valid");
+            }            
+        }
         $checkedData = $this->checkFields($request);
         $modelId = $this->setIndividualFields($checkedData);
-        return $modelId;
+
+        $courierObject = new CourierCompany([$modelId]);
+
+        if ($modelId) {
+            if ($request['filename'] !== null) {
+                $type = FileManager::getExtensionFromName($request['filename']);
+                $filePath = $this->getFilePath('logo_url', $modelId . $type);
+                shell_exec("aws s3 cp $file $filePath ");
+                $courierObject->model->setLogoUrl($modelId . $type);
+                $courierObject->model->save();
+            }
+            return $modelId;
+        } else {
+            throw new \Exception("not updated");
+        }
     }
     
+    /**
+     * Function to get the file path to be uploaded
+     * @return string filepath
+     */
+    private function getFilePath($type, $filename)
+    {
+        return "s3://btpost/img/$type/" . $filename;
+    }
+
     /**
      * Function to set the fields to be inserted into the db from the incoming data and save the model
      * @param mixed $data
@@ -121,7 +151,7 @@ class CourierCompany extends BaseController
     {
         $modelClass = $this->getModelClass();
         if ($new) {
-            $model = new $modelClass();        
+            $model = new $modelClass();
         } else {
             $model = new $modelClass($this->model->getId());
         }
@@ -220,15 +250,22 @@ class CourierCompany extends BaseController
      * @uses getCourierServices
      * @return mixed
      */
-    public function getAdminCouriers()
+    public function getAdminCouriers($status)
     {
-        $couriers = $this->model->getAll();
+        $couriers = $this->model->getByParam(['status' => $status]);
         $returnCouriers = [];
         foreach ($couriers as $courier) {
+            $courierObject = new CourierCompany([$courier['id']]);
             $courierData['name'] = $courier['name'];
             $courierData['short_code'] = $courier['short_code'];
-            $courierData['logo_url'] = $courier['logo_url'];
-            $courierData['services'] = $this->getCourierServices();
+            $file = $this->getFilePath('logo_url', $courier['logo_url']);
+            // $filepath = btpTMP . '/local/logo_url/' . $courier['logo_url'];
+            // shell_exec("aws s3 cp $file $filepath");
+
+            $courierData['logo_url'] = $file;
+            $awbDataAndServices = $courierObject->getCourierServicesAndAwb();
+            $courierData['services'] = $awbDataAndServices['services'];
+            $courierData['awb_data'] = $awbDataAndServices['awb_data'];
             $returnCouriers[] = $courierData;
         }
         return $returnCouriers;
@@ -239,28 +276,56 @@ class CourierCompany extends BaseController
      * @param string $courierId
      * @return mixed $returnServices
      */
-    public function getCourierServices()
+    public function getCourierServicesAndAwb()
     {
         $courierId = $this->model->getId();
         $courierServices = (new CourierService([]))->getByCourierId($courierId);
         $returnServices = [];
+        $combineAWB = [];
         foreach ($courierServices as $service) {
             $serviceObject = new CourierService([$service['id']]);
             $servicesData['service_type'] = $serviceObject->getServiceType();
             $servicesData['order_type'] = $serviceObject->getOrderType();
             $servicesData['credentials_required_json'] = $serviceObject->getCredentialsRequiredJson();
             $courierAccount = $serviceObject->getAdminAccount();
+            $codCount = $nonCodCount = $awbCount = 0;
             if ($courierAccount) {
-                try {
-                    $awbBatch = $courierAccount->getAWBBatch();
-                    $servicesData['awb'] = $awbBatch->getAvailableCount();
-                } catch (\Exception $e) {
-                    $servicesData['awb'] = 0;
+                $awbData = [];
+                // try {
+                    $awbBatches = $courierAccount->getAllAWBBatches();
+                foreach ($awbBatches as $awbBatch) {
+                    if (isset($servicesData['awb_data'][$awbBatch])) {
+                        $servicesData['awb_data'][$awbBatch]['service_types'].push($servicesData['service_type']);
+                    } else {
+                        $awbBatchObject = new AWBBatch([$awbBatch]);
+                        $awbData['id'] = $awbBatch;
+                        $awbData['service_types'] = [$servicesData['service_type']];
+                        $awbData['timestamp'] = time();
+                        $awbData['status'] = $awbBatchObject->getStatus();
+                        $awbData['count'] = $awbBatchObject->getAvailableCount();
+                        switch ($servicesData['order_type']) {
+                                case 'cod':
+                                    $codCount += $awbData['count'];
+                                    break;
+
+                                case 'prepaid':
+                                    $nonCodCount += $awbData['count'];
+                                    break;
+                            }
+                        $awbCount += $awbData['count'];
+                    }
+                    $combineAWB[$awbBatch] = $awbData;
                 }
+                // } catch (\Exception $e) {
+                //     $servicesData['awb'] = 0;
+                // }
             }
+            $servicesData['awb'] = $awbCount;
+            $servicesData['cod_count'] = $codCount;
+            $servicesData['non_count'] = $nonCodCount;
             $returnServices[] = $servicesData;
         }
-        return $returnServices;
+        return ['services' => $returnServices, 'awb_data' => $combineAWB];
     }
 
     /**
@@ -275,9 +340,9 @@ class CourierCompany extends BaseController
         if ($courierSaved) {
             $courierServices = (new CourierService([]))->getByCourierId($data['id']);
             foreach ($courierServices as $service) {
-                $serviceObject = new CourierSservice([$service['id']]);
+                $serviceObject = new CourierService([$service['id']]);
                 $serviceObject->setCredentialsRequiredJson(json_encode($data['credentials_required']));
-            } 
+            }
         }
     }
 

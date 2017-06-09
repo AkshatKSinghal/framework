@@ -72,7 +72,7 @@ class CourierServiceAccount extends CourierService
      * The function would determine if the Courier Service Account is set
      * to use global AWB Batches or account specific Batches. Based on the
      * defined batch type, oldest batch with available AWBs would be returned
-     *
+     * @uses getAccountModel
      * @throws Exception if there is no AWB Batch available
      * with available count > 0
      * @throws Exception in case the AWB Batch Mode set is invalid
@@ -81,6 +81,36 @@ class CourierServiceAccount extends CourierService
      */
 
     public function getAWBBatch()
+    {
+        $courierServiceAccount = $this->getAccountModel();
+        try {
+            $batchId = $courierServiceAccount->getAWBBatch();
+            return new AWBBatch([$batchId]);
+        } catch (\Exception $e) {
+            throw new \Exception($e->getMessage());
+        }
+    }
+
+    /**
+     * Function to return all the AWB batched linked to the courierserviceaccount
+     * @return mixed array of all the awb batche
+     */
+    public function getAllAWBBatches()
+    {
+        $courierServiceAccount = $this->getAccountModel();
+        try {
+            $batches = $courierServiceAccount->getAllAWBBatches();
+            return $batches;
+        } catch (\Exception $e) {
+            throw new \Exception($e->getMessage());
+        }
+    }
+
+    /**
+     * Function to get account model according to the batch mode
+     * @return mixed CourierServiceAccount model object
+     */
+    public function getAccountModel()
     {
         $mode = $this->model->getAwbBatchMode();
         switch ($mode) {
@@ -94,12 +124,7 @@ class CourierServiceAccount extends CourierService
                 throw new \Exception("Unknown AWB Batch Mode set");
             break;
         }
-        try {
-            $batchId = $courierServiceAccount->getAWBBatch();
-            return new AWBBatch([$batchId]);
-        } catch (\Exception $e) {
-            throw new \Exception($e->getMessage());
-        }
+        return $courierServiceAccount;        
     }
 
 

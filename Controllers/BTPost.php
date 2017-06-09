@@ -2,9 +2,9 @@
 // namespace Controllers;
 
 
-require_once __DIR__ . '/../vendor/autoload.php';
-require_once/* __DIR__ . */'/var/www/html/btapp/app/Vendor/btpost/vendor/malkusch/php-autoloader/autoloader.php';
-// require_once __DIR__ . '/../vendor/malkusch/php-autoloader/autoloader.php';
+require __DIR__ . '/../vendor/autoload.php';
+// require_once/* __DIR__ . */'/var/www/html/btapp/app/Vendor/btpost/vendor/malkusch/php-autoloader/autoloader.php';
+require __DIR__ . '/../vendor/malkusch/php-autoloader/autoloader.php';
 require_once __DIR__ . "/../constants.php";
 /**
  * Controller for all external communications of the BTPost System
@@ -73,15 +73,16 @@ class BTPost
      * @return mixed $response Courier company information in case the creation is successful
      * Error message in case the operation is unsuccessful
      */
-    public function createCourierCompany($name, $shortCode, $comments, $logoURL)
+    public function createCourierCompany($name, $shortCode, $comments, $logoURL, $filename)
     {
         $company = new \Controllers\CourierCompany([]);
         $companyId = $company->create([
-            'name' => 'gati',
-            'short_code' => '123456',
-            'comments' => '$comments',
-            'logo_url' => '$logoURL',
+            'name' => $name,
+            'short_code' => $shortCode,
+            'comments' => $comments,
+            'logo_url' => $logoURL,
             'status' => 'ACTIVE',
+            'filename' => $filename
         ]);
         return $companyId;
     }
@@ -96,6 +97,7 @@ class BTPost
             'settings' => $status,
             'service_type' => $serviceType,
             'order_type' => $orderType,
+            'status' => 'ACTIVE'
         ]);
         return $companyServiceId;
     }
@@ -180,64 +182,6 @@ class BTPost
         $res = '';
         $res = $ship->bookShipment($orderData);
         return $res;
-        // return $ship->bookShipment([
-        //     'order_ref' => '500000013',
-        //     'account_id' => '12',
-        //     'pickup_address' => [
-        //         'name' => 'Pickup contact person name',
-        //         'text' => '#301, Some Road Name, City Name',
-        //         'landmark' => 'landmark text (optional)',
-        //         'time' => 'epoch timestamp',
-        //         'phone' => '9876543210',
-        //         'pincode' => '110052',
-        //         'email_id' => 'email id to be notified with updates',
-        //         'state'=> 'Goa',
-        //         'country'=> 'India'
-        //     ],
-        //     'drop_address' => [
-        //         'name' => 'Drop contact person name',
-        //         'pincode' => '500021',
-        //         'text' => '#301, Some Road Name, City Name',
-        //         'phone' => '9876543210',
-        //         'landmark' => 'landmark text (optional)',
-        //         'state'=> 'Goa',
-        //         'country'=> 'India'
-        //     ],
-        //     'shipment_details' => [
-        //         'orders' => [
-        //             [
-        //                 'items' => [
-        //                     [
-        //                         'price'=> '1200.23',
-        //                         'sku_id' => 'A152AFD',
-        //                         'quantity' => '2',
-        //                         'description' => 'item description (optional)'
-        //                     ], [
-        //                         'price'=> 'asdasd',
-        //                         'sku_id' => 'A152AFD',
-        //                         'quantity' => '2',
-        //                         'description' => 'item description (optional)'
-        //                     ]
-        //                 ],
-        //                 'invoice' => [
-        //                     'ref_id' => '2017-18/ABC123',
-        //                     'value' => '400.26',
-        //                     'date' => '2017-04-03'
-        //                 ]
-        //             ]
-        //         ],
-        //         'length' => '20',
-        //         'breadth' => '30',
-        //         'height' => '24',
-        //         'weight' => '350',
-        //         'tin' => '02513642510',
-        //         'type' => 'forward',
-        //         'reason' => 'reverse pickup reason'
-        //     ],
-        //     'cod_value' => '120',
-        //     'courier_service_id' => '15',
-        //     'awb' => '10',
-        // ]);
     }
 
     /**
@@ -358,11 +302,10 @@ class BTPost
         $courierAccounts = $courierAccount->getCouriersByAccountId($accountId);
     }
 
-    public function getAdminCouriers()
+    public function getAdminCouriers($status)
     {
         $courierCompany = new \Controllers\CourierCompany([]);
-        $adminCompanies = $courierCompany->getAdminCouriers();
-        print_r($adminCompanies);
+        $adminCompanies = $courierCompany->getAdminCouriers($status);
         return $adminCompanies;
     }
 
@@ -373,13 +316,15 @@ class BTPost
     public function addCourierAdmin($request)
     {
         try {
-            $courierId = $this->createCourierCompany($request['name'], $request['short_code'], $request['comments'], $request['logo_url']);
-            $credentialsRequired = json_encode($request['fields']);
-            foreach ($$request['services'] as $service) {
-                $serviceId = $this->createCourierService($courierId, $credentialsRequired, '', '', 'ACTIVE', $service['type'], $service['order_type']);
+            $request['logo_url'] = isset($_FILES['logo_url']['tmp_name']) ? $_FILES['logo_url']['tmp_name'] : '';
+            $courierId = $this->createCourierCompany($request['name'], $request['short_code'], isset($request['comments']) ? $request['comments'] : '', $request['logo_url'], isset($_FILES['logo_url']['name']) ? $_FILES['logo_url']['name'] : null);
+
+            $credentialsRequired = ($request['fields']);
+            foreach ($request['services'] as $service) {
+                $serviceId = $this->createCourierService($courierId, $credentialsRequired, '', '', [], $service['service_type'], $service['order_type']);
             }            
         } catch (\Exception $e) {
-            return false;
+            throw new \Exception($e->getMessage());            
         }
         return true;
     }

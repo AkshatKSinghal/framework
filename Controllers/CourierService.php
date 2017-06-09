@@ -43,11 +43,11 @@ class CourierService extends CourierCompany
         'settings' => [
             'mandatory' => true,
             'data' => [
-                'awb_allocation_mode' => [
-                    'data' => [],
-                    'mandatory' => true,
-                    'multiple' => false,
-                ]
+                // 'awb_allocation_mode' => [
+                //     'data' => [],
+                //     'mandatory' => true,
+                //     'multiple' => false,
+                // ]
             ],
             'multiple' => false
         ],
@@ -127,6 +127,7 @@ class CourierService extends CourierCompany
     public function create($request)
     {
         $checkedData = $this->checkFields($request);
+        $checkedData['class_name'] = '';
         $modelId = $this->setIndividualFields($checkedData);
         return $modelId;
     }
@@ -146,10 +147,9 @@ class CourierService extends CourierCompany
             'credentials_required_json' => 'credentials_required_json',
             'pincodes' => 'pincodes',
             'status' => 'status',
-            'settings' => 'settings'
+            'settings' => 'settings',
+            'class_name' => 'class_name'
         ];
-
-        $data['class_name'] = '';
 
         foreach ($mapArray as $dbField => $mergeFields) {
             $resultFields = [];
@@ -219,7 +219,7 @@ class CourierService extends CourierCompany
      */
     public function getCredentialsRequiredJson()
     {
-        return $this->model->getCredentialsRequiredJson();
+        return json_decode($this->model->getCredentialsRequiredJson());
     }
 
     /**
@@ -228,7 +228,7 @@ class CourierService extends CourierCompany
      */
     public function setCredentialsRequiredJson($credentials)
     {
-        $this->model->setCredentialsRequiredJson();
+        $this->model->setCredentialsRequiredJson($credentials);
         $this->model->save();
     }
     /**

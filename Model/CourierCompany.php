@@ -9,7 +9,7 @@ class CourierCompany extends Base
 {
     protected static $tableName = 'courier_companies';
     // protected $uniqueKeys = ['name', 'short_code'];
-    protected static $searchableFields = ['name'];
+    protected static $searchableFields = ['name', 'status'];
 
     public function validate()
     {
