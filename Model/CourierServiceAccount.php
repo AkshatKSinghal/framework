@@ -73,6 +73,38 @@ class CourierServiceAccount extends CourierService
         return $awbBatchId;
     }
 
+     /**
+     * Function to get all awbbatch for the courierServiceAccount
+     * @return string awbBatchId
+     */
+    public function getAllAWBBatches()
+    {
+        $awbBatchId = '';
+        try {
+            $awbBatchId = $this->get('awbBatchId');
+        } catch (\Exception $e) {
+            #TODO Do it via Model::find()
+            $query = "SELECT awb_batches.id FROM awb_batches_courier_services INNER JOIN awb_batches".
+            " ON awb_batches.id = awb_batches_courier_services.awb_batch_id".
+            " AND awb_batches_courier_services.courier_service_account_id = " . $this->getId();
+            $result = DB::executeQuery($query);
+            
+            #TODO Extract the ID #Done
+
+            $data = [];
+            while ($line = $result->fetch_assoc()) {
+                $data[] = $line['id'];
+            }
+            if (empty($data)) {
+                // throw new \Exception("No AWB batch found for the account id");
+            }
+            // $this->setAwbBatchId($awbBatchId);
+            // $this->save(false, ['awbBatchId']);
+        }
+        return $data;
+    }
+
+
     /**
      * Function to map/unmap courierServiceAccountId with awb batch id
      * @param string $awbBatchId awbBatchId to be mapped

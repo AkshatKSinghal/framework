@@ -2,9 +2,9 @@
 // namespace Controllers;
 
 
-require_once __DIR__ . '/../vendor/autoload.php';
+require __DIR__ . '/../vendor/autoload.php';
 // require_once/* __DIR__ . */'/var/www/html/btapp/app/Vendor/btpost/vendor/malkusch/php-autoloader/autoloader.php';
-require_once __DIR__ . '/../vendor/malkusch/php-autoloader/autoloader.php';
+require __DIR__ . '/../vendor/malkusch/php-autoloader/autoloader.php';
 require_once __DIR__ . "/../constants.php";
 /**
  * Controller for all external communications of the BTPost System
@@ -73,15 +73,16 @@ class BTPost
      * @return mixed $response Courier company information in case the creation is successful
      * Error message in case the operation is unsuccessful
      */
-    public function createCourierCompany($name, $shortCode, $comments, $logoURL)
+    public function createCourierCompany($name, $shortCode, $comments, $logoURL, $filename)
     {
         $company = new \Controllers\CourierCompany([]);
         $companyId = $company->create([
-            'name' => 'gati',
-            'short_code' => '123456',
-            'comments' => '$comments',
-            'logo_url' => '$logoURL',
+            'name' => $name,
+            'short_code' => $shortCode,
+            'comments' => $comments,
+            'logo_url' => $logoURL,
             'status' => 'ACTIVE',
+            'filename' => $filename
         ]);
         return $companyId;
     }
@@ -96,6 +97,7 @@ class BTPost
             'settings' => $status,
             'service_type' => $serviceType,
             'order_type' => $orderType,
+            'status' => 'ACTIVE'
         ]);
         return $companyServiceId;
     }
@@ -300,13 +302,10 @@ class BTPost
         $courierAccounts = $courierAccount->getCouriersByAccountId($accountId);
     }
 
-    public function getAdminCouriers()
+    public function getAdminCouriers($status)
     {
-        debug('$courierCompany');
-
         $courierCompany = new \Controllers\CourierCompany([]);
-        debug($courierCompany);
-        $adminCompanies = $courierCompany->getAdminCouriers();
+        $adminCompanies = $courierCompany->getAdminCouriers($status);
         return $adminCompanies;
     }
 
@@ -317,13 +316,15 @@ class BTPost
     public function addCourierAdmin($request)
     {
         try {
-            $courierId = $this->createCourierCompany($request['name'], $request['short_code'], $request['comments'], $request['logo_url']);
-            $credentialsRequired = json_encode($request['fields']);
-            foreach ($$request['services'] as $service) {
-                $serviceId = $this->createCourierService($courierId, $credentialsRequired, '', '', 'ACTIVE', $service['type'], $service['order_type']);
+            $request['logo_url'] = isset($_FILES['logo_url']['tmp_name']) ? $_FILES['logo_url']['tmp_name'] : '';
+            $courierId = $this->createCourierCompany($request['name'], $request['short_code'], isset($request['comments']) ? $request['comments'] : '', $request['logo_url'], isset($_FILES['logo_url']['name']) ? $_FILES['logo_url']['name'] : null);
+
+            $credentialsRequired = ($request['fields']);
+            foreach ($request['services'] as $service) {
+                $serviceId = $this->createCourierService($courierId, $credentialsRequired, '', '', [], $service['service_type'], $service['order_type']);
             }            
         } catch (\Exception $e) {
-            return false;
+            throw new \Exception($e->getMessage());            
         }
         return true;
     }

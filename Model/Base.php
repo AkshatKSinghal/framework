@@ -135,6 +135,7 @@ class Base
         if ($validate) {
             $this->validate($fields);
         }
+
         $compareArray = array_keys($this->dbFields(false, true));
         #TODO DO not call the DBManager::saveObject function in case the fields are all non-DB fields
         #done

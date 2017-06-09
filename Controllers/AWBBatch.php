@@ -541,6 +541,24 @@ class AWBBatch extends BaseController
             'status' => true
         ];
     }
+
+    /**
+     * Function to get the available count of the awb batch
+     * @return string
+     */
+    public function getAvailableCount()
+    {
+        return $this->model->getAvailableCount();
+    }
+
+    /**
+     * Function to get the status of the awb batch
+     * @return string
+     */
+    public function getStatus()
+    {
+        return $this->model->getStatus();
+    }
 }
 
 /**
