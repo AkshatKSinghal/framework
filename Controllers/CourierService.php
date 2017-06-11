@@ -45,7 +45,7 @@ class CourierService extends CourierCompany
             'data' => [
                 'awb_allocation_mode' => [
                     'data' => [],
-                    'mandatory' => true,
+                    'mandatory' => false,
                     'multiple' => false,
                 ]
             ],
@@ -142,9 +142,10 @@ class CourierService extends CourierCompany
             'credentials_required_json' => 'credentials_required_json',
             'pincodes' => 'pincodes',
             'status' => 'status',
-            'settings' => 'settings'
+            'settings' => 'settings',
+            'class_name' => 'class_name'
         ];
-
+        $data['class_name'] = '';
         foreach ($mapArray as $dbField => $mergeFields) {
             $resultFields = [];
             $insertData = $data[$dbField];

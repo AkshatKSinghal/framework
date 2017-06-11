@@ -74,10 +74,10 @@ class BTPost
     {
         $company = new \Controllers\CourierCompany([]);
         $companyId = $company->create([
-            'name' => 'gati',
-            'short_code' => '123456',
-            'comments' => '$comments',
-            'logo_url' => '$logoURL',
+            'name' => $name,
+            'short_code' => $shortCode,
+            'comments' => $comments,
+            'logo_url' => $logoURL,
             'status' => 'ACTIVE',
         ]);
         return $companyId;
@@ -93,22 +93,20 @@ class BTPost
             'settings' => $status,
             'service_type' => $serviceType,
             'order_type' => $orderType,
+            'status' => 'ACTIVE'
         ]);
         return $companyServiceId;
     }
 
-    public function createCourierServiceAccount()
+    public function createCourierServiceAccount($data)
     {
         $ship = new \Controllers\CourierServiceAccount([]);
         return ($ship->create([
-            'account_id' => '12',
-            'courier_service_id' => '15',
-            'awb_batch_mode' => 'ADMIN',
-            'credentials' => [
-                'code' => '54655501',
-                'cust_vend_code'=>'100001',
-            ],
-            'pincodes' => '7',
+            'account_id' => $data['account_id'],
+            'courier_service_id' => $data['service_id'],
+            'awb_batch_mode' => 'USER',
+            'credentials' => [],
+            'pincodes' => '',
             'status' => 'ACTIVE',
         ]));
     }
