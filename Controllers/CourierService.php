@@ -51,6 +51,11 @@ class CourierService extends CourierCompany
             ],
             'multiple' => false
         ],
+        'code' => [
+            'mandatory' => true,
+            'data' => [],
+            'multiple' => false
+        ],
     ];
     // protected $model;
     /**
@@ -127,7 +132,7 @@ class CourierService extends CourierCompany
     public function create($request)
     {
         $checkedData = $this->checkFields($request);
-        $checkedData['class_name'] = '';
+        $checkedData['class_name'] = isset($checkedData['class_name']) ? $checkedData['class_name'] : '';
         $modelId = $this->setIndividualFields($checkedData);
         return $modelId;
     }
@@ -148,7 +153,8 @@ class CourierService extends CourierCompany
             'pincodes' => 'pincodes',
             'status' => 'status',
             'settings' => 'settings',
-            'class_name' => 'class_name'
+            'class_name' => 'class_name',
+            'code' => 'code'
         ];
 
         foreach ($mapArray as $dbField => $mergeFields) {
@@ -191,6 +197,24 @@ class CourierService extends CourierCompany
     {
         $courierCompany = $this->getCourierCompany();
         return $courierCompany->getShortCode();
+    }
+
+    /**
+     * Function to get the service code used by courier
+     * @return string code
+     */
+    public function getCode()
+    {
+        return $this->model->getCode();
+    }
+
+    /**
+     * Function to get the status used by courier
+     * @return string code
+     */
+    public function getStatus()
+    {
+        return $this->model->getStatus();
     }
 
     public function getCourierCompanyName()
@@ -268,7 +292,7 @@ class CourierService extends CourierCompany
     {
         $model = static::getModelClass();
         $modelObj = new $model;
-        $services = $modelObj->getByParam(['courier_company_id' => $courierId ]);
+        $services = $modelObj->getByParam(['courier_company_id' => $courierId, 'status' => 'active']);
         return $services;
     }
 
@@ -283,5 +307,15 @@ class CourierService extends CourierCompany
             'courier_service_id' => $this->model->getId()
         ]);
         return $courierAccount;
+    }
+
+    /**
+     * Function to set status of the service to active or inactive
+     * @param type $status 
+     * @return type
+     */
+    public function setStatus($status)
+    {
+        $this->model->setStatus($status);
     }
 }
