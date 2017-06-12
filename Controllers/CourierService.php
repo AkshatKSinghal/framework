@@ -302,11 +302,11 @@ class CourierService extends CourierCompany
      */
     public function getAdminAccount()
     {
-        $courierAccount = CourierServiceAccount::getByParams([
+        $courierAccounts = CourierServiceAccount::getByParams([
             'account_id' => 0,
             'courier_service_id' => $this->model->getId()
         ]);
-        return $courierAccount;
+        return $courierAccounts[0];
     }
 
     /**
@@ -317,5 +317,24 @@ class CourierService extends CourierCompany
     public function setStatus($status)
     {
         $this->model->setStatus($status);
+    }
+
+    /**
+     * Function to get all the details of the model
+     * @return mixed array contaning the fields
+     */
+    public function getDetails()
+    {
+        $service['id'] = $this->model->getId();
+        $service['courier_company_id'] = $this->model->getCourierCompanyId();
+        $service['credentials_required_json'] = json_decode($this->model->getCredentialsRequiredJson());
+        $service['pincodes'] = $this->model->getPincodes();
+        $service['settings'] = $this->model->getSettings();
+        $service['status'] = $this->model->getStatus();
+        $service['service_type'] = $this->model->getServiceType();
+        $service['order_type'] = $this->model->getOrderType();
+        $service['class_name'] = $this->model->getClassName();
+        $service['code'] = $this->model->getCode();
+        return $service;
     }
 }

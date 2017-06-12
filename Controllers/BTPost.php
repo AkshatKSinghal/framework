@@ -301,10 +301,70 @@ class BTPost
         $courierAccounts = $courierAccount->getCouriersByAccountId($accountId);
     }
 
-    public function getAdminCouriers($status)
+    public function getCouriers($status, $user, $accountId = null)
     {
-        $courierCompany = new \Controllers\CourierCompany([]);
-        $adminCompanies = $courierCompany->getAdminCouriers($status);
+        if ($user == 'admin') {
+            $courierCompany = new \Controllers\CourierCompany([]);
+            $adminCompanies = $courierCompany->getAdminCouriers($status);        
+        } else {
+            $combineAWB = [];
+            $courierAccounts = \Controllers\CourierServiceAccount::getByParams(['account_id' => $accountId, 'status' => 'ACTIVE', 'aws_batch_mode' => 'USER']);
+            if (!($courierAccounts)) {
+                return [];
+            }
+            foreach ($courierAccounts as $courierAccount) {
+                $account = new \Controllers\CourierServiceAccount([$courierAccount['id']]);
+                $service = $account->getCourierService($status);
+                if (strcasecmp($service->getStatus(), 'active') != 0) {
+                    // debug($service);
+                    continue;
+                }
+                $company = $service->getCourierCompany();
+                $companyDetails = $company->getDetails();
+                if (strcasecmp($companyDetails['status'], 'active') != 0) {
+                    debug($companyDetails['id']);
+                    continue;
+                }
+                $serviceDetails = $service->getDetails();
+                $awbCount = $codCount = $nonCodCount = 0;
+                $batches = $account->getAllAWBBatches();
+                foreach ($batches as $batch) {
+                    $awbBatchObject = new \Controllers\AWBBatch([$batch]);
+                    $awbData['id'] = $batch;
+                    $awbData['service_types'] = [$serviceDetails['service_type']];
+                    $awbData['timestamp'] = time();
+                    $awbData['status'] = $awbBatchObject->getStatus();
+                    $awbData['count'] = $awbBatchObject->getAvailableCount();
+                    switch ($serviceDetails['order_type']) {
+                        case 'cod':
+                            $codCount += $awbData['count'];
+                            break;
+
+                        case 'prepaid':
+                            $nonCodCount += $awbData['count'];
+                            break;
+                    }
+                    $awbCount += $awbData['count'];
+                    $combineAWB[$batch] = $awbData;
+                }
+
+                if (isset($returnComp[$companyDetails['id']])) {
+                    if (isset($returnComp[$companyDetails['id']]['services'][$serviceDetails['id']])) {
+                        $returnComp[$companyDetails['id']]['services'][$serviceDetails['id']]['awb'] += $awbCount;
+                    } else {
+                        $returnComp[$companyDetails['id']]['services'][$serviceDetails['id']] = $serviceDetails;
+                    }
+                } else {
+                    $companyDetails['services'][$serviceDetails['id']] = $serviceDetails;
+                    $returnComp[$companyDetails['id']] = $companyDetails;                    
+                }
+
+                $returnComp[$companyDetails['id']]['awb_data'][] = $awbData;
+                // $adminCompanies[$companyDetails['id']] = $companyDetails; 
+                // $adminCompanies[$companyDetails['id']] = $companyDetails; 
+            }
+            $adminCompanies['couriers'] = $returnComp;
+        }
         return $adminCompanies;
     }
 

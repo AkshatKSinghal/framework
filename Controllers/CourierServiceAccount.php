@@ -204,11 +204,12 @@ class CourierServiceAccount extends CourierService
         $model = self::getModelClass();
         $modelObj = new $model;
 
-        $courierServiceAccount = $modelObj->getByParam($params);
-        if (empty($courierServiceAccount)) {
+        $courierServiceAccounts = $modelObj->getByParam($params);
+        if (empty($courierServiceAccounts)) {
             return false;
         } else {
-            return new CourierServiceAccount([$courierServiceAccount[0]['id']]);
+            return $courierServiceAccounts;
+            // return new CourierServiceAccount([$courierServiceAccount[0]['id']]);
         }
     }
 

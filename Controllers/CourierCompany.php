@@ -63,7 +63,7 @@ class CourierCompany extends BaseController
     {
         #TODO Get the proper class name
         if (!method_exists($courierClassName, $functionName)) {
-            throw new Exception("Undefined method $functionName");
+            throw new \Exception("Undefined method $functionName");
         }
         #TODO return call_user_func_array(array($courierClassName, $functionName), $arguments);
     }
@@ -246,6 +246,21 @@ class CourierCompany extends BaseController
     }
 
     /**
+     * Function to get all the details of the model
+     * @return mixed array contaning the fields
+     */
+    public function getDetails()
+    {
+        $courier['id'] = $this->model->getId();
+        $courier['name'] = $this->model->getName();
+        $courier['short_code'] = $this->model->getShortCode();
+        $courier['comments'] = $this->model->getComments();
+        $courier['logo_url'] = $this->model->getLogoUrl();
+        $courier['status'] = $this->model->getStatus();
+        return $courier;
+    }
+
+    /**
      * Function to get all the courier and services with admin account
      * @uses getCourierServices
      * @return mixed
@@ -269,15 +284,16 @@ class CourierCompany extends BaseController
         $cnt = 0;
         foreach ($couriers as $courier) {
             $courierObject = new CourierCompany([$courier['id']]);
-            $courierData['id'] = $courier['id'];
-            $courierData['name'] = $courier['name'];
-            $courierData['short_code'] = $courier['short_code'];
+            $courierData = $courierObject->getDetails();
+            // $courierData['id'] = $courier['id'];
+            // $courierData['name'] = $courier['name'];
+            // $courierData['short_code'] = $courier['short_code'];
             // $file = $this->getFilePath('logo_url', $courier['logo_url']);
             // $filepath = btpTMP . '/local/logo_url/' . $courier['logo_url'];
             // shell_exec("aws s3 cp $file $filepath");
 
-            $courierData['logo_url'] = $courier['logo_url'];
-            $courierData['comments'] = $courier['comments'];
+            // $courierData['logo_url'] = $courier['logo_url'];
+            // $courierData['comments'] = $courier['comments'];
             $awbDataAndServices = $courierObject->getCourierServicesAndAwb();
             $courierData['services'] = $awbDataAndServices['services'];
             $courierData['awb_data'] = $awbDataAndServices['awb_data'];
@@ -302,18 +318,20 @@ class CourierCompany extends BaseController
         $combineAWB = [];
         foreach ($courierServices as $service) {
             $serviceObject = new CourierService([$service['id']]);
-            $servicesData['id'] = $service['id'];
-            $servicesData['service_type'] = $serviceObject->getServiceType();
-            $servicesData['code'] = $serviceObject->getCode();
-            $servicesData['status'] = $serviceObject->getStatus();
-            $servicesData['order_type'] = $serviceObject->getOrderType();
-            $servicesData['credentials_required_json'] = $serviceObject->getCredentialsRequiredJson();
+            $servicesData = $serviceObject->getDetails();
+            // $servicesData['id'] = $service['id'];
+            // $servicesData['service_type'] = $serviceObject->getServiceType();
+            // $servicesData['code'] = $serviceObject->getCode();
+            // $servicesData['status'] = $serviceObject->getStatus();
+            // $servicesData['order_type'] = $serviceObject->getOrderType();
+            // $servicesData['credentials_required_json'] = $serviceObject->getCredentialsRequiredJson();
             $courierAccount = $serviceObject->getAdminAccount();
             $codCount = $nonCodCount = $awbCount = 0;
             if ($courierAccount) {
                 $awbData = [];
                 // try {
-                    $awbBatches = $courierAccount->getAllAWBBatches();
+                $courierAccountObject = new CourierServiceAccount([$courierAccount['id']]);
+                $awbBatches = $courierAccountObject->getAllAWBBatches();
                 foreach ($awbBatches as $awbBatch) {
                     if (isset($servicesData['awb_data'][$awbBatch])) {
                         $servicesData['awb_data'][$awbBatch]['service_types'].push($servicesData['service_type']);
@@ -325,14 +343,14 @@ class CourierCompany extends BaseController
                         $awbData['status'] = $awbBatchObject->getStatus();
                         $awbData['count'] = $awbBatchObject->getAvailableCount();
                         switch ($servicesData['order_type']) {
-                                case 'cod':
-                                    $codCount += $awbData['count'];
-                                    break;
+                            case 'cod':
+                                $codCount += $awbData['count'];
+                                break;
 
-                                case 'prepaid':
-                                    $nonCodCount += $awbData['count'];
-                                    break;
-                            }
+                            case 'prepaid':
+                                $nonCodCount += $awbData['count'];
+                                break;
+                        }
                         $awbCount += $awbData['count'];
                     }
                     $combineAWB[$awbBatch] = $awbData;

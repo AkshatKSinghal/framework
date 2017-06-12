@@ -473,10 +473,16 @@ class ShipmentDetail extends BaseController
         foreach ($request as $index => $order) {
             $checkedData = $this->checkFields($order);
             $orderRef = $order['order_ref'];
-            $courierServiceAccount = CourierServiceAccount::getByParams([
+            $courierServiceAccounts = CourierServiceAccount::getByParams([
                 'account_id' => $checkedData['account_id']
             ]);
-            if ($courierServiceAccount) {
+            if (empty($courierServiceAccounts)) {
+                $response[$$index] = [
+                    'status' => 'FAILED',
+                    'MSG' => 'CourierService Account not found for the seller account'
+                ];
+            } else {
+                $courierServiceAccount = $courierServiceAccounts[0];
                 $courierService = $courierServiceAccount->getCourierService();
                 $awbDetail = $courierServiceAccount->getAWB();
                 $checkedData['courier_service_account_id'] = $courierServiceAccount->getId();
@@ -486,11 +492,6 @@ class ShipmentDetail extends BaseController
                 $checkedData['shipment_type'] = 'FORWARD';
 
                 $response[$$index]  = $this->addShipmentTODB($checkedData, $awbDetail['awb'], $courierService->getCourierCompanyName());
-            } else {
-                $response[$$index] = [
-                    'status' => 'FAILED',
-                    'MSG' => 'CourierService Account not found for the seller account'
-                ];
             }
         }
         return $response;
