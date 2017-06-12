@@ -348,4 +348,16 @@ class BTPost
         $courier = new \Controllers\CourierCompany([$request['id']]);
         $courier->updateServices($request['services']);
     }
+
+    public function uploadAWBFromUi($file, $courierCompanyID, $accountID)
+    {
+        $destinationDir = btpTMP . '/local/awbs/';
+        \Utility\FileManager::verifyDirectory($destinationDir);
+        $destination = $destinationDir  . $_FILES['file']['name'];
+        move_uploaded_file( $_FILES['file']['tmp_name'] , $destination );
+        if (!\Utility\FileManager::validate($destination, 'text')) {
+            throw new \Exception("File not valid");            
+        }
+        $this->uploadAWB($destination, $courierCompanyID,$accountID);
+    }
 }
