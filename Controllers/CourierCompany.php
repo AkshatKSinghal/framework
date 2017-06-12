@@ -108,25 +108,25 @@ class CourierCompany extends BaseController
      */
     public function create($request)
     {
-        $file = $request['logo_url'];
-        if ($request['filename'] !== null) {
-            if (!FileManager::validate($file, 'img')) {
-                throw new \Exception("File not valid");
-            }            
-        }
+        // $file = $request['logo_url'];
+        // if ($request['filename'] !== null) {
+        //     if (!FileManager::validate($file, 'img')) {
+        //         throw new \Exception("File not valid");
+        //     }            
+        // }
         $checkedData = $this->checkFields($request);
         $modelId = $this->setIndividualFields($checkedData);
 
-        $courierObject = new CourierCompany([$modelId]);
+        // $courierObject = new CourierCompany([$modelId]);
 
         if ($modelId) {
-            if ($request['filename'] !== null) {
-                $type = FileManager::getExtensionFromName($request['filename']);
-                $filePath = $this->getFilePath('logo_url', $modelId . $type);
-                shell_exec("aws s3 cp $file $filePath ");
-                $courierObject->model->setLogoUrl($modelId . $type);
-                $courierObject->model->save();
-            }
+            // if ($request['filename'] !== null) {
+            //     $type = FileManager::getExtensionFromName($request['filename']);
+            //     $filePath = $this->getFilePath('logo_url', $modelId . $type);
+            //     shell_exec("aws s3 cp $file $filePath ");
+            //     $courierObject->model->setLogoUrl($modelId . $type);
+            //     $courierObject->model->save();
+            // }
             return $modelId;
         } else {
             throw new \Exception("not updated");
@@ -252,22 +252,40 @@ class CourierCompany extends BaseController
      */
     public function getAdminCouriers($status)
     {
-        $couriers = $this->model->getByParam(['status' => $status]);
+        $couriers = $this->model->getByParam(['status' => $status]);       
         $returnCouriers = [];
+        switch ($status) {
+            case 'active':
+                $nextStatus = 'inactive';
+                break;
+            
+            case 'inactive':
+                $nextStatus = 'active';
+                break;
+        }
+
+        $nextCount = $this->model->getByParam(['status' => $nextStatus]);
+
+        $cnt = 0;
         foreach ($couriers as $courier) {
             $courierObject = new CourierCompany([$courier['id']]);
+            $courierData['id'] = $courier['id'];
             $courierData['name'] = $courier['name'];
             $courierData['short_code'] = $courier['short_code'];
-            $file = $this->getFilePath('logo_url', $courier['logo_url']);
+            // $file = $this->getFilePath('logo_url', $courier['logo_url']);
             // $filepath = btpTMP . '/local/logo_url/' . $courier['logo_url'];
             // shell_exec("aws s3 cp $file $filepath");
 
-            $courierData['logo_url'] = $file;
+            $courierData['logo_url'] = $courier['logo_url'];
+            $courierData['comments'] = $courier['comments'];
             $awbDataAndServices = $courierObject->getCourierServicesAndAwb();
             $courierData['services'] = $awbDataAndServices['services'];
             $courierData['awb_data'] = $awbDataAndServices['awb_data'];
-            $returnCouriers[] = $courierData;
+            $returnCouriers['couriers'][] = $courierData;
+            $cnt++;
         }
+        $returnCouriers['count'][$status] = $cnt;
+        $returnCouriers['count'][$nextStatus] = count($nextCount);
         return $returnCouriers;
     }
 
@@ -284,7 +302,10 @@ class CourierCompany extends BaseController
         $combineAWB = [];
         foreach ($courierServices as $service) {
             $serviceObject = new CourierService([$service['id']]);
+            $servicesData['id'] = $service['id'];
             $servicesData['service_type'] = $serviceObject->getServiceType();
+            $servicesData['code'] = $serviceObject->getCode();
+            $servicesData['status'] = $serviceObject->getStatus();
             $servicesData['order_type'] = $serviceObject->getOrderType();
             $servicesData['credentials_required_json'] = $serviceObject->getCredentialsRequiredJson();
             $courierAccount = $serviceObject->getAdminAccount();
@@ -336,12 +357,19 @@ class CourierCompany extends BaseController
      */
     public function saveData($data)
     {
+        if (!isset($data['comments'])) {
+            $data['comments'] = '';
+        }
+        if (!isset($data['logo_url'])) {
+            $data['logo_url'] = '';
+        }
+
         $courierSaved = $this->setIndividualFields($data, false);
         if ($courierSaved) {
             $courierServices = (new CourierService([]))->getByCourierId($data['id']);
             foreach ($courierServices as $service) {
                 $serviceObject = new CourierService([$service['id']]);
-                $serviceObject->setCredentialsRequiredJson(json_encode($data['credentials_required']));
+                $serviceObject->setCredentialsRequiredJson($service['credentials_required_json']);
             }
         }
     }
@@ -353,23 +381,43 @@ class CourierCompany extends BaseController
      */
     public function updateServices($servicesData)
     {
-        $servicesInDb = $this->getCourierServices();
+        $servicesInDb = $this->getCourierServicesAndAwb()['services'];
+
+        $credentialsRequired = $servicesInDb[0]['credentials_required_json'];
         foreach ($servicesInDb as $index => $service) {
-            if (array_key_exists($service['id'], $servicesData)) {
+            $idArray = array_column($servicesData, 'id');
+            $indexInData = array_search($service['id'], $idArray);
+            if ($indexInData === false) {
+                debug($service);
                 $serviceObject = new CourierService([$service['id']]);
+                $serviceObject->setStatus('inactive');
+                $serviceObject->save();
+            } else {
+                $servicesFromData = $servicesData[$indexInData];
+                $serviceObject = new CourierService([$service['id']]);
+                $service['pincodes'] = '';
                 $service['courier_company_id'] = $this->model->getId();
-                $serviceObject->setIndividualFields($service);
-                unset($servicesData[$service['id']]);
+                $service['class_name'] = $serviceObject->getClassName();
+                $service['settings'] = [];
+                $service['code'] = $servicesFromData['code'];
+                $service['order_type'] = $servicesFromData['order_type'];
+                $service['service_type'] = $servicesFromData['service_type'];
+                $serviceObject->setIndividualFields($service, false);
+                array_splice($servicesData, $indexInData, 1);
             }
         }
-
         foreach ($servicesData as $service) {
             $serviceObject = new CourierService([]);
-            $newService = $service;
+            // $newService = $service;
             $newService['courier_company_id'] = $this->model->getId();
-            $newService['pincodes'] = $this->model->getId();
+            $newService['pincodes'] = '';
             $newService['status'] = 'ACTIVE';
-            $newService['class_name'] = $newService['service_type'];
+            $newService['service_type'] = $service['service_type'];
+            $newService['order_type'] = $service['order_type'];
+            $newService['class_name'] = $service['service_type'];
+            $newService['code'] = $service['code'];
+            $newService['settings'] = [];
+            $newService['credentials_required_json'] = $credentialsRequired;
             $serviceObject->create($newService);
         }
     }

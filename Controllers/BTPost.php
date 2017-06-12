@@ -73,7 +73,7 @@ class BTPost
      * @return mixed $response Courier company information in case the creation is successful
      * Error message in case the operation is unsuccessful
      */
-    public function createCourierCompany($name, $shortCode, $comments, $logoURL, $filename)
+    public function createCourierCompany($name, $shortCode, $comments, $logoURL)
     {
         $company = new \Controllers\CourierCompany([]);
         $companyId = $company->create([
@@ -81,8 +81,7 @@ class BTPost
             'short_code' => $shortCode,
             'comments' => $comments,
             'logo_url' => $logoURL,
-            'status' => 'ACTIVE',
-            'filename' => $filename
+            'status' => 'ACTIVE'
         ]);
         return $companyId;
     }
@@ -313,8 +312,7 @@ class BTPost
     public function addCourierAdmin($request)
     {
         try {
-            $request['logo_url'] = isset($_FILES['logo_url']['tmp_name']) ? $_FILES['logo_url']['tmp_name'] : '';
-            $courierId = $this->createCourierCompany($request['name'], $request['short_code'], isset($request['comments']) ? $request['comments'] : '', $request['logo_url'], isset($_FILES['logo_url']['name']) ? $_FILES['logo_url']['name'] : null);
+            $courierId = $this->createCourierCompany($request['name'], $request['short_code'], isset($request['comments']) ? $request['comments'] : '', isset($request['logo_url']) ? $request['logo_url'] : '');
 
             $credentialsRequired = ($request['fields']);
             foreach ($request['services'] as $service) {
