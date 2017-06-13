@@ -481,9 +481,9 @@ class ShipmentDetail extends BaseController
                 $checkedData['courier_service_details'] = '';
                 $checkedData['courier_service_reference_number'] = $awbDetail['awb'];
                 $checkedData['shipment_type'] = 'FORWARD';
-                $response[$$index]  = $this->addShipmentTODB($checkedData, $awbDetail['awb'], $courierService->getCourierCompanyName());
+                $response[$index]  = $this->addShipmentTODB($checkedData, $awbDetail['awb'], $courierService->getCourierCompanyName());
             } else {
-                $response[$$index] = [
+                $response[$index] = [
                     'status' => 'FAILED',
                     'MSG' => 'CourierService Account not found for the seller account'
                 ];
