@@ -45,12 +45,12 @@ class Postmen extends Base
         //     throw new \Exception("Courier supported not supported");
         // }
 
-        $credentials['api_key'] = '25dddfc8-b793-4aa2-b13b-64963bee5820';
+        // $credentials['api_key'] = '25dddfc8-b793-4aa2-b13b-64963bee5820';
         if (!isset($credentials['api_key'])) {
             throw new \Exception("Api key not found");
         }
         $serviceType = 'fedex_express_saver_one_rate';
-            $credentials['id'] = '5560a67f-5e2a-4081-b06e-a167acd11153';
+            // $credentials['id'] = '5560a67f-5e2a-4081-b06e-a167acd11153';
         if (!isset($credentials['id'])) {
             // throw new \Exception("Api id not found");
         }
@@ -120,7 +120,7 @@ class Postmen extends Base
                 $newItem['sku'] = $item['sku_id'];
                 $newItem['price'] = [
                     'amount' =>  (float) $item['price'],
-                    'currency' => 'EUR'
+                    'currency' => 'INR'
                 ];
 
                 $newItem['weight'] = [

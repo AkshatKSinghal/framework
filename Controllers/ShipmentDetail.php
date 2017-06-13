@@ -277,9 +277,9 @@ class ShipmentDetail extends BaseController
         }
         $awb = $request['awb'];
         $checkedData = $this->checkFields($request);
-        if ($checkedData['courier_service_id']) {
-            throw new \Exception("Courier Service id not found");
-        }
+        // if ($checkedData['courier_service_id']) {
+        //     throw new \Exception("Courier Service id not found");
+        // }
         
         $courierService = new CourierService([$checkedData['courier_service_id']]);
         $serviceType = $courierService->getServiceType();
