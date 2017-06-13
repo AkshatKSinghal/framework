@@ -280,9 +280,9 @@ class ShipmentDetail extends BaseController
         }
         $awb = $request['awb'];
         $checkedData = $this->checkFields($request);
-        if ($checkedData['courier_service_id']) {
-            throw new \Exception("Courier Service id not found");
-        }
+        // if ($checkedData['courier_service_id']) {
+        //     throw new \Exception("Courier Service id not found");
+        // }
         
         $courierService = new CourierService([$checkedData['courier_service_id']]);
         $serviceType = $courierService->getServiceType();
@@ -527,5 +527,17 @@ class ShipmentDetail extends BaseController
     {
         $courierServiceAccount = new CourierServiceAccount([$this->model->getCourierServiceAccountId()]);
         return $courierServiceAccount->getCourierCompanyShortCode();
+    }
+
+    /**
+     * Function to get all the records for the shipment details table
+     * @return mixed array containing all the records
+     */
+    public static function getShipments($fieldList)
+    {
+        $model = self::getModelClass();
+        $modelObj = new $model;
+        $shipments= $modelObj->getAll($fieldList);
+        return $shipments;
     }
 }
