@@ -154,7 +154,11 @@ class CourierServiceAccount extends CourierService
         $courierServiceAccount = $modelObj->getByParam([
             'account_id' => $accountId,
             'courier_service_id' => $courierServiceId
-        ]);
+        ]);       
+        if (empty($courierServiceAccount)) {
+            throw new \Exception("Courier Service Account not found");
+            
+        }
         return new CourierServiceAccount([$courierServiceAccount[0]['id']]);
     }
 

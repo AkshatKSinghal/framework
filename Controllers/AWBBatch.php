@@ -300,7 +300,15 @@ class AWBBatch extends BaseController
             }
             $logAwb[trim($rowData[1])] = trim($rowData[2]);
         }
+
         fclose($fp);
+        // #TODO this is only till the time we find out a way to share the log file accross different instanecs
+        $shipments = ShipmentDetail::getShipments(['courier_service_reference_number']);
+
+        foreach ($shipments as $ship) {
+            $logAwb[$ship['courier_service_reference_number']] = 'used';
+        }
+        // #TODO remaining stays the same
         $files = array();
         $fileTypes = array(self::AVAILABLE, self::ASSIGNED, self::FAILED);
         foreach ($fileTypes as $fileType) {

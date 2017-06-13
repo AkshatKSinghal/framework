@@ -523,4 +523,16 @@ class ShipmentDetail extends BaseController
         $courierServiceAccount = new CourierServiceAccount([$this->model->getCourierServiceAccountId()]);
         return $courierServiceAccount->getCourierCompanyShortCode();
     }
+
+    /**
+     * Function to get all the records for the shipment details table
+     * @return mixed array containing all the records
+     */
+    public static function getShipments($fieldList)
+    {
+        $model = self::getModelClass();
+        $modelObj = new $model;
+        $shipments= $modelObj->getAll($fieldList);
+        return $shipments;
+    }
 }
