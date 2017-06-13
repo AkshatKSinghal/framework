@@ -205,7 +205,7 @@ class CourierCompany extends BaseController
      * @param mixed $params contaning key value pairs of the fields to be inserted
      * @return string id of the instance of the class called upon.
      */
-    public static function getOrCreate($params)
+    public static function getOrCreate($params, $create = true)
     {
         $model = static::getModelClass();
         $modelObj = new $model;
@@ -216,6 +216,9 @@ class CourierCompany extends BaseController
         }
         $controllerObject = $modelObj->getByParam($params);
         if (empty($controllerObject)) {
+            if (!$create) {
+                throw new \Exception("Courier service not found");
+            }
             if ($class == 'CourierServiceAccount') {
                 $params['credentials'] = $credentials;
             }
@@ -226,6 +229,7 @@ class CourierCompany extends BaseController
             // return new $class([$controllerObject[0]['id']]);
             return $controllerObject[0]['id'];
         }
+        throw new \Exception("Courier service not found");
     }
 
     /**

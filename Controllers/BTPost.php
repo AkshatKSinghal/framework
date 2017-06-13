@@ -165,7 +165,10 @@ class BTPost
     public function addShipment($orderData, $courierId, $orderType, $serviceType)
     {
         $orderData['courier_service_id'] = $this->getOrCreateCourierService($courierId, $serviceType, $orderType);
-        $courierServiceAccountId = $this->getOrCreateCourierAccount($accountId, $orderData['courier_service_id'], 'ADMIN');
+        if (!$orderData['courier_service_id']) {
+            throw new \Exception("Courier Service Not found");
+        }
+        // $courierServiceAccountId = $this->getOrCreateCourierAccount($accountId, $orderData['courier_service_id'], 'ADMIN');
         $ship = new \Controllers\ShipmentDetail([]);
         return $ship->addShipmentRequest($orderData);
     }
@@ -271,7 +274,7 @@ class BTPost
             'courier_company_id' => $courierId,
             'service_type' => $serviceType,
             'order_type' => $orderType,
-        ]);
+        ], false);
         return $courierServiceId;
     }
     
