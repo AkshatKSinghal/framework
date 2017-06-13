@@ -265,7 +265,6 @@ class ShipmentDetail extends BaseController
         $return = $this->addShipmentTODB($checkedData, $courierResponse['data']['awb'], $courierService->getCourierCompanyName());
 
         return $return;
-
     }
 
     /**
