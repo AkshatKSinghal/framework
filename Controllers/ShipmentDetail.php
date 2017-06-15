@@ -490,7 +490,8 @@ class ShipmentDetail extends BaseController
                     'status' => 'FAILED',
                     'MSG' => 'CourierService Account not found for the seller account'
                 ];
-            }        }
+            }        
+        }
         return $response;
     }
 

@@ -567,6 +567,25 @@ class AWBBatch extends BaseController
     {
         return $this->model->getStatus();
     }
+
+    /**
+     * Function to get the presign link for s3 uploaded awb file
+     * @return string link
+     */
+    public function getDownloadLink($type = 'available')
+    {
+        $remoteFilePath = $this->getS3Path($type);
+        return shell_exec("aws s3 presign $remoteFilePath");
+    }
+
+    /**
+     * Function to get the seller account id for the AWB batch
+     * @return string seller account id
+     */
+    public function getAccountId()
+    {
+        return $this->model->getAccountId();
+    }
 }
 
 /**

@@ -10,7 +10,7 @@ class FileManager
     private $filePath;
     private static $allowed = [
         'img' => ['image/jpg', 'image/jpeg', 'image/png','image/gif'],
-        'text' => ['txt']
+        'text' => ['text/plain']
     ];
     private static $maxSize = 2 * 1000000;
     private static $tmp = btpTMP . '/img/';

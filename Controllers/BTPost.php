@@ -21,8 +21,6 @@ class BTPost
 
         foreach ($config as $class => $conf) {
             if (class_exists($class)) {
-                // $classInst = new $class();
-                // $classInst->setStdConfig($conf);
                 $class::setStdConfig($conf);
             }
         }
@@ -40,28 +38,10 @@ class BTPost
     public function uploadAWB($filePath, $courierCompanyID, $accountID)
     {
         // Check courier company ID, return error if invalid
-                // upload awb;
         $batchExecute = new \Controllers\AWBBatch([]);
         $batchId = $batchExecute->createBatch($filePath, $courierCompanyID, $accountID);
         return $batchId;
     }
-
-
-    /**
-     * Function to perform basic validations on the file
-     * i.e. Duplicates within the file, Invalid Characters, Empty lines etc
-     *
-     * @param string $filePath Path of the file on disk
-     *
-     * @throws Exception in case the file contains duplicates or invalid characters
-     *
-     * @return void
-     */
-    private function basicValidateFile($filePath)
-    {
-        #TODO Check for duplicates, throw exception in case duplicates within file are found
-    }
-
 
     #TODO Put complete list of required parameters
     /**
@@ -101,14 +81,14 @@ class BTPost
         return $companyServiceId;
     }
 
-    public function createCourierServiceAccount($data)
+    public function createCourierServiceAccount($data, $mode)
     {
         $ship = new \Controllers\CourierServiceAccount([]);
         return ($ship->create([
             'account_id' => $data['account_id'],
             'courier_service_id' => $data['service_id'],
-            'awb_batch_mode' => 'USER',
-            'credentials' => [],
+            'awb_batch_mode' => $mode,
+            'credentials' => $data['credentials'],
             'pincodes' => '',
             'status' => 'ACTIVE',
         ]));
@@ -305,65 +285,10 @@ class BTPost
     {
         if ($user == 'admin') {
             $courierCompany = new \Controllers\CourierCompany([]);
-            $adminCompanies = $courierCompany->getAdminCouriers($status);        
+            $adminCompanies = $courierCompany->getCouriers($status, 'admin');        
         } else {
-            $combineAWB = [];
-            $courierAccounts = \Controllers\CourierServiceAccount::getByParams(['account_id' => $accountId, 'status' => 'ACTIVE', 'aws_batch_mode' => 'USER']);
-            if (!($courierAccounts)) {
-                return [];
-            }
-            foreach ($courierAccounts as $courierAccount) {
-                $account = new \Controllers\CourierServiceAccount([$courierAccount['id']]);
-                $service = $account->getCourierService($status);
-                if (strcasecmp($service->getStatus(), 'active') != 0) {
-                    // debug($service);
-                    continue;
-                }
-                $company = $service->getCourierCompany();
-                $companyDetails = $company->getDetails();
-                if (strcasecmp($companyDetails['status'], 'active') != 0) {
-                    debug($companyDetails['id']);
-                    continue;
-                }
-                $serviceDetails = $service->getDetails();
-                $awbCount = $codCount = $nonCodCount = 0;
-                $batches = $account->getAllAWBBatches();
-                foreach ($batches as $batch) {
-                    $awbBatchObject = new \Controllers\AWBBatch([$batch]);
-                    $awbData['id'] = $batch;
-                    $awbData['service_types'] = [$serviceDetails['service_type']];
-                    $awbData['timestamp'] = time();
-                    $awbData['status'] = $awbBatchObject->getStatus();
-                    $awbData['count'] = $awbBatchObject->getAvailableCount();
-                    switch ($serviceDetails['order_type']) {
-                        case 'cod':
-                            $codCount += $awbData['count'];
-                            break;
-
-                        case 'prepaid':
-                            $nonCodCount += $awbData['count'];
-                            break;
-                    }
-                    $awbCount += $awbData['count'];
-                    $combineAWB[$batch] = $awbData;
-                }
-
-                if (isset($returnComp[$companyDetails['id']])) {
-                    if (isset($returnComp[$companyDetails['id']]['services'][$serviceDetails['id']])) {
-                        $returnComp[$companyDetails['id']]['services'][$serviceDetails['id']]['awb'] += $awbCount;
-                    } else {
-                        $returnComp[$companyDetails['id']]['services'][$serviceDetails['id']] = $serviceDetails;
-                    }
-                } else {
-                    $companyDetails['services'][$serviceDetails['id']] = $serviceDetails;
-                    $returnComp[$companyDetails['id']] = $companyDetails;                    
-                }
-
-                $returnComp[$companyDetails['id']]['awb_data'][] = $awbData;
-                // $adminCompanies[$companyDetails['id']] = $companyDetails; 
-                // $adminCompanies[$companyDetails['id']] = $companyDetails; 
-            }
-            $adminCompanies['couriers'] = $returnComp;
+            $courierCompany = new \Controllers\CourierCompany([]);
+            $adminCompanies = $courierCompany->getCouriers($status, 'user', $accountId); 
         }
         return $adminCompanies;
     }
@@ -388,6 +313,28 @@ class BTPost
     }
 
     /**
+     * Function to add courier service account for a seller
+     * @return bool true/false if added or not
+     */
+    public function addCourierSeller($request)
+    {
+        $credentialsRequired = $request['credentials'];
+        $data['account_id'] = $request['account_id'];
+        $data['credentials'] = $request['credentials'];
+        $cnt = 0;
+        foreach ($request['selectedServicesId'] as $service) {
+            try {
+                $data['service_id'] = $service;
+                $modelId = $this->createCourierServiceAccount($data, "user");                      
+            } catch (\Exception $e) {
+                throw new \Exception($e->getMessage());            
+            }
+            $cnt++;
+        }
+        return ['status' => 'success', 'number' => $cnt];
+    }
+
+    /**
      * Function to save the general tab setting for the coourier company
      * @param  $request data from the user panel 
      * @return bool
@@ -409,15 +356,87 @@ class BTPost
         $courier->updateServices($request['services']);
     }
 
-    public function uploadAWBFromUi($file, $courierCompanyID, $accountID)
+    public function uploadAWBFromUi($file, $courierCompanyID, $accountID, $serviceIds, $mode)
     {
         $destinationDir = btpTMP . '/local/awbs/';
         \Utility\FileManager::verifyDirectory($destinationDir);
         $destination = $destinationDir  . $_FILES['file']['name'];
         move_uploaded_file( $_FILES['file']['tmp_name'] , $destination );
-        if (!\Utility\FileManager::validate($destination, 'text')) {
-            throw new \Exception("File not valid");            
+        \Utility\FileManager::validate($destination, 'text');
+        $batchId = $this->uploadAWB($destination, $courierCompanyID, $accountID);
+        if ($mode == 'user') {
+            foreach ($serviceIds as $service) {
+                $accounts = \Controllers\CourierServiceAccount::getByParams(['courier_service_id' => $service, 'account_id' => $accountID, 'awb_batch_mode' => 'user']);
+                foreach ($accounts as $account) {
+                    $accountObject = new \Controllers\CourierServiceAccount([$account['id']]);
+                    $accountObject->mapAWBBatch($batchId, 'add');
+                }
+            }
         }
-        $this->uploadAWB($destination, $courierCompanyID,$accountID);
+
+    }
+
+    /**
+     * Function to save the courier service account details from the ui for the seller
+     * @param mixed $data containing the credentials and status of the account
+     * @return type
+     */
+    public function saveCourierAccount($data)
+    {
+        $courierServices = (new \Controllers\CourierService([]))->getByCourierId($data['courier_id']);
+        foreach ($courierServices as $service) {
+            $accounts = \Controllers\CourierServiceAccount::getByParams(['courier_service_id' => $service['id'], 'account_id' => $data['account_id'], 'awb_batch_mode' => 'user']);
+            if ($accounts) {
+                foreach ($accounts as $account) {
+                    $accountObject = new \Controllers\CourierServiceAccount([$account['id']]);
+                    $accountObject->setCredentials($data['credentials']);
+                    $accountObject->setStatus($data['status']);
+                    $accountObject->save();                    
+                }
+            }
+        }
+    }
+
+    /**
+     * Function to update th courier service account with status or create new if not present
+     * @param mixed $data containing the service id related to account and seller account id 
+     * @return type
+     */
+    public function updateOrCreateCourierServiceAccount($data)
+    {
+        $credentials = [];
+        // print_r($data);die;
+        foreach ($data['services'] as $service) {
+            $accounts = \Controllers\CourierServiceAccount::getByParams(['courier_service_id' => $service['service_id'], 'account_id' => $data['account_id'], 'awb_batch_mode' => 'user']);
+            // var_dump($accounts);
+            // var_dump( $service['service_id']);
+            if ($accounts) {
+                $account = $accounts[0];
+                $accountObject = new \Controllers\CourierServiceAccount([$account['id']]);
+                $accountObject->setStatus($service['status']);
+                $accountObject->save();  
+                $credentials = $accountObject->getCredentials();                  
+            } else {
+                // die;
+                $this->getOrCreateCourierAccount($data['account_id'], $service['service_id'], $credentials, 'user');                
+            }
+        }
+    }
+
+    /**
+     * Function to get the download link for the awb Batch file by id
+     * @param string $batchId id of the batchfile
+     * @param string $accountId seller account id
+     * @return string $url link for the download
+     */
+    public function getAWBDownload($batchId, $accountId, $type = 'available')
+    {
+        $awb = new \Controllers\AWBBatch([$batchId]);
+        if ($accountId != $awb->getAccountId()) {
+            throw new \Exception("Batch not liked  to the seller account");
+        }
+  
+        $url = $awb->getDownloadLink($type);
+        return $url;
     }
 }

@@ -10,7 +10,7 @@ use \DB\DB as DB;
 class CourierServiceAccount extends CourierService
 {
     protected static $tableName = 'courier_service_accounts';
-    protected static $searchableFields = ['courier_service_id', 'account_id', 'awb_batch_mode'];
+    protected static $searchableFields = ['courier_service_id', 'account_id', 'awb_batch_mode', 'status'];
     const ADMIN_ACCOUNT_ID = 0;
 
     /**
@@ -135,6 +135,26 @@ class CourierServiceAccount extends CourierService
                 throw new \Exception("Error Processing Request");
             }
         }
+    }
+
+    /**
+     * Function to check if the awb batch is mapped with the courier service accuont
+     * @param string $batchId 
+     * @return bool
+     */
+    public function checkMapping($batchId)
+    {
+        $query = "select * FROM awb_batches_courier_services"
+        ." WHERE courier_service_account_id = " . $this->getId()
+        ." AND awb_batch_id = " .  DB::getInstance()->real_escape_string($batchId);        
+        $extraParams = DB::executeQuery($query);
+        while ($row = $extraParams->fetch_assoc()) {
+            $data[] = $row;
+        }
+        if (empty($data)) {
+            return false;
+        }
+        return end($data);
     }
 
     #TODO make a common function for extra params select insert update
