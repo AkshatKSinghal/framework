@@ -17,7 +17,7 @@ class BTPost
 
     public function __construct()
     {
-        $config = require_once(__DIR__ . '/../config.php');
+        $config = require(__DIR__ . '/../config.php');
 
         foreach ($config as $class => $conf) {
             if (class_exists($class)) {
