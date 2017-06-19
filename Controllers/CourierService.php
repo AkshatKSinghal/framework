@@ -252,7 +252,7 @@ class CourierService extends CourierCompany
      */
     public function setCredentialsRequiredJson($credentials)
     {
-        $this->model->setCredentialsRequiredJson($credentials);
+        $this->model->setCredentialsRequiredJson(json_encode($credentials));
         $this->model->save();
     }
     /**

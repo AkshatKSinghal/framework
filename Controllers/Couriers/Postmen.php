@@ -8,15 +8,7 @@ use \DateTime;
 */
 class Postmen extends Base
 {
-    protected static $baseUrl = 'https://sandbox-api.postmen.com/v3/';
-    // private $supportedCariers = [
-    //     'bluedart_dart_apex','bluedart_domestic_priority','bluedart_surface','aramex_deferred_express','aramex_domestic','aramex_ecommerce','aramex_economy_express','aramex_ground_express','aramex_priority_express', 'delhivery_standard', 'dtdc_b2c','dtdc_ecd','dtdc_eci','dtdc_ed','dtdc_edp','dtdc_en','dtdc_ied','dtdc_imd','dtdc_imp','fedex_2_day', 'fedex_2_day_am', 'fedex_2_day_am_one_rate', 'fedex_2_day_one_rate', 'fedex_distance_deferred', 'fedex_europe_first_international_priority', 'fedex_express_saver', 'fedex_express_saver_one_rate', 'fedex_first_overnight', 'fedex_first_overnight_one_rate', 'fedex_ground', 'fedex_ground_home_delivery', 'fedex_international_economy', 'fedex_international_first', 'fedex_international_priority', 'fedex_next_day_afternoon', 'fedex_next_day_early_morning', 'fedex_next_day_end_of_day', 'fedex_next_day_mid_morning', 'fedex_priority_overnight', 'fedex_priority_overnight_one_rate', 'fedex_same_day', 'fedex_same_day_city', 'fedex_standard_overnight', 'fedex_standard_overnight_one_rate'
-    //     // 'bluedart' => ['bluedart_dart_apex','bluedart_domestic_priority','bluedart_surface'],
-    //     // 'aramex' => ['aramex_deferred_express','aramex_domestic','aramex_ecommerce','aramex_economy_express','aramex_ground_express','aramex_priority_express'],
-    //     // 'delhivery' => ['delhivery_standard'],
-    //     // 'dtdc' => ['dtdc_b2c','dtdc_ecd','dtdc_eci','dtdc_ed','dtdc_edp','dtdc_en','dtdc_ied','dtdc_imd','dtdc_imp'],
-    //     // 'fedex' => ['fedex_2_day', 'fedex_2_day_am', 'fedex_2_day_am_one_rate', 'fedex_2_day_one_rate', 'fedex_distance_deferred', 'fedex_europe_first_international_priority', 'fedex_express_saver', 'fedex_express_saver_one_rate', 'fedex_first_overnight', 'fedex_first_overnight_one_rate', 'fedex_ground', 'fedex_ground_home_delivery', 'fedex_international_economy', 'fedex_international_first', 'fedex_international_priority', 'fedex_next_day_afternoon', 'fedex_next_day_early_morning', 'fedex_next_day_end_of_day', 'fedex_next_day_mid_morning', 'fedex_priority_overnight', 'fedex_priority_overnight_one_rate', 'fedex_same_day', 'fedex_same_day_city', 'fedex_standard_overnight', 'fedex_standard_overnight_one_rate'],
-    // ];
+    protected static $baseUrl = postmen_url;
     /**
      * To check if the given courier type is supported and the it gives the service asked for
      * @param string $courier Name of the courier to be used
@@ -25,11 +17,9 @@ class Postmen extends Base
      */
     public function checkCourierAndService($serviceType)
     {
-        // if (array_key_exists($courier, $this->supportedCariers)) {
         if (in_array($serviceType, $this->supportedCariers)) {
             return true;
         }
-        // }
         return false;
     }
 
@@ -41,19 +31,15 @@ class Postmen extends Base
 
         $credentials = $courierServiceAccount->getCredentials();
         $courierServiceAccountId = $courierServiceAccount->getId();
-        // if (!(new Postmen())->checkCourierAndService($serviceType)) {
-        //     throw new \Exception("Courier supported not supported");
-        // }
 
-        // $credentials['api_key'] = '25dddfc8-b793-4aa2-b13b-64963bee5820';
         if (!isset($credentials['api_key'])) {
             throw new \Exception("Api key not found");
         }
-        $serviceType = 'fedex_express_saver_one_rate';
-            // $credentials['id'] = '5560a67f-5e2a-4081-b06e-a167acd11153';
+
         if (!isset($credentials['id'])) {
-            // throw new \Exception("Api id not found");
+            throw new \Exception("Api id not found");
         }
+        $serviceType = 'fedex_express_saver';
         $headers = array(
             "content-type: application/json",
             "postmen-api-key: " . $credentials['api_key']
@@ -64,7 +50,6 @@ class Postmen extends Base
         } else {
             throw new \Exception("Payload not generated successfully", 1);
         }
-        // die;
         $curl = curl_init();
 
         curl_setopt_array($curl, array(
@@ -79,10 +64,11 @@ class Postmen extends Base
         $err = curl_error($curl);
     
         curl_close($curl);
-        
+
         if ($err) {
             throw new \Exception('cURL error:', $err);
         } else {
+            debug($response);
             $responseArray = json_decode($response, true);
             if ($responseArray['meta']['code'] == 200) {
                 return array('success'=> true, 'data' => ['awb' => $responseArray['data']['tracking_numbers'][0], 'details' => 'success', 'courier_service_account_id' => $courierServiceAccountId, 'courier_ref_id' => $responseArray['data']['id']]);
@@ -91,6 +77,7 @@ class Postmen extends Base
                 foreach ($responseArray['meta']['details'] as $error) {
                     $errors = $errors . ', ' .  $error['info'];
                 }
+                $errors = $errors . $responseArray['meta']['message'];
                 throw new \Exception($errors);
             }
         }
@@ -176,19 +163,19 @@ class Postmen extends Base
                     ],
                     "dimension"=> [
 
-                        "width"=> (float) $order['shipment_details']['breadth'],
-                        "height"=> (float) $order['shipment_details']['height'],
-                        "depth"=> (float) $order['shipment_details']['length'],
+                        "width"=> (float) $order['shipment_details']['breadth']/10,
+                        "height"=> (float) $order['shipment_details']['height']/10,
+                        "depth"=> (float) $order['shipment_details']['length']/10,
                         "unit"=> "cm"
                     ],
                     "items"=> $itemsArray,
                 ]],
                 "ship_from"=> [
                     "contact_name"=> $order['pickup_address']['name'],
-                    "company_name"=>  $order['pickup_address']['text'],
+                    "company_name"=>  $order['pickup_address']['name'],
                     "email"=> "jameson@yahoo.com",
                     "phone"=> "12345678910",
-                    "street1"=> (isset($order['pickup_address']['landmark']) && $order['pickup_address']['landmark'] != '')?$order['pickup_address']['landmark']: '-',
+                    "street1"=> (isset($order['pickup_address']['text']) && $order['pickup_address']['text'] != '')?$order['pickup_address']['text']: '-',
                     "city"=> $this->getCItyFromPincode($order['pickup_address']['pincode']),
                     "state"=> $order['pickup_address']['state'],
                     "postal_code"=>  $order['pickup_address']['pincode'],
