@@ -28,7 +28,9 @@ class FileManager
     public static function verifyDirectory($path)
     {
         if (!is_dir($path)) {
-            mkdir($path, 0777, true);
+            if (!mkdir($path, 0777, true)) {
+                throw new \Exception("Could not create a folder. Please contact admin.");
+            }
         }
     }
 

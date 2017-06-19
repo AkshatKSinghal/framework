@@ -443,7 +443,7 @@ class AWBBatch extends BaseController
 
     private function getLogFile()
     {
-        $dir = btpTMP . "/logs/";
+        $dir = log_file;
         FileManager::verifyDirectory($dir);
         $filePath = $dir . "{$this->model->getId()}.log";
         if (!file_exists($filePath)) {
