@@ -141,8 +141,6 @@ class CacheManager extends \Redis
 
     public static function addToSet($key, $values)
     {
-        print_r('asd');
-        die;
         if (!is_array($values)) {
             $values = array($values);
         }

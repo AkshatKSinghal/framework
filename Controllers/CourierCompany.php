@@ -257,7 +257,7 @@ class CourierCompany extends BaseController
     {
         $courier['id'] = $this->model->getId();
         $courier['name'] = $this->model->getName();
-        $courier['short_code'] = $this->model->getShortCode();
+        $courier['short_code'] = strtolower($this->model->getShortCode());
         $courier['comments'] = $this->model->getComments();
         $courier['logo_url'] = $this->model->getLogoUrl();
         $courier['status'] = $this->model->getStatus();
@@ -266,12 +266,22 @@ class CourierCompany extends BaseController
 
     /**
      * Function to get all the courier and services with admin account
+     * @param string $status status for which couriers to be looked
+     * @param string $mode mode for which it is used ie admin or user
      * @uses getCourierServices
      * @return mixed
      */
-    public function getAdminCouriers($status)
+    public function getCouriers($status, $mode, $accountId = null)
     {
-        $couriers = $this->model->getByParam(['status' => $status]);       
+        switch ($mode) {
+            case 'user':
+                $currStatus = 'active';
+                break;
+            case 'admin':
+                $currStatus = $status;
+                break;
+        }
+        $couriers = $this->model->getByParam(['status' => $currStatus]);       
         $returnCouriers = [];
         switch ($status) {
             case 'active':
@@ -282,93 +292,108 @@ class CourierCompany extends BaseController
                 $nextStatus = 'active';
                 break;
         }
-
-        $nextCount = $this->model->getByParam(['status' => $nextStatus]);
-
         $cnt = 0;
+        $returnCouriers['couriers'] = [];
+        $returnCouriers['selected_couriers'] = [];
         foreach ($couriers as $courier) {
             $courierObject = new CourierCompany([$courier['id']]);
             $courierData = $courierObject->getDetails();
-            // $courierData['id'] = $courier['id'];
-            // $courierData['name'] = $courier['name'];
-            // $courierData['short_code'] = $courier['short_code'];
-            // $file = $this->getFilePath('logo_url', $courier['logo_url']);
-            // $filepath = btpTMP . '/local/logo_url/' . $courier['logo_url'];
-            // shell_exec("aws s3 cp $file $filepath");
 
-            // $courierData['logo_url'] = $courier['logo_url'];
-            // $courierData['comments'] = $courier['comments'];
-            $awbDataAndServices = $courierObject->getCourierServicesAndAwb();
+            $awbDataAndServices = $courierObject->getCourierServicesAndAwb($mode, $status, $accountId);
             $courierData['services'] = $awbDataAndServices['services'];
             $courierData['awb_data'] = $awbDataAndServices['awb_data'];
-            $returnCouriers['couriers'][] = $courierData;
-            $cnt++;
+            if ($mode == 'user') {
+                if ($awbDataAndServices['account_present']) {
+                    if ($awbDataAndServices['account_active']) {
+                        $returnCouriers['couriers'][] = $courierData;                    
+                        $cnt++;
+                    }
+                    $returnCouriers['selected_couriers'][] = $courierData['id'];                    
+                }
+                $returnCouriers['all_couriers'][] = $courierData;
+            } else {
+                $returnCouriers['couriers'][] = $courierData;                                
+            }
         }
         $returnCouriers['count'][$status] = $cnt;
-        $returnCouriers['count'][$nextStatus] = count($nextCount);
+        if ($mode == 'admin') {
+            $nextCount = $this->model->getByParam(['status' => $nextStatus]);            
+            $returnCouriers['count'][$nextStatus] = count($nextCount);
+        } else {
+            $returnCouriers['count'][$nextStatus] = count($returnCouriers['selected_couriers']) - count($returnCouriers['couriers']);
+        }
         return $returnCouriers;
     }
 
     /**
      * Function to get the courier services for a particular courier company
-     * @param string $courierId
+     * @param string $mode i.e. admin or user
      * @return mixed $returnServices
      */
-    public function getCourierServicesAndAwb()
+    public function getCourierServicesAndAwb($mode, $status, $accountId = null)
     {
         $courierId = $this->model->getId();
         $courierServices = (new CourierService([]))->getByCourierId($courierId);
         $returnServices = [];
         $combineAWB = [];
+        $accountPresent = false;
+        $accountActive = false;
         foreach ($courierServices as $service) {
             $serviceObject = new CourierService([$service['id']]);
             $servicesData = $serviceObject->getDetails();
-            // $servicesData['id'] = $service['id'];
-            // $servicesData['service_type'] = $serviceObject->getServiceType();
-            // $servicesData['code'] = $serviceObject->getCode();
-            // $servicesData['status'] = $serviceObject->getStatus();
-            // $servicesData['order_type'] = $serviceObject->getOrderType();
-            // $servicesData['credentials_required_json'] = $serviceObject->getCredentialsRequiredJson();
-            $courierAccount = $serviceObject->getAdminAccount();
             $codCount = $nonCodCount = $awbCount = 0;
-            if ($courierAccount) {
-                $awbData = [];
-                // try {
+            $awbData = [];
+            $awbBatches = [];
+            if ($mode == 'admin') {
+                $courierAccount = $serviceObject->getAdminAccount();
                 $courierAccountObject = new CourierServiceAccount([$courierAccount['id']]);
                 $awbBatches = $courierAccountObject->getAllAWBBatches();
-                foreach ($awbBatches as $awbBatch) {
-                    if (isset($servicesData['awb_data'][$awbBatch])) {
-                        $servicesData['awb_data'][$awbBatch]['service_types'].push($servicesData['service_type']);
-                    } else {
-                        $awbBatchObject = new AWBBatch([$awbBatch]);
-                        $awbData['id'] = $awbBatch;
-                        $awbData['service_types'] = [$servicesData['service_type']];
-                        $awbData['timestamp'] = time();
-                        $awbData['status'] = $awbBatchObject->getStatus();
-                        $awbData['count'] = $awbBatchObject->getAvailableCount();
-                        switch ($servicesData['order_type']) {
-                            case 'cod':
-                                $codCount += $awbData['count'];
-                                break;
-
-                            case 'prepaid':
-                                $nonCodCount += $awbData['count'];
-                                break;
-                        }
-                        $awbCount += $awbData['count'];
+            } else {
+                $courierAccounts = \Controllers\CourierServiceAccount::getByParams(['account_id' => $accountId, 'awb_batch_mode' => 'USER', 'courier_service_id' => $service['id']]);
+                if ($courierAccounts) {
+                    $accountPresent = true;                                
+                    $courierAccountObject = new CourierServiceAccount([$courierAccounts[0]['id']]);
+                    if (strtolower($courierAccounts[0]['status']) == strtolower($status)) {
+                        $accountActive = true;
+                        $servicesData['account'] = $courierAccountObject->getCredentials();   
                     }
-                    $combineAWB[$awbBatch] = $awbData;
+                    $awbBatches = $courierAccountObject->getAllAWBBatches();
+                    $awbBatches['courier_service_account'] = $courierAccounts[0]['id'];
                 }
-                // } catch (\Exception $e) {
-                //     $servicesData['awb'] = 0;
-                // }
+            }
+            foreach ($awbBatches as $key => $awbBatch) {
+                if ($key == 'courier_service_account')
+                    continue;
+
+                if (isset($servicesData['awb_data'][$awbBatch])) {
+                    $servicesData['awb_data'][$awbBatch]['service_types'].push($servicesData['service_type']);
+                } else {
+                    $awbBatchObject = new AWBBatch([$awbBatch]);
+                    $awbData['id'] = $awbBatch;
+                    $awbData['service_types'] = [$service['id'] => $servicesData['service_type']];
+                    $awbData['timestamp'] = time();
+                    $awbData['status'] = $awbBatchObject->getStatus();
+                    $awbData['count'] = $awbBatchObject->getAvailableCount();
+                    $awbData['courier_service_account'] = $awbBatches['courier_service_account'];
+                    switch ($servicesData['order_type']) {
+                        case 'cod':
+                            $codCount += $awbData['count'];
+                            break;
+
+                        case 'prepaid':
+                            $nonCodCount += $awbData['count'];
+                            break;
+                    }
+                    $awbCount += $awbData['count'];
+                }
+                $combineAWB[$awbBatch] = $awbData;
             }
             $servicesData['awb'] = $awbCount;
             $servicesData['cod_count'] = $codCount;
             $servicesData['non_count'] = $nonCodCount;
             $returnServices[] = $servicesData;
         }
-        return ['services' => $returnServices, 'awb_data' => $combineAWB];
+        return ['services' => $returnServices, 'awb_data' => $combineAWB, 'account_present' => $accountPresent, 'account_active' => $accountActive];
     }
 
     /**

@@ -330,7 +330,7 @@ class CourierService extends CourierCompany
         $service['credentials_required_json'] = json_decode($this->model->getCredentialsRequiredJson());
         $service['pincodes'] = $this->model->getPincodes();
         $service['settings'] = $this->model->getSettings();
-        $service['status'] = $this->model->getStatus();
+        $service['status'] = strtolower($this->model->getStatus());
         $service['service_type'] = $this->model->getServiceType();
         $service['order_type'] = $this->model->getOrderType();
         $service['class_name'] = $this->model->getClassName();

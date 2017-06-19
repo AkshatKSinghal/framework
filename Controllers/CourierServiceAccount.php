@@ -97,12 +97,13 @@ class CourierServiceAccount extends CourierService
      */
     public function getAllAWBBatches()
     {
-        $courierServiceAccount = $this->getAccountModel();
         try {
+            $courierServiceAccount = $this->getAccountModel();
             $batches = $courierServiceAccount->getAllAWBBatches();
             return $batches;
         } catch (\Exception $e) {
-            throw new \Exception($e->getMessage());
+            // throw new \Exception($e->getMessage());
+            return [];
         }
     }
 
@@ -131,12 +132,9 @@ class CourierServiceAccount extends CourierService
     public function create($request)
     {
         try {
-            $this->model->startTransaction();
             $checkedData = $this->checkFields($request);
             $modelId = $this->setIndividualFields($checkedData);
-            $this->model->commitTransaction();
         } catch (\Exception $e) {
-            $this->model->rollbackTransaction();
             throw new \Exception($e->getMessage());
         }
         return $modelId;
@@ -281,36 +279,26 @@ class CourierServiceAccount extends CourierService
         return $insertData;
     }
 
+    /**
+     * Function to set credentials
+     * @param mixed $credentialArray 
+     * @return void
+     */
     public function setCredentials($credentialArray)
     {
         $this->model->setCredentials(json_encode($credentialArray));
-        $this->model->save();
     }
 
-    // public function getCouriersByAccountId($accountId)
-    // {
-    //     $courierAccounts = $this->model->getByParam(['account_id' => $accountId]);
+    /**
+     * Function to set status
+     * @param string $status 
+     * @return void
+     */
+    public function setStatus($status)
+    {
+        $this->model->setStatus($status);
+    }
 
-    //     // if (empty($courierAccounts)) {
-    //     //     $courierAccounts = $this->model->getByParam(['nam'])
-    //     // }
-    //     foreach ($courierAccounts as $courierAccount) {
-    //         $courierService = $courierAccount->getCourierService();
-    //         $courierCompany = $courierService->getCourierCompany();
-
-
-    //         $courierService = [
-    //             'serviceType' => $courierService->getServiceType(),
-    //             'orderType' => $courierService->getOrderType()
-    //         ];
-    //         $couriers = [
-    //             'name' => $courierCompany->getName(),
-    //             'shortCode' => $courierCompany->getShortCode(),
-    //             'logoUrl' => $courierCompany->getLogoUrl(),
-
-    //         ];
-    //     }
-    // }
     public function getCouriersByAccountId($accountId)
     {
         $courierAccounts = $this->model->getByParam(['account_id' => $accountId]);
@@ -357,5 +345,17 @@ class CourierServiceAccount extends CourierService
     public function saveExtraParams($columnName, $value, $description)
     {
         return $this->model->saveExtraParams($columnName, $value, $description);
+    }
+    /**
+     * Function to check mapping of the awb Batch with the courier service account
+     * @param string $batchId 
+     * @return type
+     */
+    public function checkMapping($batchId)
+    {
+        if (empty($this->model->checkMapping($batchId))) {
+            return false;
+        }
+        return true;
     }
 }
