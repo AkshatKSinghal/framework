@@ -428,14 +428,17 @@ class CourierCompany extends BaseController
      */
     public function updateServices($servicesData)
     {
-        $servicesInDb = $this->getCourierServicesAndAwb()['services'];
-
-        $credentialsRequired = $servicesInDb[0]['credentials_required_json'];
+        $servicesInDb = $this->getCourierServicesAndAwb('admin', 'active')['services'];
+        if (empty($servicesInDb)) {
+            $credentialsRequired = ['cust_vend_code', 'code'];
+        } else {
+            $credentialsRequired = $servicesInDb[0]['credentials_required_json'];        
+        }
         foreach ($servicesInDb as $index => $service) {
             $idArray = array_column($servicesData, 'id');
             $indexInData = array_search($service['id'], $idArray);
             if ($indexInData === false) {
-                debug($service);
+                // debug($service);
                 $serviceObject = new CourierService([$service['id']]);
                 $serviceObject->setStatus('inactive');
                 $serviceObject->save();
