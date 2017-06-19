@@ -27,7 +27,7 @@ class Postmen extends Base
     {
         $url = static::$baseUrl . 'labels';
         $method = 'POST';
-		$courierServiceAccount = static::getCourierServcieAccount($accountId, $courierServiceId);
+        $courierServiceAccount = static::getCourierServcieAccount($accountId, $courierServiceId);
 
         $credentials = $courierServiceAccount->getCredentials();
         $courierServiceAccountId = $courierServiceAccount->getId();
@@ -289,9 +289,9 @@ class Postmen extends Base
 
     /**
      * Function to prepare payload to create shipper account
-     * @param type $order 
-     * @param type $credentials 
-     * @param type $serviceType 
+     * @param type $order
+     * @param type $credentials
+     * @param type $serviceType
      * @return type
      */
     private function prepareTrackPayload($order, $credentials, $serviceType)

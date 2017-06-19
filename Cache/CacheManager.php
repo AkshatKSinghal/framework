@@ -29,8 +29,6 @@ class CacheManager extends \Redis
      */
     public function commitTransaction()
     {
-        // print_r(static::$transactionFunction);
-        // die;
         static::$transaction = false;
         foreach (static::$transactionFunction as $key => $functionArray) {
             foreach ($functionArray as $functionName => $arguments) {

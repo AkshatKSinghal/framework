@@ -175,7 +175,6 @@ class AWBBatch extends BaseController
         } elseif ($status != $allowedState) {
             throw new \Exception("Cannot obtain lock for $operation operation from $status state");
         }
-        // print_r($this->model);
         $this->model->setStatus($operation);
         $this->model->save();
     }
@@ -436,7 +435,7 @@ class AWBBatch extends BaseController
         // return btpTMP . "/s3/$type/{$this->model->getId()}.txt";
     }
 
-    private function getRedisSetKey($type)
+    public function getRedisSetKey($type)
     {
         return "{$this->model->getId()}_$type";
     }

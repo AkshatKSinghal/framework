@@ -285,10 +285,10 @@ class BTPost
     {
         if ($user == 'admin') {
             $courierCompany = new \Controllers\CourierCompany([]);
-            $adminCompanies = $courierCompany->getCouriers($status, 'admin');        
+            $adminCompanies = $courierCompany->getCouriers($status, 'admin');
         } else {
             $courierCompany = new \Controllers\CourierCompany([]);
-            $adminCompanies = $courierCompany->getCouriers($status, 'user', $accountId); 
+            $adminCompanies = $courierCompany->getCouriers($status, 'user', $accountId);
         }
         return $adminCompanies;
     }
@@ -305,9 +305,9 @@ class BTPost
             $credentialsRequired = ($request['fields']);
             foreach ($request['services'] as $service) {
                 $serviceId = $this->createCourierService($courierId, $credentialsRequired, '', '', [], $service['service_type'], $service['order_type']);
-            }            
+            }
         } catch (\Exception $e) {
-            throw new \Exception($e->getMessage());            
+            throw new \Exception($e->getMessage());
         }
         return true;
     }
@@ -325,9 +325,9 @@ class BTPost
         foreach ($request['selectedServicesId'] as $service) {
             try {
                 $data['service_id'] = $service;
-                $modelId = $this->createCourierServiceAccount($data, "user");                      
+                $modelId = $this->createCourierServiceAccount($data, "user");
             } catch (\Exception $e) {
-                throw new \Exception($e->getMessage());            
+                throw new \Exception($e->getMessage());
             }
             $cnt++;
         }
@@ -336,7 +336,7 @@ class BTPost
 
     /**
      * Function to save the general tab setting for the coourier company
-     * @param  $request data from the user panel 
+     * @param  $request data from the user panel
      * @return bool
      */
     public function saveCourierGeneral($request)
@@ -361,7 +361,7 @@ class BTPost
         $destinationDir = btpTMP . '/local/awbs/';
         \Utility\FileManager::verifyDirectory($destinationDir);
         $destination = $destinationDir  . $_FILES['file']['name'];
-        move_uploaded_file( $_FILES['file']['tmp_name'] , $destination );
+        move_uploaded_file($_FILES['file']['tmp_name'], $destination);
         \Utility\FileManager::validate($destination, 'text');
         $batchId = $this->uploadAWB($destination, $courierCompanyID, $accountID);
         if ($mode == 'user') {
@@ -373,7 +373,6 @@ class BTPost
                 }
             }
         }
-
     }
 
     /**
@@ -391,7 +390,7 @@ class BTPost
                     $accountObject = new \Controllers\CourierServiceAccount([$account['id']]);
                     $accountObject->setCredentials($data['credentials']);
                     $accountObject->setStatus($data['status']);
-                    $accountObject->save();                    
+                    $accountObject->save();
                 }
             }
         }
@@ -399,13 +398,12 @@ class BTPost
 
     /**
      * Function to update th courier service account with status or create new if not present
-     * @param mixed $data containing the service id related to account and seller account id 
+     * @param mixed $data containing the service id related to account and seller account id
      * @return type
      */
     public function updateOrCreateCourierServiceAccount($data)
     {
         $credentials = [];
-        // print_r($data);die;
         foreach ($data['services'] as $service) {
             $accounts = \Controllers\CourierServiceAccount::getByParams(['courier_service_id' => $service['service_id'], 'account_id' => $data['account_id'], 'awb_batch_mode' => 'user']);
             // var_dump($accounts);
@@ -414,11 +412,10 @@ class BTPost
                 $account = $accounts[0];
                 $accountObject = new \Controllers\CourierServiceAccount([$account['id']]);
                 $accountObject->setStatus($service['status']);
-                $accountObject->save();  
-                $credentials = $accountObject->getCredentials();                  
+                $accountObject->save();
+                $credentials = $accountObject->getCredentials();
             } else {
-                // die;
-                $this->getOrCreateCourierAccount($data['account_id'], $service['service_id'], $credentials, 'user');                
+                $this->getOrCreateCourierAccount($data['account_id'], $service['service_id'], $credentials, 'user');
             }
         }
     }

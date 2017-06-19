@@ -6,6 +6,7 @@ use \Model\ShipmentDetail as ShipmentDetailModel;
 use \Controllers\Base as BaseController;
 use \Controllers\CourierServiceAccount as CourierServiceAccount;
 use \Controllers\AWBBatch as AWBBatch;
+use \Cache\CacheManager as CacheManager;
 
 /**
 *
@@ -287,6 +288,15 @@ class ShipmentDetail extends BaseController
         $serviceType = $courierService->getServiceType();
         $checkedData['shipment_type'] = $checkedData['shipment_details']['type'] == '' ? 'FORWARD': $checkedData['shipment_details']['type'] ;
         $courierServiceAccount = CourierServiceAccount::getByAccountAndCourierService($checkedData['account_id'], $checkedData['courier_service_id']);
+        try {
+            $batch = $courierServiceAccount->getAWBBatch();
+            $setKey = $batch->getRedisSetKey(AWBBatch::AVAILABLE);
+            if (CacheManager::existsInSet($setKey, $awb)) {
+                $batch->logAWBEvent(AWBBatch::EVENT_USED, $awb);
+            }
+        } catch (\Exception $e) {
+        }
+
         $checkedData['courier_service_account_id'] = $courierServiceAccount->getId();
         $checkedData['courier_service_details'] = '';
         $checkedData['courier_service_reference_number'] = $awb;
@@ -484,13 +494,12 @@ class ShipmentDetail extends BaseController
                 $checkedData['courier_service_reference_number'] = $awbDetail['awb'];
                 $checkedData['shipment_type'] = 'FORWARD';
                 $response[$index]  = $this->addShipmentTODB($checkedData, $awbDetail['awb'], $courierService->getCourierCompanyName());
-                
             } else {
                 $response[$index] = [
                     'status' => 'FAILED',
                     'MSG' => 'CourierService Account not found for the seller account'
                 ];
-            }        
+            }
         }
         return $response;
     }

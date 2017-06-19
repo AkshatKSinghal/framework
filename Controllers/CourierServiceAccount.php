@@ -125,7 +125,7 @@ class CourierServiceAccount extends CourierService
                 throw new \Exception("Unknown AWB Batch Mode set");
             break;
         }
-        return $courierServiceAccount;        
+        return $courierServiceAccount;
     }
 
 
@@ -144,7 +144,7 @@ class CourierServiceAccount extends CourierService
     {
         $modelClass = $this->getModelClass();
         if ($new) {
-            $model = new $modelClass();        
+            $model = new $modelClass();
         } else {
             $model = new $modelClass($this->model->getId());
         }
@@ -188,10 +188,9 @@ class CourierServiceAccount extends CourierService
         $courierServiceAccount = $modelObj->getByParam([
             'account_id' => $accountId,
             'courier_service_id' => $courierServiceId
-        ]);       
+        ]);
         if (empty($courierServiceAccount)) {
             throw new \Exception("Courier Service Account not found");
-            
         }
         return new CourierServiceAccount([$courierServiceAccount[0]['id']]);
     }
@@ -281,7 +280,7 @@ class CourierServiceAccount extends CourierService
 
     /**
      * Function to set credentials
-     * @param mixed $credentialArray 
+     * @param mixed $credentialArray
      * @return void
      */
     public function setCredentials($credentialArray)
@@ -291,7 +290,7 @@ class CourierServiceAccount extends CourierService
 
     /**
      * Function to set status
-     * @param string $status 
+     * @param string $status
      * @return void
      */
     public function setStatus($status)
@@ -348,7 +347,7 @@ class CourierServiceAccount extends CourierService
     }
     /**
      * Function to check mapping of the awb Batch with the courier service account
-     * @param string $batchId 
+     * @param string $batchId
      * @return type
      */
     public function checkMapping($batchId)

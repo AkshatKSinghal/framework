@@ -22,12 +22,13 @@ class FileManager
     
     /**
      * Function to verify if a directory exists if not it will create one.
-     * @param string $path 
+     * @param string $path
      * @return void
      */
     public static function verifyDirectory($path)
     {
-        if (!is_dir($path)) {
+        // echo 'in verify';
+        if (!(is_dir($path) && file_exists($path))) {
             if (!mkdir($path, 0777, true)) {
                 throw new \Exception("Could not create a folder. Please contact admin.");
             }
@@ -36,7 +37,7 @@ class FileManager
 
     /**
      * Function to get the line count of the given file path
-     * @param string $filePath 
+     * @param string $filePath
      * @return string number of lines
      */
     public static function lineCount($filePath)
@@ -67,7 +68,7 @@ class FileManager
         $tmpfile = self::$tmp . $filePath;
         // move_uploaded_file( $filename , $tmpfile);
         $type = mime_content_type($filePath);
-        if( ! in_array( $type, $allowedTypes ) ) {
+        if (! in_array($type, $allowedTypes)) {
             throw new \Exception("File type not allowed :". $type);
         }
 
@@ -79,7 +80,7 @@ class FileManager
 
     /**
      * Function to get the extension from the name
-     * @param string $filename 
+     * @param string $filename
      * @return string extension
      */
     public static function getExtensionFromName($filename)
