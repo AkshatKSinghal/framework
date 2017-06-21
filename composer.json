@@ -1,10 +1,10 @@
 {
-    "name": "browntape_tech/btpost",
+    "name": "browntape_tech/bt_framework",
     "version": "0.0.1",
     "source": {
-        "url": "https://archit2511@bitbucket.org/browntape_tech/btpost.git",
+        "url": "https://archit2511@bitbucket.org/browntape_tech/bt_framework.git",
         "type": "git",
-        "reference": "origin/archit"
+        "reference": "origin/master"
     },
     "require": {
         "malkusch/php-autoloader": "^1.14"
