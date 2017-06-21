@@ -1,4 +1,11 @@
 {
+    "name": "archit2511/bt_post_base",
+    "version": "0.0.1",
+    "source": {
+        "url": "https://archit2511@bitbucket.org/archit2511/bt_post_base.git",
+        "type": "git",
+        "reference": "origin/master"
+    },
     "require": {
         "malkusch/php-autoloader": "^1.14"
     }
