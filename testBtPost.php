@@ -9,7 +9,6 @@
     try {
         echo '****start*******';
 
-        $bt = new BTF([]);
         echo '******end******';
     } catch (Exception $e) {
         echo '<br>';
