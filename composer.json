@@ -1,8 +1,8 @@
 {
-    "name": "browntape_tech/bt_framework",
+    "name": "archit2511/bt_post_base",
     "version": "0.0.1",
     "source": {
-        "url": "https://archit2511@bitbucket.org/browntape_tech/bt_framework.git",
+        "url": "https://archit2511@bitbucket.org/archit2511/bt_post_base.git",
         "type": "git",
         "reference": "origin/master"
     },
