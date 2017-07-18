@@ -8,49 +8,16 @@ namespace DB;
 
 class DB
 {
-    public static $singleton = array();
-    public static $transaction;
-    // public static $defaultConfig = array(
-    //     // "hostname" => "localhost",
-    //     // "username" => "root",
-    //     // "password" => "archit@2905",
-    //     "hostname" => "browntape-staging-new.crkstpypjzpm.us-east-1.rds.amazonaws.com",
-    //     "username" => "browntape_rds",
-    //     "password" => "Flame~#$#123",
-    //     "database" => "btpost"
-        // );
+    public $singleton = array();
+    private $database;
 
-    public static $hostname;
-    public static $username;
-    public static $password;
-    public static $database;
-    /**
-     * function to set Standard config for the db
-     * @param mixed $conf configuration array
-     * @return void
-     */
-    public static function setStdConfig($conf)
+    public function __construct($config)
     {
-        foreach ($conf as $key => $value) {
-            if (property_exists(self::class, $key)) {
-                // $this->$key = $value;
-                static::$$key = $value;
-            }
+        $this->database = $config["database"];
+        $this->$singleton = new \mysqli($config["hostname"], $config["username"], $config["password"], $config["database"]);
+        if (!$mysqli) {
+            throw new Exception("Error Connecting to DB");
         }
-    }
-    
-    /**
-     * Function to get the config set
-     * @return mixed array containing the configuration
-     */
-    private static function getConfig()
-    {
-        return [
-            'hostname' => static::$hostname,
-            'username' => static::$username,
-            'password' => static::$password,
-            'database' => static::$database
-        ];
     }
 
     /**
@@ -58,20 +25,9 @@ class DB
      * @param mixed|null $config
      * @return mixed object of the class
      */
-    public static function getInstance($config = null)
+    private function getInstance($config = null)
     {
-        if (empty($config)) {
-            $config = self::getConfig();
-        }
-        $hash = $config['hostname'] . $config['username'] . $config ['database'];
-        if (!isset(self::$singleton[$hash])) {
-            $mysqli = new \mysqli($config["hostname"], $config["username"], $config["password"], $config["database"]);
-            if (!$mysqli) {
-                throw new Exception("Error Connecting to DB");
-            }
-            self::$singleton[$hash] = $mysqli;
-        }
-        return self::$singleton[$hash];
+        return $this->singleton;
     }
 
     /**
@@ -224,9 +180,9 @@ class DB
      *
      * @return mixed $result result of the query executed
      */
-    public static function executeQuery($query)
+    public function executeQuery($query)
     {
-        return static::getInstance()->query($query);
+        return $this->getInstance()->query($query);
     }
 
     /**
@@ -234,9 +190,9 @@ class DB
      * @param string $tableName
      * @return mixed fields array contaning the data type, limit, is_null etc of every field
      */
-    public static function getDBSchema($tableName)
+    public function getDBSchema($tableName)
     {
-        $query = "SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE table_name = '". $tableName . "' and TABLE_SCHEMA = '" . static::$database . "'";
+        $query = "SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE table_name = '". $tableName . "' and TABLE_SCHEMA = '" . $this->$database . "'";
         $response = self::executeQuery($query);
         $fieldsArray = [];
         while ($row = $response->fetch_assoc()) {

@@ -3,14 +3,14 @@
 namespace Model;
 
 use \Cache\CacheManager as CacheManager;
-use \DB\DB as DBManager;
+use \DB\DB as DB;
 use \DB\FilterQuery as FilterQuery;
 use \DB\FilterList as FilterList;
 
 /**
 * CRUD Operations
 */
-class Base
+class Base extends \Base\Object
 {
     protected static $tableName = '';
     protected static $primaryKey = 'id';
@@ -21,6 +21,8 @@ class Base
     protected $relativeValues = [];
     protected $data = [];
     protected $new = true;
+    private static $databases;
+    private static $currentDB;
 
     /**
      * Constructor to create model instance of existing record
@@ -48,17 +50,35 @@ class Base
         }
     }
 
+    public static function setup($config)
+    {
+        $this->currentDB = $this->getDBHash($config);
+        if (empty($this->db[$hash])) {
+            $this->databases[$hash] = new DB($config);
+        }
+    }
+
+    protected function getDBHash($config)
+    {
+        return $config['username'] . $config['hostname'] . $config['database'];
+    }
+
+    protected function getDB($config = null)
+    {
+        if (!empty($config)) {
+            $this->setup($config);
+        }
+        return $this->databases[$this->currentDB];
+    }
+
     protected function getDataFromDB($id = null)
     {
         if ($id == null) {
             $id = $this->getId();
         }
 
-        $response = (new DBManager())->get(get_called_class(), $id);
+        $response = $this->getDB()->get(get_called_class(), $id);
         if ($response->num_rows == 0) {
-            // echo '********';
-            // echo get_called_class();
-            // echo $id;
             throw new \Exception("Invalid " . $this->primaryKeyName());
         }
         $data = [];
@@ -137,10 +157,8 @@ class Base
         }
 
         $compareArray = array_keys($this->dbFields(false, true));
-        #TODO DO not call the DBManager::saveObject function in case the fields are all non-DB fields
-        #done
         if (!empty(array_intersect($fields, $compareArray))) {
-            $result = (new DBManager())->saveObject($this, $fields, $this->relativeValues);
+            $result = $this->getDB()->saveObject($this, $fields, $this->relativeValues);
             if (($this->new && $result) || !empty($this->relativeValues)) {
                 $this->data = $this->getDataFromDB($result);
                 $this->new = false;
@@ -246,7 +264,7 @@ class Base
                 $fields = CacheManager::getModelSchema(get_called_class());
             } catch (\Exception $e) {
                 $table = static::tableName();
-                $fields = DBManager::getDBSchema($table);
+                $fields = $this->getDB()->getDBSchema($table);
                 CacheManager::setModelSchema(get_called_class(), $fields);
             } finally {
                 static::$dbFields[get_called_class()] = $fields;
@@ -407,8 +425,8 @@ class Base
             }
         }
         $sqlWhere = new FilterList('AND', $filterQuery);
-        $query = 'SELECT * from ' . self::tableName() . ' where ' . $sqlWhere->getSQL(DBManager::getInstance());
-        $response = DBManager::executeQuery($query);
+        $query = 'SELECT * from ' . self::tableName() . ' where ' . $sqlWhere->getSQL($this->getDB()->getInstance());
+        $response = $this->getDB()->executeQuery($query);
 
         $data = [];
         while ($row = $response->fetch_assoc()) {
@@ -430,7 +448,7 @@ class Base
             $fields = implode(', ', $fieldList);        
         }
         $query = 'SELECT '. $fields .' from ' . self::tableName();
-        $response = DBManager::executeQuery($query);
+        $response = $this->getDB()->executeQuery($query);
 
         $data = [];
         while ($row = $response->fetch_assoc()) {
@@ -445,8 +463,7 @@ class Base
      */
     public function startTransaction()
     {
-        $dbInstance = DBManager::getInstance();
-        $dbInstance->begin_transaction(MYSQLI_TRANS_START_READ_WRITE);
+        $this->getDB()->begin_transaction(MYSQLI_TRANS_START_READ_WRITE);
         $cache = CacheManager::getInstance();
         $cache->startTransaction();
     }
@@ -457,8 +474,7 @@ class Base
      */
     public function commitTransaction()
     {
-        $dbInstance = DBManager::getInstance();
-        $dbInstance->commit();
+        $this->getDB()->commit();
         $cache = CacheManager::getInstance();
         $cache->commitTransaction();
     }
@@ -469,8 +485,7 @@ class Base
      */
     public function rollbackTransaction()
     {
-        $dbInstance = DBManager::getInstance();
-        $dbInstance->rollback();
+        $this->getDB()->rollback();
         $cache = CacheManager::getInstance();
         $cache->rollbackTransaction();
     }
