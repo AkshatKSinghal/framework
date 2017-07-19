@@ -23,6 +23,7 @@ class Base extends \Base\Object
     protected $new = true;
     private static $databases;
     private static $currentDB;
+    private static $cache;
 
     /**
      * Constructor to create model instance of existing record
@@ -38,10 +39,15 @@ class Base extends \Base\Object
         if ($id != null) {
             $this->new = false;
             try {
-                $this->data = CacheManager::getModelObject(get_called_class(), $id);
+                if (!empty($this->cache)) {
+                    $this->data = $this->cache->getModelObject(get_called_class(), $id);
+                } else {
+                    $this->data = $this->getDataFromDB($id);
+                    return;
+                }
             } catch (\Exception $ex) {
                 $this->data = $this->getDataFromDB($id);
-                CacheManager::setModelObject($this);
+                $this->cache->setModelObject($this);
             }
         } elseif (!empty($data)) {
             foreach ($data as $key => $value) {
@@ -52,9 +58,15 @@ class Base extends \Base\Object
 
     public static function setup($config)
     {
-        $this->currentDB = $this->getDBHash($config);
+        $dbConfig = $config['\DB\DB'];
+        $this->currentDB = $this->getDBHash($dbConfig);
         if (empty($this->db[$hash])) {
-            $this->databases[$hash] = new DB($config);
+            $this->databases[$hash] = new DB($dbConfig);
+        }
+
+        $cacheConfig = $config['\Cache\Redis'];
+        if (empty($this->cache)) {
+            $this->cache = new CacheManager($cacheConfig);
         }
     }
 
@@ -166,7 +178,7 @@ class Base extends \Base\Object
         }
         $this->modifiedFields = [];
         $this->relativeValues = [];
-        \Cache\CacheManager::setModelObject($this, $fields);
+        $this->cache->setModelObject($this, $fields);
         return $this->getPrimaryKey();
     }
 
@@ -261,11 +273,11 @@ class Base extends \Base\Object
         $fields = '';
         if (!isset(static::$dbFields[get_called_class()])) {
             try {
-                $fields = CacheManager::getModelSchema(get_called_class());
+                $fields = $this->getModelSchema(get_called_class());
             } catch (\Exception $e) {
                 $table = static::tableName();
                 $fields = $this->getDB()->getDBSchema($table);
-                CacheManager::setModelSchema(get_called_class(), $fields);
+                $this->cache->setModelSchema(get_called_class(), $fields);
             } finally {
                 static::$dbFields[get_called_class()] = $fields;
             }
@@ -464,8 +476,7 @@ class Base extends \Base\Object
     public function startTransaction()
     {
         $this->getDB()->begin_transaction(MYSQLI_TRANS_START_READ_WRITE);
-        $cache = CacheManager::getInstance();
-        $cache->startTransaction();
+        $this->cache->startTransaction();
     }
 
     /**
@@ -475,8 +486,7 @@ class Base extends \Base\Object
     public function commitTransaction()
     {
         $this->getDB()->commit();
-        $cache = CacheManager::getInstance();
-        $cache->commitTransaction();
+        $this->cache->commitTransaction();
     }
 
     /**
@@ -486,8 +496,7 @@ class Base extends \Base\Object
     public function rollbackTransaction()
     {
         $this->getDB()->rollback();
-        $cache = CacheManager::getInstance();
-        $cache->rollbackTransaction();
+        $this->cache->rollbackTransaction();
     }
 }
 

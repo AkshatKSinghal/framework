@@ -7,12 +7,25 @@ namespace Cache;
 */
 class CacheManager extends \Redis
 {
-    private static $singleton = null;
+    private $singleton = null;
     const DEFAULT_EXPIRY = 259200; //3 * 24 * 60 * 60
-    private static $host;
-    private static $port;
-    private static $transaction = false;
-    private static $transactionFunction = [];
+    private $transaction = false;
+    private $transactionFunction = [];
+
+
+    /**
+     * Constructor to initialise the connection with Redis Server
+     */
+    public function __construct($config)
+    {
+        $this->connect($config['host'], $config['port']);
+        if (!empty($config['password'])) {
+            $this->auth($config['password']);
+        }
+        if (!empty($config['database'])) {
+            $this->select($config['database']);
+        }
+    }
 
     /**
      * Function to start transaction in cache
@@ -20,7 +33,7 @@ class CacheManager extends \Redis
      */
     public function startTransaction()
     {
-        static::$transaction = true;
+        $this->transaction = true;
     }
 
     /**
@@ -29,10 +42,10 @@ class CacheManager extends \Redis
      */
     public function commitTransaction()
     {
-        static::$transaction = false;
-        foreach (static::$transactionFunction as $key => $functionArray) {
+        $this->transaction = false;
+        foreach ($this->transactionFunction as $key => $functionArray) {
             foreach ($functionArray as $functionName => $arguments) {
-                call_user_func_array('static::' . $functionName, $arguments);
+                call_user_func_array([$this, $functionName], $arguments);
             }
         }
     }
@@ -43,39 +56,23 @@ class CacheManager extends \Redis
      */
     public function rollbackTransaction()
     {
-        static::$transactionFunction = [];
-        static::$transaction = false;
+        $this->transactionFunction = [];
+        $this->transaction = false;
     }
 
     /**
-     * Function to set config for cache
-     * @param mixed $conf array of confiuration
+     * Function to enqueue operations in case the transaction is enabled
+     * 
+     * @param string $functionName Function Name being enqueued
+     * @param array $params Params passed to the function being enqueued
+     * 
      * @return void
      */
-    public static function setStdConfig($conf)
+    private function enqueueOperation($functionName, $params)
     {
-        foreach ($conf as $key => $value) {
-            if (property_exists(self::class, $key)) {
-                static::$$key = $value;
-            }
-        }
+        $this->transactionFunction[] = [$functionName => $params];
     }
-    /**
-     * Function to instantiate, if not already done,
-     * and return the singleton object
-     *
-     * @return object $cache CacheManager Object
-     */
-    public static function getInstance()
-    {
-        if (self::$singleton == null) {
-            // instantiate the object
-            self::$singleton = new CacheManager();
-            self::$singleton->connect(static::$host, static::$port);
-            self::$singleton->select(1);
-        }
-        return self::$singleton;
-    }
+
     /**
      * Function to get object data from cache for the given id
      *
@@ -85,9 +82,9 @@ class CacheManager extends \Redis
      *
      * @return mixed $data object data from cache
      */
-    public static function getModelObject($model, $id)
+    public function getModelObject($model, $id)
     {
-        $data = self::getHashData(self::getObjectKey($model, $id));
+        $data = $this->getHashData($this->getObjectKey($model, $id));
         $data[$model::primaryKeyName()] = $id;
         return $data;
     }
@@ -109,23 +106,17 @@ class CacheManager extends \Redis
 
     public function set($key, $value, $expiry = self::DEFAULT_EXPIRY, $serialize = true)
     {
-        if (static::$transaction) {
-            static::$transactionFunction[] = [
-                'set' => [
-                    $key,
-                    $value,
-                    $expiry,
-                    $serialize
-                ]
-            ];
-        } else {
-            if ($serialize == true) {
-                $value = serialize($value);
-            } elseif ($value != null && is_scalar($value)) {
-                throw new CacheManagerTypeException("Cannot save data of type ". gettype($value) ." without serialization");
-            }
-            parent::set($key, $value, $expiry);
+        if ($this->transaction) {
+            $this->enqueueOperation('set', func_get_args());
+            return;
         }
+
+        if ($serialize == true) {
+            $value = serialize($value);
+        } elseif ($value != null && is_scalar($value)) {
+            throw new CacheManagerTypeException("Cannot save data of type ". gettype($value) ." without serialization");
+        }
+        parent::set($key, $value, $expiry);
     }
     
     /**
@@ -137,15 +128,15 @@ class CacheManager extends \Redis
      * @return void
      */
 
-    public static function addToSet($key, $values)
+    public function addToSet($key, $values)
     {
         if (!is_array($values)) {
             $values = array($values);
         }
+        $values = array_chunk($values, 1000);
         foreach ($values as $value) {
-            self::getInstance()->sAdd($key, $value);
+            call_user_func_array([$this, 'sAdd'], $value);
         }
-        // #TODO use call_user_func_array to insert in batches of 10000
     }
 
     /**
@@ -159,30 +150,24 @@ class CacheManager extends \Redis
      *
      * @return void
      */
-    public static function setModelObject($object, $fields = [])
+    public function setModelObject($object, $fields = [])
     {
-        if (static::$transaction) {
-            static::$transactionFunction[] = [
-                'setModelObject' => [
-                    $object,
-                    $fields
-                ]
-            ];
-        } else {
-            if (empty($fields)) {
-                $fields = $object->allFields();
-            }
-            $id = $object->getPrimaryKey();
-            $data = [];
-            foreach ($fields as $field) {
-                $fieldKey = $field;
-                $field = ucfirst($field);
-                $data[$fieldKey] = $object->{"get$field"}();
-            }
-            $cache = self::getInstance();
-            $key = self::getObjectKey(get_class($object), $id);
-            $cache->hMSet($key, $data);
+        if ($this->transaction) {
+            $this->enqueueOperation('setModelObject', func_get_args());
+            return;
+        } 
+        if (empty($fields)) {
+            $fields = $object->allFields();
         }
+        $id = $object->getPrimaryKey();
+        $data = [];
+        foreach ($fields as $field) {
+            $fieldKey = $field;
+            $field = ucfirst($field);
+            $data[$fieldKey] = $object->{"get$field"}();
+        }
+        $key = $this->getObjectKey(get_class($object), $id);
+        $this->hMSet($key, $data);
     }
 
 
@@ -195,10 +180,9 @@ class CacheManager extends \Redis
      *
      * @return array $list
      */
-    public static function getModelSchema($modelClass)
+    public function getModelSchema($modelClass)
     {
-        $cache = self::getInstance();
-        return $cache->get(self::getModelPrefix($modelClass));
+        return $this->get($this->getModelPrefix($modelClass));
     }
 
     /**
@@ -211,43 +195,53 @@ class CacheManager extends \Redis
      * @return void
      */
 
-    public static function setModelSchema($modelClass, $schema)
+    public function setModelSchema($modelClass, $schema)
     {
-        if (static::$transaction) {
-            static::$transactionFunction[] = [
-                'setModelSchema' => [
-                    $modelClass,
-                    $schema
-                ]
-            ];
-        } else {
-            $cache = self::getInstance();
-            $cache->set(self::getModelPrefix($modelClass), $schema);
+        if ($this->transaction) {
+            $this->enqueueOperation('setModelSchema', func_get_args());
+            return;
         }
+        $this->set($this->getModelPrefix($modelClass), $schema);
+    }
+
+    /**
+     * Function to remove all keys of given model
+     * To be used when the schema is updated for the model
+     * 
+     * @param string $modelClass Name of the Model Class
+     * 
+     * @return void
+     */
+    public function clearModelSchema($modelClass)
+    {
+        $this->delete($this->keys($this->getModelPrefix($modelClass) . "*"));
     }
 
     /**
      * Function to get the Model Prefix
      *
-     * @return string $modelPrefix Key containing the schema of the model/
+     * @return string $modelClass Prefix Key containing the schema of the model/
      * Standard prefix for model keys
      */
 
-    private static function getModelPrefix($model)
+    private static function getModelPrefix($modelClass)
     {
-        return "O:". $model::shortName();
+        return "O:". $modelClass::shortName();
     }
 
 
     /**
      * Function to get key for given model and id
      *
+     * @param string $modelClass Name of the Model Class
+     * @param string $id Primary Identifier of the Model
+     * 
      * @return string $key
      */
 
-    private static function getObjectKey($model, $id)
+    private static function getObjectKey($modelClass, $id)
     {
-        return self::getModelPrefix($model) . ":$id";
+        return self::getModelPrefix($modelClass) . ":$id";
     }
 
 
@@ -257,21 +251,24 @@ class CacheManager extends \Redis
      * @param string $key identifier of the hash
      *
      * @throws CacheMissException in case the hash is not found
-     * @throws CacheTypeException in case of key not of type hash
+     * @throws CacheManagerTypeException in case of key not of type hash
      *
      * @return mixed $data data from Cache
      */
 
-    public static function getHashData($key, $fields = [])
+    public function getHashData($key, $fields = [])
     {
-        $cache = self::getInstance();
-        if (!$cache->exists($key)) {
-            throw new CacheMissException("Not found");
+        $type = $this->type($key);
+        if ($type == self::REDIS_NOT_FOUND) {
+            throw new CacheMissException("Hash Not found");
+        } else if ($type != self::REDIS_HASH) {
+            throw new CacheManagerTypeException("Data Type Mismatch");
         }
+
         if (!empty($fields)) {
-            $data = $cache->hMget($key, $fields);
+            $data = $this->hMget($key, $fields);
         } else {
-            $data = $cache->hGetAll($key);
+            $data = $this->hGetAll($key);
         }
         return $data;
     }
@@ -291,7 +288,7 @@ class CacheManager extends \Redis
     {
         $value = parent::get($key);
         if ($value === false) {
-            throw new CacheMissException("Not found");
+            throw new CacheMissException("Key Not found");
         }
         $unserializedValue = @unserialize($value);
         if ($unserializedValue === false) {
@@ -309,12 +306,8 @@ class CacheManager extends \Redis
      * @return bool $isMember Boolean if the value already exists in set or not
      */
 
-    public static function existsInSet($existingSet, $value)
+    public function existsInSet($existingSet, $value)
     {
-        return self::$singleton->sIsMember($existingSet, $value);
+        return $this->sIsMember($existingSet, $value);
     }
-}
-
-class CacheMissException extends \Exception
-{
 }
