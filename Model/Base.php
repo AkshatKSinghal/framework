@@ -225,9 +225,11 @@ class Base extends \Base\Object
                     }
                     break;
                 case 'timestamp':
-                    #TODO Convert formatted time string to epoch
-                    if ((string) (int)$value != $value || $timestamp > PHP_INT_MAX || $timestamp < 0) {
-                        throw new \Exception("Valid timestamp value required");
+                    if (!is_numeric($value)) {
+                        throw new \Exception("Invalid format for $propertyName");
+                    }
+                    if ($timestamp > 2147483647 || $timestamp < 0) {
+                        throw new \Exception("$propertyName should be between 01-01-1970 and 19-01-2038");
                     }
                     break;
                 case 'date':
