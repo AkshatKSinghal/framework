@@ -44,6 +44,8 @@ class Log
 				'line' => 'N/A'
 			];
 		}
+
+		$this->debug("Request Initiated");
 	}
 
 	public function __destruct()
@@ -97,7 +99,7 @@ class Log
 
 	public function __call($level, $arguments)
 	{
-		if (empty(constant('self::'.$level))) {
+		if (empty(constant('self::'.strtoupper($level)))) {
 			error_log("Undefined Log Method $level used");
 			return;
 		}

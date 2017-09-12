@@ -1,7 +1,7 @@
 <?php
 
 /**
-* Base Controller for BTPost
+* Base Controller
 */
 
 namespace Controllers;
